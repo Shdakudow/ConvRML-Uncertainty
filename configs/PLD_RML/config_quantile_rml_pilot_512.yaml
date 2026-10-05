@@ -1,0 +1,55 @@
+gpu_setup:
+  gpu_visible_id: "0"
+  gpu_num: 0
+  num_workers: 4
+  parallel: false
+
+modes:
+  full_fov_loss: false
+
+checkpoint:
+  save_checkpoint_path: "./checkpoints"
+
+run:
+  name: "quantile_convrml_tiny_pilot_512"
+
+dataset:
+  name: "rml"
+  downsize_factor: 4
+  use_processed: true
+  data_path: ${oc.env:CONVRML_DATA_PATH}
+  size: 0.06
+  train_count: 512
+  val_count: 128
+  test_count: 64
+
+dataloader:
+  batch_size: 4
+
+optimization:
+  lr: 0.0003
+  weight_decay: 0.001
+  max_grad_norm: 1.0
+
+loss:
+  reconstruction_weight: 1.0
+  pinball_weight: 1.0
+
+quantile:
+  minimum: 0.05
+  maximum: 0.95
+  embedding_dim: 128
+  condition_channels: 32
+  validation_levels: [0.1, 0.5, 0.9]
+
+model:
+  size: "tiny"
+  num_epochs: 3
+  input_height: 300
+  input_width: 480
+  output_height: 300
+  output_width: 480
+  n_channels: 3
+  drop_path_rate: 0.1
+  layer_scale_init_value: 1.0
+  decoder_channels: [512, 256, 128, 64]

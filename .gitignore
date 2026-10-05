@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.venv*/
+data/
+results/
+logs/
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.npy
+!homography_matrices/**/*.npy
+.env*

@@ -1,0 +1,64 @@
+gpu_setup:
+  gpu_visible_id: "0"
+  gpu_num: 0
+  num_workers: 6
+  parallel: false
+
+modes:
+  full_fov_loss: false
+
+checkpoint:
+  save_checkpoint_path: "./checkpoints"
+
+run:
+  name: "real_rml_uniform_continue3h"
+  seed: 20260920
+  max_minutes: 160
+
+dataset:
+  name: "rml"
+  data_path: ${oc.env:CONVRML_DATA_PATH}
+  downsize_factor: 4
+  use_processed: true
+  size: 1.0
+  train_count: 1024
+  val_count: 256
+  test_count: 64
+  exclude_test_ids: [5, 6]
+
+dataloader:
+  batch_size: 2
+
+optimization:
+  lr: 0.0002
+  weight_decay: 0.001
+  max_grad_norm: 1.0
+
+loss:
+  reconstruction_weight: 1.0
+  pinball_weight: 1.0
+  crossing_weight: 0.0
+
+quantile:
+  minimum: 0.0
+  maximum: 1.0
+  normalization: group
+  embedding_dim: 128
+  condition_channels: 32
+  train_endpoints: false
+  validation_levels: [0.05, 0.95]
+
+model:
+  size: "tiny"
+  num_epochs: 100
+  input_height: 300
+  input_width: 480
+  output_height: 300
+  output_width: 480
+  n_channels: 3
+  drop_path_rate: 0.1
+  layer_scale_init_value: 1.0
+  decoder_channels: [256, 128, 64, 32]
+
+resume:
+  checkpoint_path: /home/jy2228/ConvRML/checkpoints/real_rml_uniform_1024_gn/best_model.pth
