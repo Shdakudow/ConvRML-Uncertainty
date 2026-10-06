@@ -7,7 +7,7 @@ The code is organized by experiment. Start with the folder that matches the comp
 | Folder | What it contains |
 | --- | --- |
 | **[Original 50-epoch comparison](experiments/baseline_50epochs/)** | The earlier large-data RML and DiffuserCam study: im2im, five-member ensemble, 30-pass MC dropout, and the original final-feature-map quantile conditioner. |
-| **[Current adjusted comparison](experiments/adjusted_comparison_50epochs/)** | Corrected pinball-only QUTCC, end-to-end im2im, dropout throughout the network, independent ensemble shuffles, and separate lower/upper calibration scales. Training is stopped. |
+| **[Current adjusted comparison](experiments/adjusted_comparison_50epochs/)** | Corrected pinball-only QUTCC, end-to-end im2im, dropout throughout the network, independent ensemble shuffles, and separate lower/upper calibration scales. The corrected rerun is authorized. |
 | **[Exploratory archive](archive/exploratory/)** | Toy experiments, smaller-data studies, CRPS/residual-distribution experiments, earlier pilots, and superseded approaches. |
 
 **Naming clarification:** the large-data comparisons use **60,000 training images and 50 epochs**, not 50,000 training images. Each camera also has 5,000 validation images, 5,000 test images, and 2,048 separate calibration images.
@@ -21,7 +21,7 @@ The code is organized by experiment. Start with the folder that matches the comp
 | **MC dropout** | Dropout in every encoder block and decoder refinement stage; tune `0.05`, `0.10`, and `0.20` on validation data. |
 | **Q-conditioned ConvRML (QUTCC)** | Pinball-only training with 48 FiLM sites; reconstruction comes from the `q=0.5` prediction. |
 
-**FiLM is only used in QUTCC.** The target is 50 total backbone epochs. The implementation retains two-epoch training chunks and checkpoints every five epochs. **All earlier comparison jobs are stopped; corrected training has not been submitted.**
+**FiLM is only used in QUTCC.** The target is 50 total backbone epochs. The implementation retains two-epoch training chunks and checkpoints every five epochs. **Earlier comparison jobs are stopped. The corrected rerun trains all methods from scratch, using six independent job chains.**
 
 - [Current parameters](experiments/adjusted_comparison_50epochs/configs/parameters.json)
 - [Original comparison parameters](experiments/baseline_50epochs/configs/parameters.json)
@@ -44,7 +44,7 @@ We want informative, narrow intervals while maintaining adequate coverage. The R
 
 Each main experiment folder contains its own required Python modules, requirements file, and execution instructions. Run its commands **from that experiment folder**. Small shared modules are copied into both folders so each source package can be inspected without importing the exploratory archive.
 
-Datasets, split manifests, and trained checkpoints are not included. The corrected trainer rejects historical protocol checkpoints rather than silently resuming them under new objectives. A decision to reuse or retrain original ensemble members must be recorded explicitly before submission.
+Datasets, split manifests, and trained checkpoints are not included. The corrected trainer rejects historical protocol checkpoints rather than silently resuming them under new objectives. The authorized rerun retrains all ten ensemble members with independent initialization and shuffle seeds.
 
 The stopped October 5 variant is preserved in [a separate archive](archive/superseded_adjusted_20261005/). Historical results and checkpoints remain distinct from the corrected protocol.
 

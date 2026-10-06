@@ -1,6 +1,6 @@
 # Corrected ConvRML comparison
 
-**Status: implemented and locally tested; no corrected training jobs submitted.** The earlier comparison was stopped on October 6, 2026. Its code is preserved in [the superseded experiment archive](../../archive/superseded_adjusted_20261005/).
+**Status: corrected rerun authorized; fresh training for all four methods.** The earlier comparison was stopped on October 6, 2026. Its code is preserved in [the superseded experiment archive](../../archive/superseded_adjusted_20261005/).
 
 [Parameters](configs/parameters.json) · [Model implementations](models/corrected_uncertainty.py) · [Trainer](scripts/corrected_comparison_study.py) · [Evaluator](scripts/corrected_comparison_evaluate.py)
 
@@ -19,7 +19,7 @@ FiLM remains exclusive to QUTCC, with 36 encoder and 12 decoder conditioning sit
 
 Ensemble member `i` uses initialization seed `20261006 + i` and data-generator seed `20281006 + i`. Each epoch reshuffles the training images. Each checkpoint stores the data, quantile, CPU, CUDA, and optimizer states so resuming does not reset or repeat the shuffle sequence.
 
-A protocol identifier rejects the older shared-shuffle, frozen-head, and hybrid-loss checkpoints. The trainer supports ensemble members `00` through `09`; it does not automatically launch ten new models or silently reuse old members. MC-dropout candidates deliberately share initialization and data-order seeds to isolate the dropout-rate comparison.
+A protocol identifier rejects the older shared-shuffle, frozen-head, and hybrid-loss checkpoints. The rerun trains all ten ensemble members (`00` through `09`) from scratch, without reusing earlier member weights. MC-dropout candidates deliberately share initialization and data-order seeds to isolate the dropout-rate comparison.
 
 ## Separate lower/upper calibration
 
@@ -55,7 +55,16 @@ python scripts/corrected_comparison_evaluate.py --help
 
 Tests cover independent/resumable shuffles, pinball-only QUTCC, median reconstruction, backbone gradients from all im2im outputs, encoder/decoder dropout, inference-mode restoration, and asymmetric RCPS budgets.
 
-No submission script is provided for this revised run yet. Training remains stopped while the protocol is reviewed. The trainer supports `smoke` and `train` actions and allows at most two new epochs per invocation; GPU smoke tests are required before actual training.
+The trainer supports `smoke` and `train` actions and allows at most two new epochs per invocation. The submission workflow gates training behind GPU smoke tests and uses six independent sequential chains, limiting concurrent GPU jobs to six without a global barrier after every two epochs. QUTCC requests H100; other methods can use H100, H200, or RTX 6000 Ada.
+
+Review cluster settings in `scripts/corrected_comparison.sbatch`, then submit from this directory:
+
+```bash
+python scripts/submit_corrected_comparison.py --dry-run
+python scripts/submit_corrected_comparison.py
+```
+
+The second command submits GPU jobs and refuses to overwrite an existing `jobs.json`. It schedules fresh 50-epoch training for ten ensemble members, QUTCC, im2im, and three dropout candidates on each camera; validation selection and calibrated evaluation follow automatically. The six-chain limit also applies to evaluation jobs.
 
 ## Data and outputs
 
@@ -68,6 +77,6 @@ data/formal_rml_calibration95/
 data/diffuser_intervals_calibration_20260928/
 ```
 
-New checkpoints and evaluations use `results/corrected_comparison_20261006/`, separate from historical outputs. Existing baseline and stopped-run checkpoints are preserved.
+New checkpoints and evaluations use `results/corrected_comparison_20261006/`, separate from historical outputs. Older experimental weights have been selected for removal to free storage; historical metrics, reports, source code and the advisor baseline are retained.
 
 The [original large-data baseline](../baseline_50epochs/) and the [demo](https://shdakudow.github.io/ConvRML-Uncertainty-Demo/) show historical variants; they are not results for this corrected implementation.

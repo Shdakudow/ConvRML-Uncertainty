@@ -1,6 +1,6 @@
 {
   "protocol": "convrml_pinball_e2e_independent_shuffle_v1",
-  "status": "implemented; training not submitted",
+  "status": "authorized rerun, fresh initialization for all methods",
   "cameras": [
     "rml",
     "diffuser"
@@ -43,7 +43,8 @@
     "independent_per_epoch_shuffle": true,
     "initialization_seed": "20261006 + member index",
     "data_seed": "20281006 + member index",
-    "resume": "Restore saved generator states; reject old protocol checkpoints"
+    "resume": "Restore saved generator states; reject old protocol checkpoints",
+    "members_to_train": 10
   },
   "qutcc": {
     "loss": "pinball only",
@@ -95,5 +96,17 @@
     "evaluation_clipped": true
   },
   "checkpoint_policy": "New protocol only; historical checkpoints preserved separately",
-  "configuration_role": "Documentation snapshot, not an executable config file"
+  "configuration_role": "Documentation snapshot, not an executable config file",
+  "scheduling": {
+    "max_gpus": 6,
+    "independent_lanes": 6,
+    "epochs_per_job": 2,
+    "qutcc_gpu": "H100",
+    "other_gpus": [
+      "H100",
+      "H200",
+      "RTX 6000 Ada"
+    ],
+    "global_round_barrier": false
+  }
 }
