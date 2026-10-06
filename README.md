@@ -19,7 +19,7 @@ The code is organized by experiment. Start with the folder that matches the comp
 | **Im2im / fixed head** | Nothing: reuse its existing epoch-50 backbone and trained uncertainty head. |
 | **Deep ensemble** | Keep the original five members; finish five additional members to epoch 50. |
 | **MC dropout** | Compare dropout probabilities `0.05`, `0.10`, and `0.20` on validation data; evaluate 30, 60, and 100 inference passes. |
-| **QUTCC + ConvRML** | Train with 48 FiLM conditioning sites: 36 in the encoder and 12 in the decoder. |
+| **Q-conditioned ConvRML (QUTCC)** | Train with 48 FiLM conditioning sites: 36 in the encoder and 12 in the decoder. |
 
 **FiLM is only used in QUTCC.** The target is 50 total backbone epochs. The current workflow uses two-epoch job stages and saves checkpoints every five epochs.
 
