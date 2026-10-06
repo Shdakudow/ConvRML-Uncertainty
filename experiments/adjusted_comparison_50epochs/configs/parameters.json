@@ -1,8 +1,6 @@
 {
-  "initialization": "Fresh QUTCC; resume pilot extra ensemble and MC; preserve original im2im and ensemble members 0-4",
-  "backbone": "ConvNeXtV2-Base FPN",
-  "film_sites": 48,
-  "conditioning": "FiLM only in QUTCC; no FiLM in ensemble or MC dropout",
+  "protocol": "convrml_pinball_e2e_independent_shuffle_v1",
+  "status": "implemented; training not submitted",
   "cameras": [
     "rml",
     "diffuser"
@@ -11,111 +9,91 @@
   "val_count": 5000,
   "test_count": 5000,
   "calibration_count": 2048,
-  "epochs": 50,
-  "fixed_head_extra_epochs": 0,
-  "ensemble_members": 10,
-  "dropout_probabilities": [
-    0.05,
-    0.1,
-    0.2
-  ],
-  "validation_passes": [
-    30,
-    60,
-    100
-  ],
-  "selected_inference_passes": 100,
-  "coverage_alpha": 0.1,
-  "rcps_delta": 0.05,
-  "selection": "Full validation SSIM at 100 passes; per-camera selected p locked before test",
-  "max_concurrent_gpus": 6,
-  "checkpoints": [
-    5,
-    10,
-    15,
-    20,
-    25,
-    30,
-    35,
-    40,
-    45,
-    50
-  ],
-  "epochs_per_job": 2,
-  "configuration_role": "Documented snapshot of settings used by selective_film50 scripts; not a CLI input file",
   "image_shape": [
     3,
     256,
     256
   ],
-  "data_range": [
-    0,
-    1
-  ],
+  "epochs": 50,
+  "epochs_per_job": 2,
+  "checkpoint_interval": 5,
   "optimizer": {
     "name": "AdamW",
-    "learning_rate": 0.0001,
+    "lr": 0.0001,
     "weight_decay": 0.0001,
-    "betas": [
-      0.9,
-      0.999
-    ],
     "batch_size": 2,
     "gradient_clip_norm": 1.0,
-    "precision": "bfloat16 autocast",
-    "scheduler": null
+    "precision": "BF16"
   },
-  "architecture": {
-    "encoder": "convnextv2_base.fcmae_ft_in22k_in1k",
-    "pretrained": false,
-    "encoder_channels": [
-      128,
-      256,
-      512,
-      1024
+  "ensemble": {
+    "available_member_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
     ],
-    "fpn_channels": 256,
-    "head_kernel": 3,
-    "residual_reconstruction": "measurement + predicted residual",
-    "film_in_qutcc_only": true,
-    "film_sites": 48,
-    "film_encoder_sites": 36,
-    "film_decoder_sites": 12,
-    "quantile_embedding": "sinusoidal 128 -> Linear512 -> SiLU -> Linear512",
-    "film_initialization": "zero scale and shift projection"
+    "loss": "Gaussian NLL",
+    "independent_initialization": true,
+    "independent_per_epoch_shuffle": true,
+    "initialization_seed": "20261006 + member index",
+    "data_seed": "20281006 + member index",
+    "resume": "Restore saved generator states; reject old protocol checkpoints"
   },
-  "losses": {
-    "im2im_backbone": "MSE; existing epoch 50 reused",
-    "im2im_fixed_head": "mean endpoint pinball; existing 10-epoch head on frozen epoch-50 backbone reused",
-    "ensemble": "0.5 * mean(log(variance) + squared_error / variance)",
-    "mc_dropout": "MSE",
-    "qutcc": "MSE reconstruction + pinball at independently sampled q per image; coefficients 1 and 1",
-    "q_sampling": "Uniform(0,1)",
-    "native_interval_q": [
+  "qutcc": {
+    "loss": "pinball only",
+    "q_sampling": "Uniform(0,1) per image",
+    "reconstruction_q": 0.5,
+    "interval_q": [
       0.05,
       0.95
-    ]
+    ],
+    "film_sites": 48,
+    "training_forward_passes": 1,
+    "separate_mse_branch": false
   },
-  "resume": {
-    "rml_extra_ensemble_and_mc": 8,
-    "diffuser_extra_ensemble_and_mc": 6,
-    "qutcc": 0,
-    "im2im_retrained": false,
-    "original_five_ensemble_members_retrained": false
+  "im2im": {
+    "training": "end-to-end, all parameters trainable",
+    "outputs": [
+      "lower RGB",
+      "center RGB",
+      "upper RGB"
+    ],
+    "head_channels": 9,
+    "loss": "MSE(center) + pinball(lower,0.05) + pinball(upper,0.95)",
+    "frozen_backbone": false
   },
-  "random_seeds": {
-    "extra_ensemble_members": "20261004 + member index (5..9)",
-    "mc_variants": 20261104,
-    "qutcc_initialization": 20261205,
-    "training_rng": 20261004,
-    "quantile_rng": 20261005,
-    "data_rng": 20261006
+  "mc_dropout": {
+    "loss": "MSE",
+    "probabilities": [
+      0.05,
+      0.1,
+      0.2
+    ],
+    "placement": "36 encoder residual-branch MLP outputs + 12 decoder activations",
+    "dropout_type": "elementwise nn.Dropout",
+    "validation_passes": [
+      30,
+      60,
+      100
+    ],
+    "selected_passes": 100,
+    "selection": "Highest validation SSIM at 100 passes; no test-based selection"
   },
-  "notes": [
-    "50 means total backbone epochs, not 50 additional epochs.",
-    "Checkpoint snapshots every 5 epochs; optimizer/RNG latest after every epoch.",
-    "Use separate validation, calibration and test splits.",
-    "RCPS targets risk 0.10 at delta 0.05; test coverage is not guaranteed to equal exactly 90%.",
-    "No new 50-epoch revised-study result is claimed by this source snapshot."
-  ]
+  "calibration": {
+    "type": "separate lower and upper scaling",
+    "alpha": 0.1,
+    "delta": 0.05,
+    "tail_alpha": 0.05,
+    "tail_delta": 0.025,
+    "confidence": "Bonferroni across tails",
+    "evaluation_clipped": true
+  },
+  "checkpoint_policy": "New protocol only; historical checkpoints preserved separately",
+  "configuration_role": "Documentation snapshot, not an executable config file"
 }

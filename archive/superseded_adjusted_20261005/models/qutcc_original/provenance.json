@@ -1,0 +1,13 @@
+{
+  "repository": "Shdakudow/code-for-quant",
+  "commit": "0e16411",
+  "source_sha256": {
+    "quantile_uqnet.py": "10e457095d655543d366cc08482a417bdc05fa937ccb6a63a52e4d5330868ff4",
+    "nn.py": "25a00e28d25c77c7ea820163d2b5c363d1c07158f8f8ce3e017280522ffa2e6e"
+  },
+  "changes": [
+    "Namespaced imports",
+    "PyTorch nonreentrant activation checkpointing preserves autocast; bypass during inference",
+    "RGB input/output handled by adapter; original architecture widths, depths, attention settings and 30 FiLM sites retained"
+  ]
+}

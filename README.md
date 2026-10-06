@@ -1,13 +1,13 @@
 # ConvRML Uncertainty
 
-Compare how four lensless imaging methods reconstruct an image and estimate **where that reconstruction is uncertain**: im2im with a fixed uncertainty head, MC dropout, deep ensemble, and quantile-conditioned ConvRML (QUTCC).
+Compare how four lensless imaging methods reconstruct an image and estimate **where that reconstruction is uncertain**: im2im, MC dropout, deep ensemble, and quantile-conditioned ConvRML (QUTCC).
 
 The code is organized by experiment. Start with the folder that matches the comparison you want to inspect.
 
 | Folder | What it contains |
 | --- | --- |
 | **[Original 50-epoch comparison](experiments/baseline_50epochs/)** | The earlier large-data RML and DiffuserCam study: im2im, five-member ensemble, 30-pass MC dropout, and the original final-feature-map quantile conditioner. |
-| **[Current adjusted comparison](experiments/adjusted_comparison_50epochs/)** | Validation-based MC-dropout tuning, QUTCC with FiLM throughout the encoder and decoder, and expansion to ten ensemble members. Im2im is reused unchanged. |
+| **[Current adjusted comparison](experiments/adjusted_comparison_50epochs/)** | Corrected pinball-only QUTCC, end-to-end im2im, dropout throughout the network, independent ensemble shuffles, and separate lower/upper calibration scales. Training is stopped. |
 | **[Exploratory archive](archive/exploratory/)** | Toy experiments, smaller-data studies, CRPS/residual-distribution experiments, earlier pilots, and superseded approaches. |
 
 **Naming clarification:** the large-data comparisons use **60,000 training images and 50 epochs**, not 50,000 training images. Each camera also has 5,000 validation images, 5,000 test images, and 2,048 separate calibration images.
@@ -16,12 +16,12 @@ The code is organized by experiment. Start with the folder that matches the comp
 
 | Method | What changes? |
 | --- | --- |
-| **Im2im / fixed head** | Nothing: reuse its existing epoch-50 backbone and trained uncertainty head. |
-| **Deep ensemble** | Keep the original five members; finish five additional members to epoch 50. |
-| **MC dropout** | Compare dropout probabilities `0.05`, `0.10`, and `0.20` on validation data; evaluate 30, 60, and 100 inference passes. |
-| **Q-conditioned ConvRML (QUTCC)** | Train with 48 FiLM conditioning sites: 36 in the encoder and 12 in the decoder. |
+| **Im2im** | Train lower, center, and upper outputs jointly with the entire backbone; no freezing. |
+| **Deep ensemble** | Separate initialization and data-order seeds for each member; restore the shuffle RNG exactly on resume. |
+| **MC dropout** | Dropout in every encoder block and decoder refinement stage; tune `0.05`, `0.10`, and `0.20` on validation data. |
+| **Q-conditioned ConvRML (QUTCC)** | Pinball-only training with 48 FiLM sites; reconstruction comes from the `q=0.5` prediction. |
 
-**FiLM is only used in QUTCC.** The target is 50 total backbone epochs. The current workflow uses two-epoch job stages and saves checkpoints every five epochs.
+**FiLM is only used in QUTCC.** The target is 50 total backbone epochs. The implementation retains two-epoch training chunks and checkpoints every five epochs. **All earlier comparison jobs are stopped; corrected training has not been submitted.**
 
 - [Current parameters](experiments/adjusted_comparison_50epochs/configs/parameters.json)
 - [Original comparison parameters](experiments/baseline_50epochs/configs/parameters.json)
@@ -44,9 +44,9 @@ We want informative, narrow intervals while maintaining adequate coverage. The R
 
 Each main experiment folder contains its own required Python modules, requirements file, and execution instructions. Run its commands **from that experiment folder**. Small shared modules are copied into both folders so each source package can be inspected without importing the exploratory archive.
 
-Datasets, split manifests, and trained checkpoints are not included. In particular, the current comparison resumes saved pilot states and reuses completed baselines; cloning the source alone is not enough to run that workflow.
+Datasets, split manifests, and trained checkpoints are not included. The corrected trainer rejects historical protocol checkpoints rather than silently resuming them under new objectives. A decision to reuse or retrain original ensemble members must be recorded explicitly before submission.
 
-This GitHub reorganization does not modify existing cluster jobs or their storage paths.
+The stopped October 5 variant is preserved in [a separate archive](archive/superseded_adjusted_20261005/). Historical results and checkpoints remain distinct from the corrected protocol.
 
 ## Demo and sources
 
