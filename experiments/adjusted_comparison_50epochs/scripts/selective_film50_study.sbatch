@@ -11,7 +11,7 @@
 #SBATCH --time=08:00:00
 #SBATCH --requeue
 set -euo pipefail
-cd "$HOME/ConvRML"
+cd "${SLURM_SUBMIT_DIR:?Submit from this experiment directory}"
 export OMP_NUM_THREADS=2 MKL_NUM_THREADS=2
 PY="$HOME/.conda/envs/convrml/bin/python"
 stage="$1";shift

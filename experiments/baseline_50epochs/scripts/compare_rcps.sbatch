@@ -11,6 +11,6 @@
 #SBATCH --time=02:00:00
 #SBATCH --requeue
 set -euo pipefail
-cd "$HOME/ConvRML"
+cd "${SLURM_SUBMIT_DIR:?Submit from this experiment directory}"
 export OMP_NUM_THREADS=2 MKL_NUM_THREADS=2
-"$HOME/.conda/envs/convrml/bin/python" -u scripts/run_rcps_task.py
+"$HOME/.conda/envs/convrml/bin/python" -u scripts/compare_rcps.py --worker "$SLURM_ARRAY_TASK_ID" "$@"

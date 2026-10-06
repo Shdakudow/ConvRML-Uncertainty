@@ -1,182 +1,57 @@
 # ConvRML Uncertainty
 
-**How well can a lensless reconstruction model recover an image—and tell us where its reconstruction is uncertain?**
+Compare how four lensless imaging methods reconstruct an image and estimate **where that reconstruction is uncertain**: im2im with a fixed uncertainty head, MC dropout, deep ensemble, and quantile-conditioned ConvRML (QUTCC).
 
-This repository compares four approaches on **RML** and **DiffuserCam** measurements. Each method produces a reconstructed RGB image and a lower/upper interval for every pixel channel. We compare image quality, interval coverage, interval width, and computational cost.
+The code is organized by experiment. Start with the folder that matches the comparison you want to inspect.
 
-[Experiment settings](configs/selective_film50_parameters.json) · [Training code](scripts/selective_film50_study.py) · [Evaluation code](scripts/selective_film50_evaluate.py) · [Interactive demo](https://shdakudow.github.io/ConvRML-Uncertainty-Demo/)
-
-> **Current experiment:** a 50-epoch comparison with FiLM conditioning in QUTCC, ten ensemble members, and validation-based dropout selection. This repository contains the code and configuration, **not datasets or trained weights**. The separate demo shows earlier completed experiments; it does not establish results for this new comparison.
-
-## What do the four models do?
-
-All four use a **ConvNeXtV2-Base encoder with a feature pyramid decoder**. They differ in how they learn or estimate uncertainty.
-
-| Method | Reconstruction and uncertainty | Training loss | Current experiment |
-| --- | --- | --- | --- |
-| **Im2im / fixed head** | A reconstruction backbone predicts the image. A separate, fixed-quantile head predicts lower and upper bounds from its frozen features. | MSE for the backbone; endpoint pinball loss for the uncertainty head. | Reuse the existing 50-epoch backbone and its trained 10-epoch head. **No retraining.** |
-| **Deep ensemble** | Independently trained models each predict a mean and variance. Their predictions are combined into a mean and total variance, then converted to Gaussian intervals. | Gaussian negative log-likelihood (NLL). | Keep the original five members; finish five additional members to epoch 50. Compare five versus ten members. |
-| **MC dropout** | Keep dropout active during repeated inference passes. Their mean gives the reconstruction; their variation gives an uncertainty estimate. | MSE. | Train dropout variants to epoch 50, then select the dropout probability using validation data. |
-| **QUTCC + ConvRML** | A reconstruction branch predicts the image. A quantile-conditioned branch predicts an intensity at a requested quantile, such as `q = 0.05` or `q = 0.95`. | Reconstruction MSE + pinball loss, with equal coefficients. | Train the revised FiLM-conditioned architecture from scratch to epoch 50. |
-
-**FiLM is used only in QUTCC.** It turns the requested quantile into learned scale and shift values that modify normalized features. There are **48 conditioning sites: 36 in the encoder and 12 in the decoder**. The im2im, ensemble, and MC-dropout models do not receive these FiLM layers.
-
-The current comparison uses the losses listed above. Historical CRPS and toy-experiment scripts are also retained in the repository.
-
-## Experiment at a glance
-
-The same split sizes and preprocessing are used for each method within each camera dataset.
-
-| Setting | Value |
+| Folder | What it contains |
 | --- | --- |
-| Datasets | RML and DiffuserCam, trained separately |
-| Image size | RGB, `256 × 256`, intensities scaled to `[0, 1]` |
-| Training / validation / test | 60,000 / 5,000 / 5,000 images per dataset |
-| Separate calibration set | 2,048 images per dataset |
-| Backbone training target | **50 total epochs**, including any completed pilot epochs |
-| Optimizer | AdamW; learning rate `1e-4`; weight decay `1e-4` |
-| Batch size / precision | 2 / BF16 autocast |
-| Saved checkpoints | Every 5 epochs; resumable state saved after every epoch |
-| Cluster scheduling | At most 6 GPUs concurrently; training advances at most 2 epochs per job |
-| MC-dropout candidates | Dropout probabilities `0.05`, `0.10`, and `0.20` |
-| MC validation passes | 30, 60, and 100; choose the dropout probability by validation SSIM at 100 passes |
-| QUTCC training quantiles | One uniformly sampled `q` in `(0, 1)` per image |
-| Native quantile endpoints | `q = 0.05` and `q = 0.95` |
-| Calibration target | RCPS: `alpha = 0.10`, `delta = 0.05` |
+| **[Original 50-epoch comparison](experiments/baseline_50epochs/)** | The earlier large-data RML and DiffuserCam study: im2im, five-member ensemble, 30-pass MC dropout, and the original final-feature-map quantile conditioner. |
+| **[Current adjusted comparison](experiments/adjusted_comparison_50epochs/)** | Validation-based MC-dropout tuning, QUTCC with FiLM throughout the encoder and decoder, and expansion to ten ensemble members. Im2im is reused unchanged. |
+| **[Exploratory archive](archive/exploratory/)** | Toy experiments, smaller-data studies, CRPS/residual-distribution experiments, earlier pilots, and superseded approaches. |
 
-See [the full parameter file](configs/selective_film50_parameters.json) for architecture details, seeds, and resume settings. **This JSON documents the settings; the scripts do not load it as a configuration input.** Editing the JSON alone does not change training.
+**Naming clarification:** the large-data comparisons use **60,000 training images and 50 epochs**, not 50,000 training images. Each camera also has 5,000 validation images, 5,000 test images, and 2,048 separate calibration images.
 
-## How to read the outputs
+## Current comparison
 
-For a ground-truth image `x`, reconstructed image `prediction`, and calibrated bounds `LB` and `UB`:
-
-```text
-Absolute reconstruction error = |x - prediction|
-Uncertainty width             = UB - LB
-Coverage                      = fraction of ground-truth channel values inside [LB, UB]
-```
-
-- **PSNR and SSIM:** higher values indicate better reconstruction quality.
-- **Mean absolute error:** lower values indicate smaller reconstruction errors.
-- **Mean interval width:** measures how broad the uncertainty intervals are. Smaller is preferable **when coverage is adequate**.
-- **Coverage:** checks whether the intervals contain the observed ground truth. A wide interval can achieve high coverage without being informative.
-
-Error and uncertainty maps answer different questions: error measures the mistake on a known test image, while uncertainty expresses the model's uncertainty before seeing its ground truth. They need not match pixel by pixel.
-
-The evaluator reports clipped image-quality and interval metrics on `[0, 1]`, with an additional unclipped PSNR. Width is measured in these normalized intensity units.
-
-### What does calibration change?
-
-Calibration adjusts interval widths using a held-out calibration set; it does not retrain the network or change its reconstructed image. The evaluator compares empirical calibration with Hoeffding–Bentkus RCPS calibration.
-
-RCPS targets an expected uncovered fraction of at most `0.10`, with confidence controlled by `delta = 0.05` under the calibration assumptions. An image is the calibration unit, and its loss is its uncovered RGB fraction. **This does not require exactly 90% coverage on every image or on a finite test set.**
-
-For QUTCC, this evaluator keeps the native `0.05` and `0.95` quantile queries and scales the resulting intervals around the reconstruction. It does not search for new calibrated quantile values.
-
-## Where to start in the code
-
-| File | Purpose |
+| Method | What changes? |
 | --- | --- |
-| [configs/selective_film50_parameters.json](configs/selective_film50_parameters.json) | Full settings for the current comparison |
-| [models/shamus_rml.py](models/shamus_rml.py) | Shared reconstruction backbone and decoder |
-| [models/formal_quantile.py](models/formal_quantile.py) | Fixed endpoint head and earlier quantile-conditioned model |
-| [models/convnext_norm_film.py](models/convnext_norm_film.py) | Current QUTCC model with FiLM throughout the encoder and decoder |
-| [baselines/formal_rml.py](baselines/formal_rml.py) | Ensemble and dropout backbone variants |
-| [scripts/selective_film50_study.py](scripts/selective_film50_study.py) | Training, validation, checkpointing, and model loading |
-| [scripts/submit_selective_film50.py](scripts/submit_selective_film50.py) | Submit the dependent Slurm workflow |
-| [scripts/selective_film50_evaluate.py](scripts/selective_film50_evaluate.py) | Dropout selection, calibration, and held-out evaluation |
-| [scripts/rcps_bounds.py](scripts/rcps_bounds.py) | RCPS interval calibration |
+| **Im2im / fixed head** | Nothing: reuse its existing epoch-50 backbone and trained uncertainty head. |
+| **Deep ensemble** | Keep the original five members; finish five additional members to epoch 50. |
+| **MC dropout** | Compare dropout probabilities `0.05`, `0.10`, and `0.20` on validation data; evaluate 30, 60, and 100 inference passes. |
+| **QUTCC + ConvRML** | Train with 48 FiLM conditioning sites: 36 in the encoder and 12 in the decoder. |
 
-Other scripts record earlier experiments and support the current code. Use the `selective_film50` entry points for this comparison.
+**FiLM is only used in QUTCC.** The target is 50 total backbone epochs. The current workflow uses two-epoch job stages and saves checkpoints every five epochs.
 
-## Setup and running
+- [Current parameters](experiments/adjusted_comparison_50epochs/configs/parameters.json)
+- [Original comparison parameters](experiments/baseline_50epochs/configs/parameters.json)
+- [Current setup and execution instructions](experiments/adjusted_comparison_50epochs/README.md#setup-and-running)
 
-### 1. Set up the environment
+The parameter JSON files document the settings. They are not trained weights and are not loaded automatically by the scripts.
 
-Use Python 3.11 and a PyTorch/torchvision installation compatible with your CUDA environment. Then install the remaining dependencies from the repository root:
+## Understanding the comparison
 
-```bash
-python -m pip install -r requirements.txt
-```
+Each model produces a reconstruction, a lower bound, and an upper bound. We compare:
 
-The training and evaluation scripts require an NVIDIA GPU. You can check the FiLM implementation without submitting cluster jobs:
+- **Reconstruction quality:** PSNR, SSIM, and absolute error against ground truth.
+- **Uncertainty width:** `upper bound - lower bound`.
+- **Coverage:** the fraction of ground-truth pixel-channel values inside the interval.
+- **Cost:** training and inference time.
 
-```bash
-python scripts/test_convnext_norm_film.py
-```
+We want informative, narrow intervals while maintaining adequate coverage. The RCPS target is 90% coverage in expectation under its assumptions; it does not mean every test image must have exactly 90% coverage.
 
-### 2. Provide the data and checkpoints
+## Using this repository
 
-The experiment expects paired measurement/ground-truth caches (`pairs.npy`) and split manifests (`manifest.json`) at these locations:
+Each main experiment folder contains its own required Python modules, requirements file, and execution instructions. Run its commands **from that experiment folder**. Small shared modules are copied into both folders so each source package can be inspected without importing the exploratory archive.
 
-```text
-data/
-├── optics_intervals_60k_5k_5k_20260928/       # RML train / validation / test
-├── diffuser_intervals_60k_5k_5k_20260928/     # DiffuserCam train / validation / test
-├── formal_rml_calibration95/                # RML calibration
-└── diffuser_intervals_calibration_20260928/  # DiffuserCam calibration
-```
+Datasets, split manifests, and trained checkpoints are not included. In particular, the current comparison resumes saved pilot states and reuses completed baselines; cloning the source alone is not enough to run that workflow.
 
-Each paired image cache contains unsigned-byte arrays with shape `[N, 2, 3, 256, 256]`: measurement first, ground truth second. Preserve the original manifests so every method uses the same split.
+This GitHub reorganization does not modify existing cluster jobs or their storage paths.
 
-**The submitted workflow resumes an existing experiment.** It also requires the original im2im and five-member ensemble checkpoints, plus the additional ensemble and MC-dropout pilot states. These pilot states resume at epoch 8 for RML and epoch 6 for DiffuserCam, including optimizer and random-number states. Their destination is:
+## Demo and sources
 
-```text
-results/selective_film50_both_cameras_20261005/<camera>/<arm>/latest.pt
-```
+- [Interactive demo](https://shdakudow.github.io/ConvRML-Uncertainty-Demo/) · [Separate demo repository](https://github.com/Shdakudow/ConvRML-Uncertainty-Demo)
+- [Upstream ConvRML](https://github.com/lakabuli/ConvRML) · [Original QUTCC source used here](https://github.com/Shdakudow/code-for-quant) (private)
+- [License](LICENSE) · [Upstream citation](CITATION.cff)
 
-Here, `<camera>` is `rml` or `diffuser`; resumable arms are `ensemble_05` through `ensemble_09`, `mc_005`, `mc_010`, and `mc_020`. The new `conditioned` arm starts fresh. Original baseline checkpoint paths are specified in `load_model()` in the training script.
-
-A fresh clone contains neither these weights nor the data, so it cannot reproduce the resume workflow by itself.
-
-### 3. Adapt the cluster template and submit
-
-Review [the Slurm template](scripts/selective_film50_study.sbatch), including its working directory, Python environment, GPU constraints, partition, and excluded nodes. It currently assumes the code lives at `~/ConvRML`.
-
-Once the required files and cluster settings are ready:
-
-```bash
-mkdir -p logs
-python scripts/submit_selective_film50.py
-```
-
-This command allocates cluster jobs. The workflow runs:
-
-```text
-GPU smoke tests
-    → training in two-epoch stages
-    → MC-dropout validation sweep
-    → lock the selected dropout probability
-    → calibration and held-out test evaluation
-```
-
-The submission script records job IDs in `jobs.json` and refuses to submit again if that record already exists.
-
-### 4. Find the results
-
-Outputs are written under:
-
-```text
-results/selective_film50_both_cameras_20261005/
-├── jobs.json
-├── rml/
-│   ├── <arm>/                   # Checkpoints, training history, and configuration
-│   ├── dropout_validation/      # Validation metrics and trend plots
-│   ├── dropout_policy.json      # Selected dropout setting
-│   └── evaluation/<method>/     # Aggregate metrics and per-image CSVs
-└── diffuser/                    # Same structure
-```
-
-Evaluation includes the fixed head, FiLM QUTCC, five- and ten-member ensembles, the original 30-pass MC baseline, and the validation-selected 100-pass MC model.
-
-## Related repositories and attribution
-
-- **This code:** [Shdakudow/ConvRML-Uncertainty](https://github.com/Shdakudow/ConvRML-Uncertainty)
-- **Demo code:** [Shdakudow/ConvRML-Uncertainty-Demo](https://github.com/Shdakudow/ConvRML-Uncertainty-Demo)
-- **Interactive demo:** [Open the image comparison viewer](https://shdakudow.github.io/ConvRML-Uncertainty-Demo/)
-- **Upstream ConvRML:** [lakabuli/ConvRML](https://github.com/lakabuli/ConvRML)
-- **Original QUTCC source used here:** [Shdakudow/code-for-quant](https://github.com/Shdakudow/code-for-quant) (private)
-
-Upstream attribution is retained in [LICENSE](LICENSE), [CITATION.cff](CITATION.cff), and [UPSTREAM_README.md](UPSTREAM_README.md). The imported QUTCC source is recorded in [its provenance file](models/qutcc_original/provenance.json).
-
-The demo is maintained separately. Updating this repository does not deploy the website.
+The demo represents earlier completed experiments. Updating this code repository does not update or deploy the demo.

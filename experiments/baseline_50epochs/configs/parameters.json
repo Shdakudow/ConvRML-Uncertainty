@@ -1,0 +1,31 @@
+{
+  "study": "Original four-method large-data comparison",
+  "cameras": [
+    "rml",
+    "diffuser"
+  ],
+  "train_count": 60000,
+  "val_count": 5000,
+  "test_count": 5000,
+  "calibration_count": 2048,
+  "backbone_epochs": 50,
+  "checkpoint_interval": 5,
+  "fixed_head_epochs_per_backbone_checkpoint": 10,
+  "ensemble_members": 5,
+  "mc_dropout_probability": 0.1,
+  "mc_inference_passes": 30,
+  "quantile_conditioning": "Original final-feature-map conditioner; not all-block FiLM",
+  "native_quantiles": [
+    0.05,
+    0.95
+  ],
+  "coverage_alpha": 0.1,
+  "rcps_delta": 0.05,
+  "optimizer": {
+    "name": "AdamW",
+    "lr": 0.0001,
+    "weight_decay": 0.0001,
+    "batch_size": 2
+  },
+  "configuration_role": "Documentation snapshot; scripts contain executable settings"
+}

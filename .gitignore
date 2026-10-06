@@ -9,5 +9,5 @@ checkpoints/
 *.pth
 *.ckpt
 *.npy
-!homography_matrices/**/*.npy
+!**/homography_matrices/**/*.npy
 .env*

@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=optics60k
-#SBATCH --output=logs/optics60k_%A_%a.out
-#SBATCH --error=logs/optics60k_%A_%a.err
+#SBATCH --job-name=diffuser60k
+#SBATCH --output=logs/diffuser60k_%A_%a.out
+#SBATCH --error=logs/diffuser60k_%A_%a.err
 #SBATCH --partition=gpu
 #SBATCH --exclude=nikola-compute-15,bhattacharjee-compute-02
 #SBATCH --gres=gpu:1
@@ -11,6 +11,6 @@
 #SBATCH --time=03:00:00
 #SBATCH --requeue
 set -euo pipefail
-cd "$HOME/ConvRML"
+cd "${SLURM_SUBMIT_DIR:?Submit from this experiment directory}"
 export OMP_NUM_THREADS=2 MKL_NUM_THREADS=2
-"$HOME/.conda/envs/convrml/bin/python" -u scripts/large_interval_study.py "$@" --worker "$SLURM_ARRAY_TASK_ID"
+"$HOME/.conda/envs/convrml/bin/python" -u scripts/diffuser_interval_study.py "$@" --worker "$SLURM_ARRAY_TASK_ID"
