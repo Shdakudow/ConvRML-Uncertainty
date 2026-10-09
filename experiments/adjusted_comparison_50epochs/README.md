@@ -55,7 +55,7 @@ python scripts/corrected_comparison_evaluate.py --help
 
 Tests cover independent/resumable shuffles, pinball-only QUTCC, median reconstruction, backbone gradients from all im2im outputs, encoder/decoder dropout, inference-mode restoration, and asymmetric RCPS budgets.
 
-The trainer supports `smoke` and `train` actions and allows at most two new epochs per invocation. The submission workflow gates training behind GPU smoke tests and uses six independent sequential chains, limiting concurrent GPU jobs to six without a global barrier after every two epochs. QUTCC requests H100; other methods can use H100, H200, or RTX 6000 Ada.
+The trainer supports `smoke` and `train` actions and allows at most two new epochs per invocation. The submission workflow gates training behind GPU smoke tests and uses six independent sequential chains, limiting concurrent GPU jobs to six without a global barrier after every two epochs. All methods can use H100, H200, RTX 6000 Ada, or A6000; Monakhova nodes remain excluded.
 
 Review cluster settings in `scripts/corrected_comparison.sbatch`, then submit from this directory:
 
@@ -80,3 +80,11 @@ data/diffuser_intervals_calibration_20260928/
 New checkpoints and evaluations use `results/corrected_comparison_20261006/`, separate from historical outputs. Older experimental weights have been selected for removal to free storage; historical metrics, reports, source code and the advisor baseline are retained.
 
 The [original large-data baseline](../baseline_50epochs/) and the [demo](https://shdakudow.github.io/ConvRML-Uncertainty-Demo/) show historical variants; they are not results for this corrected implementation.
+
+## Runtime optimization (October 9)
+
+Training retains batch size 2, the same losses, seeds, data splits, learning rate, and 50-epoch target. Host-to-GPU copies are nonblocking. A separate benchmark compares the original runtime with channels-last convolution layout, cuDNN algorithm selection, and fused AdamW using copies of epoch-10 weights. It never updates experiment checkpoints.
+
+Run `python scripts/benchmark_corrected_runtime.py` inside a GPU allocation. The trainer enables the faster runtime only when the completed benchmark matches the GPU model and PyTorch version, verifies optimizer resume, reports prediction mean absolute difference at most 0.002, and improves step time by more than 10%. Unsupported or unverified hardware keeps the original runtime. The benchmark uses two fixed training images and measures kernel throughput; it is not a full-epoch or accuracy evaluation.
+
+Changes take effect at the next two-epoch job boundary and retain optimizer moments and RNG states. Runtime choice is recorded in every new checkpoint and history row. Different GPU kernels and tensor layouts can introduce floating-point differences; this is not bitwise-identical continuation. Tests: `python -m unittest scripts.test_corrected_runtime scripts.test_corrected_comparison`.

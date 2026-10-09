@@ -3,9 +3,9 @@
 #SBATCH --output=logs/corrected_%j.out
 #SBATCH --error=logs/corrected_%j.err
 #SBATCH --partition=gpu
-#SBATCH --exclude=nikola-compute-15,bhattacharjee-compute-02
+#SBATCH --exclude=nikola-compute-15,bhattacharjee-compute-02,monakhova-compute-01
 #SBATCH --gres=gpu:1
-#SBATCH --constraint=(h100|h200|6000ada)&avx2
+#SBATCH --constraint=(h100|h200|6000ada|a6000)&avx2
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=32G
 #SBATCH --time=08:00:00

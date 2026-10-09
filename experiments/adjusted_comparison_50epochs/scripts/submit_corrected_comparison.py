@@ -24,13 +24,12 @@ def main():
     record=ROOT/'jobs.json'
     with record.open('x') as f:f.write('{}')
     config=json.loads(Path('configs/corrected_comparison_parameters.json').read_text())
-    config.update(status='submitting',lanes=lanes,max_concurrent_gpus=6,qutcc_constraint='h100&avx2',jobs=[])
+    config.update(status='submitting',lanes=lanes,max_concurrent_gpus=6,qutcc_constraint='(h100|h200|6000ada|a6000)&avx2',jobs=[])
     tails=[None]*6
     def submit(stage,cli,lane=None,dependency=None,task=None,epoch=None):
         args=['/usr/local/slurm/current/bin/sbatch','--parsable']
         if dependency:args+=['--dependency=afterok:'+dependency,'--kill-on-invalid-dep=yes']
         if stage=='smoke':args+=['--time=00:20:00']
-        if task is not None and ARMS[task%15]=='conditioned':args+=['--constraint=h100&avx2']
         args+=['scripts/corrected_comparison.sbatch',stage,*cli]
         job=subprocess.check_output(args,text=True).strip().split(';')[0]
         config['jobs'].append(dict(job=job,stage=stage,lane=lane,task=task,epoch=epoch,dependency=dependency))

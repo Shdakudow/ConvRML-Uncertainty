@@ -11,6 +11,7 @@ from baselines.formal_rml import FormalRML
 from baselines.deep_ensemble import DeepEnsembleMember
 from scripts.formal_rml_train import Pairs
 from scripts.training_records import manifest_digest
+from scripts.corrected_runtime import select_runtime, transfer, restore_optimizer
 ROOT=Path('results/corrected_comparison_20261006')
 ARMS=[f'ensemble_{i:02d}' for i in range(10)]+['conditioned','im2im','mc_005','mc_010','mc_020']
 from models.corrected_uncertainty import (PinballQUTCC, EndToEndIm2Im, FullDropoutRML, training_loss, experiment_seeds, check_resume, PROTOCOL)
@@ -42,8 +43,8 @@ def loaders(camera):
  data,_=paths(camera)
  return Pairs('train',data),Pairs('val',data)
 
-def step(model,arm,b,opt,qrng):
- y,x=b[:,0].cuda(),b[:,1].cuda();opt.zero_grad(set_to_none=True)
+def step(model,arm,b,opt,qrng,runtime=None):
+ y,x=transfer(b,runtime or {});opt.zero_grad(set_to_none=True)
  q=torch.rand(len(y),device='cuda',generator=qrng) if arm=='conditioned' else None
  with torch.autocast('cuda',dtype=torch.bfloat16):loss=training_loss(model,arm,y,x,q)
  if not torch.isfinite(loss):raise ValueError('Nonfinite loss')
@@ -52,11 +53,11 @@ def step(model,arm,b,opt,qrng):
  return float(loss)
 
 @torch.inference_mode()
-def validate(model,arm,loader,limit=None):
+def validate(model,arm,loader,limit=None,runtime=None):
  model.eval();sums=dict(psnr=0.,ssim=0.,mse=0.);count=0
  for i,b in enumerate(loader):
   if limit is not None and i>=limit:break
-  y,x=b[:,0].cuda(),b[:,1].cuda()
+  y,x=transfer(b,runtime or {})
   with torch.autocast('cuda',dtype=torch.bfloat16):
    r=model.bounds(y)[0] if arm=='im2im' else model(y)
    if arm.startswith('ensemble_'):r=r[0]
@@ -75,19 +76,23 @@ def main():
  torch.set_num_threads(2);out=ROOT/a.camera/a.arm;out.mkdir(parents=True,exist_ok=True)
  data,_=paths(a.camera);digest=manifest_digest(data);trainset,valset=loaders(a.camera)
  model=make_model(a.arm)
- model.cuda();opt=torch.optim.AdamW([v for v in model.parameters() if v.requires_grad],lr=1e-4,weight_decay=1e-4)
+ runtime=select_runtime(a.arm);torch.backends.cudnn.benchmark=runtime['channels_last']
+ model.cuda()
+ if runtime['channels_last']:model.to(memory_format=torch.channels_last)
+ opt=torch.optim.AdamW([v for v in model.parameters() if v.requires_grad],lr=1e-4,weight_decay=1e-4,fused=runtime['fused_adamw'])
+ print(json.dumps(dict(runtime=runtime,gpu=torch.cuda.get_device_name())),flush=True)
  # Independent per-member RNG streams; restore their exact states on resume.
  seeds=experiment_seeds(a.arm);torch.manual_seed(seeds['training']);torch.cuda.manual_seed_all(seeds['training'])
  qrng=torch.Generator(device='cuda').manual_seed(seeds['quantile']);drng=torch.Generator().manual_seed(seeds['data'])
  meta=dict(protocol=PROTOCOL,camera=a.camera,arm=a.arm,seeds=seeds,manifest_sha256=digest,
-           initialization='fresh corrected protocol',epochs=50,batch_size=2,lr=1e-4,weight_decay=1e-4,
+           initialization='fresh corrected protocol',epochs=50,batch_size=2,lr=1e-4,weight_decay=1e-4,runtime=runtime,
            train_count=len(trainset),val_count=len(valset),levels=[.05,.95],
            objective='pinball only' if a.arm=='conditioned' else 'MSE + lower pinball + upper pinball' if a.arm=='im2im' else 'MSE' if a.arm.startswith('mc_') else 'Gaussian NLL')
  history=[];start=0
  if a.action=='train' and (out/'latest.pt').exists():
   ck=torch.load(out/'latest.pt',map_location='cpu',weights_only=False)
   check_resume(ck,a.arm,digest)
-  model.load_state_dict(ck['model']);opt.load_state_dict(ck['optimizer']);history=ck['history'];start=ck['epoch']
+  model.load_state_dict(ck['model']);restore_optimizer(opt,ck['optimizer'],runtime);history=ck['history'];start=ck['epoch']
   torch.set_rng_state(ck['rng']);torch.cuda.set_rng_state(ck['cuda_rng']);qrng.set_state(ck['q_rng']);drng.set_state(ck['data_rng']);del ck
  if start and start%5==0 and not (out/'checkpoints'/f'epoch_{start:03d}.pt').exists():
   dest=out/'checkpoints'/f'epoch_{start:03d}.pt';dest.parent.mkdir(exist_ok=True);torch.save(dict(**meta,model=model.state_dict(),epoch=start,history=history),dest.with_suffix('.tmp'));dest.with_suffix('.tmp').replace(dest)
@@ -96,11 +101,11 @@ def main():
  if a.action=='smoke':
   model.train();times=[]
   for i,b in enumerate(train):
-   torch.cuda.synchronize();t=time.monotonic();step(model,a.arm,b,opt,qrng);torch.cuda.synchronize()
+   torch.cuda.synchronize();t=time.monotonic();step(model,a.arm,b,opt,qrng,runtime);torch.cuda.synchronize()
    if a.arm=='conditioned' and any(f.projection[-1].weight.grad is None for f in model.base.films.values()):raise ValueError('Disconnected FiLM')
    if i>=2:times.append(time.monotonic()-t)
    if i==6:break
-  t=time.monotonic();v=validate(model,a.arm,val,limit=3);torch.cuda.synchronize();val_batch=(time.monotonic()-t)/3
+  t=time.monotonic();v=validate(model,a.arm,val,limit=3,runtime=runtime);torch.cuda.synchronize();val_batch=(time.monotonic()-t)/3
   estimate=2*(sum(times)/len(times)*len(train)+val_batch*len(val))*1.3
   report=dict(**meta,passed=estimate<8*3600,estimated_two_epoch_hours=estimate/3600,gpu=torch.cuda.get_device_name(),validation=v)
   write(out/'smoke.json',report)
@@ -114,9 +119,9 @@ def main():
  write(out/'config.json',meta)
  for epoch in range(start,a.epochs):
   model.train();begin=time.monotonic();total=0.
-  for b in train:total+=step(model,a.arm,b,opt,qrng)*len(b)
-  validation=validate(model,a.arm,val)
-  row=dict(epoch=epoch+1,loss=total/len(trainset),validation=validation,seconds=time.monotonic()-begin,gpu=torch.cuda.get_device_name());history.append(row)
+  for b in train:total+=step(model,a.arm,b,opt,qrng,runtime)*len(b)
+  validation=validate(model,a.arm,val,runtime=runtime)
+  row=dict(epoch=epoch+1,loss=total/len(trainset),validation=validation,seconds=time.monotonic()-begin,gpu=torch.cuda.get_device_name(),runtime=runtime);history.append(row)
   ck=dict(**meta,model=model.state_dict(),optimizer=opt.state_dict(),epoch=epoch+1,history=history,rng=torch.get_rng_state(),cuda_rng=torch.cuda.get_rng_state(),q_rng=qrng.get_state(),data_rng=drng.get_state())
   torch.save(ck,out/'latest.tmp');(out/'latest.tmp').replace(out/'latest.pt')
   if (epoch+1)%5==0:
