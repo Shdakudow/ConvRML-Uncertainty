@@ -1,0 +1,118 @@
+{
+  "protocol": "convrml_pinball_e2e_independent_shuffle_v1",
+  "status": "authorized rerun, fresh initialization for all methods",
+  "cameras": [
+    "rml",
+    "diffuser"
+  ],
+  "train_count": 60000,
+  "val_count": 5000,
+  "test_count": 5000,
+  "calibration_count": 2048,
+  "image_shape": [
+    3,
+    256,
+    256
+  ],
+  "epochs": 50,
+  "epochs_per_job": 2,
+  "checkpoint_interval": 5,
+  "optimizer": {
+    "name": "AdamW",
+    "lr": 0.0001,
+    "weight_decay": 0.0001,
+    "batch_size": 2,
+    "gradient_clip_norm": 1.0,
+    "precision": "BF16"
+  },
+  "ensemble": {
+    "available_member_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "loss": "Gaussian NLL",
+    "independent_initialization": true,
+    "independent_per_epoch_shuffle": true,
+    "initialization_seed": "20261006 + member index",
+    "data_seed": "20281006 + member index",
+    "resume": "Restore saved generator states; reject old protocol checkpoints",
+    "members_to_train": 10
+  },
+  "qutcc": {
+    "loss": "pinball only",
+    "q_sampling": "Uniform(0,1) per image",
+    "reconstruction_q": 0.5,
+    "interval_q": [
+      0.05,
+      0.95
+    ],
+    "film_sites": 48,
+    "training_forward_passes": 1,
+    "separate_mse_branch": false
+  },
+  "im2im": {
+    "training": "end-to-end, all parameters trainable",
+    "outputs": [
+      "lower RGB",
+      "center RGB",
+      "upper RGB"
+    ],
+    "head_channels": 9,
+    "loss": "MSE(center) + pinball(lower,0.05) + pinball(upper,0.95)",
+    "frozen_backbone": false
+  },
+  "mc_dropout": {
+    "loss": "MSE",
+    "probabilities": [
+      0.05,
+      0.1,
+      0.2
+    ],
+    "placement": "36 encoder residual-branch MLP outputs + 12 decoder activations",
+    "dropout_type": "elementwise nn.Dropout",
+    "validation_passes": [
+      30,
+      60,
+      100
+    ],
+    "selected_passes": 100,
+    "selection": "Highest validation SSIM at 100 passes; no test-based selection"
+  },
+  "calibration": {
+    "type": "separate lower and upper scaling",
+    "alpha": 0.1,
+    "delta": 0.05,
+    "tail_alpha": 0.05,
+    "tail_delta": 0.025,
+    "confidence": "Bonferroni across tails",
+    "evaluation_clipped": true
+  },
+  "checkpoint_policy": "New protocol only; historical checkpoints preserved separately",
+  "configuration_role": "Documentation snapshot, not an executable config file",
+  "scheduling": {
+    "max_gpus": 12,
+    "independent_lanes": 12,
+    "epochs_per_job": 2,
+    "qutcc_gpu": "H100/H200/RTX 6000 Ada/RTX A6000",
+    "other_gpus": [
+      "H100",
+      "H200",
+      "RTX 6000 Ada",
+      "RTX A6000"
+    ],
+    "global_round_barrier": false,
+    "excluded_nodes": [
+      "monakhova-compute-01",
+      "nikola-compute-15",
+      "bhattacharjee-compute-02"
+    ]
+  }
+}

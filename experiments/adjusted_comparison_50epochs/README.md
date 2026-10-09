@@ -55,7 +55,7 @@ python scripts/corrected_comparison_evaluate.py --help
 
 Tests cover independent/resumable shuffles, pinball-only QUTCC, median reconstruction, backbone gradients from all im2im outputs, encoder/decoder dropout, inference-mode restoration, and asymmetric RCPS budgets.
 
-The trainer supports `smoke` and `train` actions and allows at most two new epochs per invocation. The submission workflow gates training behind GPU smoke tests and uses six independent sequential chains, limiting concurrent GPU jobs to six without a global barrier after every two epochs. All methods can use H100, H200, RTX 6000 Ada, or A6000; Monakhova nodes remain excluded.
+The trainer supports `smoke` and `train` actions and allows at most two new epochs per invocation. The submission workflow gates training behind GPU smoke tests and uses twelve independent sequential chains, limiting concurrent training GPU jobs to twelve without a global barrier after every two epochs. All methods can use H100, H200, RTX 6000 Ada, or A6000; Monakhova nodes remain excluded.
 
 Review cluster settings in `scripts/corrected_comparison.sbatch`, then submit from this directory:
 
@@ -64,7 +64,7 @@ python scripts/submit_corrected_comparison.py --dry-run
 python scripts/submit_corrected_comparison.py
 ```
 
-The second command submits GPU jobs and refuses to overwrite an existing `jobs.json`. It schedules fresh 50-epoch training for ten ensemble members, QUTCC, im2im, and three dropout candidates on each camera; validation selection and calibrated evaluation follow automatically. The six-chain limit also applies to evaluation jobs.
+The second command submits GPU jobs and refuses to overwrite an existing `jobs.json`. It schedules fresh 50-epoch training for ten ensemble members, QUTCC, im2im, and three dropout candidates on each camera; validation selection and calibrated evaluation follow automatically. Evaluation retains six-way concurrency after all twelve training chains finish.
 
 ## Data and outputs
 
@@ -91,4 +91,6 @@ Changes take effect at the next two-epoch job boundary and retain optimizer mome
 
 The initial rollout exposed an optimizer-layout incompatibility when resuming NCHW moments into channels-last parameters. The runtime now converts moment strides to match each parameter, and the benchmark must successfully train from actual saved optimizer states before activation. Completed experiment checkpoints were retained. `recover_runtime_jobs.py` repairs failed/cancelled dependency chains without restarting completed epochs.
 
-The final full-optimizer benchmark on an A6000 measured about 3–7% throughput improvement, below the 10% activation threshold; the optimized layout therefore remains disabled for this report. The report is saved under `reports/`. Pending jobs prefer H100/H200/6000 Ada or AMD-host nodes, with the existing A6000 eligibility retained as a fallback. Preference does not guarantee allocation or a specific runtime.
+The final full-optimizer benchmark on an A6000 measured about 3–7% throughput improvement, below the 10% activation threshold; the optimized layout therefore remains disabled for this report. The report is saved under `reports/`. Pending jobs prefer H100/H200/6000 Ada or A6000 GPUs on AMD-host nodes, with the existing A6000 eligibility retained as a fallback. Preference does not guarantee allocation or a specific runtime.
+
+On October 9, the live training limit was increased from six to twelve public GPUs with user approval. Existing pending jobs were rewired in place; running jobs and completed epochs were retained. Each model remains in one chain, and the tuning barrier waits for all twelve training tails. Monakhova nodes remain excluded. `submit_corrected_comparison.py` now defaults to `--max-gpus 12`; `--max-gpus 6` remains available for smaller future runs. Scheduling tests: `python -m unittest scripts.test_expand_training_lanes`.

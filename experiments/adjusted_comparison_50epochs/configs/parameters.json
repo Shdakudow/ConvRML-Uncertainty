@@ -98,15 +98,21 @@
   "checkpoint_policy": "New protocol only; historical checkpoints preserved separately",
   "configuration_role": "Documentation snapshot, not an executable config file",
   "scheduling": {
-    "max_gpus": 6,
-    "independent_lanes": 6,
+    "max_gpus": 12,
+    "independent_lanes": 12,
     "epochs_per_job": 2,
-    "qutcc_gpu": "H100",
+    "qutcc_gpu": "H100/H200/RTX 6000 Ada/RTX A6000",
     "other_gpus": [
       "H100",
       "H200",
-      "RTX 6000 Ada"
+      "RTX 6000 Ada",
+      "RTX A6000"
     ],
-    "global_round_barrier": false
+    "global_round_barrier": false,
+    "excluded_nodes": [
+      "monakhova-compute-01",
+      "nikola-compute-15",
+      "bhattacharjee-compute-02"
+    ]
   }
 }
