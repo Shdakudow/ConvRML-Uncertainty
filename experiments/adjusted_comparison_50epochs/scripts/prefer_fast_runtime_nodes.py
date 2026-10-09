@@ -8,7 +8,7 @@ slurm = '/usr/local/slurm/current/bin/'
 config = json.loads((root/'jobs.json').read_text())
 owned = {job['job'] for job in config['jobs']}
 pending = set(subprocess.check_output([slurm+'squeue', '-u', 'jy2228', '-t', 'PENDING', '-h', '-o', '%i'], text=True).split())
-preference = '(h100|h200|6000ada|(a6000&amd))&avx2'
+preference = 'h100|h200|6000ada'
 audit = []
 for job in sorted(owned & pending, key=int):
     command = [slurm+'scontrol', 'update', 'JobId='+job, 'Prefer='+preference]
