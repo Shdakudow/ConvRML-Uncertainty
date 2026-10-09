@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import torch
-from scripts.corrected_comparison_study import load_model, loaders, training_loss
+from scripts.corrected_comparison_study import ROOT, load_model, loaders, training_loss
 from scripts.corrected_runtime import restore_optimizer
 
 
@@ -41,14 +41,17 @@ def main():
     batch = torch.stack([dataset[0], dataset[1]]).pin_memory()
     results = []
     for arm in ['ensemble_00', 'conditioned', 'im2im', 'mc_010']:
+        checkpoint = torch.load(ROOT/'rml'/arm/'latest.pt', map_location='cpu', weights_only=False)
         reference = None
         for fast in [False, True]:
             torch.backends.cudnn.benchmark = fast
             model, _ = load_model('rml', arm, epoch=10)
+            model.load_state_dict(checkpoint['model'])
             model.cuda()
             if fast:
                 model.to(memory_format=torch.channels_last)
             opt = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-4, fused=fast)
+            restore_optimizer(opt, checkpoint['optimizer'], {'fused_adamw': fast})
             y, x = batch[:, 0].cuda(), batch[:, 1].cuda()
             if fast:
                 y = y.contiguous(memory_format=torch.channels_last)
@@ -89,12 +92,13 @@ def main():
                        prediction_mae_vs_original=delta, final_loss=float(loss),
                        peak_gib=torch.cuda.max_memory_allocated()/2**30,
                        gpu=torch.cuda.get_device_name(), torch_version=torch.__version__, resume_verified=True,
-                       reference_checkpoint_epoch=10)
+                       reference_checkpoint_epoch=checkpoint['epoch'], resume_layout_verified=True)
             results.append(row)
             print(json.dumps(row), flush=True)
             del model, opt, loss, prediction, y, x
             gc.collect()
             torch.cuda.empty_cache()
+        del checkpoint
     out = Path('reports/runtime_benchmark_20261009.json')
     out.parent.mkdir(exist_ok=True)
     temporary = out.with_suffix('.tmp')
