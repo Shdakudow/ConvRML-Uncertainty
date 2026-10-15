@@ -1,0 +1,18 @@
+{
+  "environment": "Unicorn convrml conda environment, isolated temporary copy",
+  "unit_tests": {
+    "count": 3,
+    "status": "passed",
+    "checks": [
+      "coverage controller feedback",
+      "coverage boundary and gradient direction",
+      "joint updates and deterministic checkpoint resume"
+    ]
+  },
+  "entrypoint_imports": [
+    "scripts/train_constrained_adaptive50.py --help",
+    "scripts/export_adaptive_q20_demo.py --help"
+  ],
+  "status": "passed",
+  "training_restarted_for_publication": false
+}

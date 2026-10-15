@@ -4,7 +4,8 @@
     "Corrected new-run metadata to calibration_count=0 and delta=null; loss and model weights unchanged",
     "Slurm uses SLURM_SUBMIT_DIR for isolated execution",
     "Native export submission supports either resumed or fresh job records",
-    "Added reader documentation and explicit native evaluation parameters"
+    "Added reader documentation and explicit native evaluation parameters",
+    "Normalized trailing whitespace in Python source and docstrings"
   ],
   "files": {
     ".gitignore": "42f48522d0d0a7badbd2ce39705eb196d3c15090ecd02c6695d8a7b1514b87df",
@@ -16,7 +17,7 @@
     "baselines/mc_dropout.py": "ef425efafb25c746e675c9215205a57061584b60b17a836eee7fbfa35e2f51a3",
     "cluster_source_manifest.json": "7e4dd4cc12dd260c8cfdaf9dc29a2a538a92472f67d265322c980e162cb858a4",
     "models/constrained_adaptive_qutcc.py": "6d4a48ffc0eb2ff1036152a3de90776521d90caed7df2fb3591e82fbf5787d96",
-    "models/convnext.py": "0fa196c35427f17cae02b9a128a1c30c0e06afd2e56e8692cd20e62083b5b65b",
+    "models/convnext.py": "56fddc58b60d627f51fb5144f50a88136c36cd0a8439a8f8e20c3179445f3410",
     "models/convnext_norm_film.py": "a5e185f84d43c23b0ac24819b484c8f82482b528bada69cd19b9dda8bed37b88",
     "models/corrected_uncertainty.py": "309a00d6c5d5f56874b707e2fa98c660b074f1a13dc8ca4b90d6fd319859ff9e",
     "models/formal_quantile.py": "dfcc87a1003d5aec53c6231c1eab77a297a603006b962421ca041cb4f4a295a4",
@@ -24,7 +25,7 @@
     "models/learned_quantile_selector.py": "1b3ce17561c6f0e32e04f767403ea98b61a582bcf466ab3d1615d98cad3f4824",
     "models/qutcc_original/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "models/qutcc_original/nn.py": "552fb39fdc1c4087d99e19ec4b4363036970958d0bec080efa4f9584574a3dd8",
-    "models/shamus_rml.py": "dfa984d4d960fdc1f3d87277da66e0c30111aa7fc344eebf71ec68d36e009cde",
+    "models/shamus_rml.py": "71aecf1d0932bb9e0b97db0d4a74db27cb52e0ca99be8029c560a3b37586e421",
     "parameters/diffuser/config.json": "242657d6c91600ec57a298c558894ebf84cb3736dff745ed9b4f5ba341f61d93",
     "parameters/diffuser/history.json": "81378732c5f77a6ba027f78a627407167d3e867add2b57d24b11732d46675099",
     "parameters/diffuser/original_checkpoint_metadata.json": "691c240a0f0b57989ad60eaf9e0b8ec17d584e752bac16eecc2c918c82c0be47",
@@ -46,6 +47,7 @@
     "scripts/test_constrained_adaptive_qutcc.py": "9851b42d58b191369775759f8d8de8906c383311e708a3ae7ed1221071bb4df0",
     "scripts/train_constrained_adaptive50.py": "17c25fa6df8e397a53eae0b401c28392240eac295b28738991f23af17af8111e",
     "scripts/train_image_adaptive_qutcc.py": "62858f563e901c40618418af207186790b83428d1467e19faa043e139a5b6145",
-    "scripts/training_records.py": "af4501ba85fc1577aa0102a4d2cf2c8fb17b76074691f2e3df7475303be6c12e"
+    "scripts/training_records.py": "af4501ba85fc1577aa0102a4d2cf2c8fb17b76074691f2e3df7475303be6c12e",
+    "verification.json": "b57cfffa894debfd00f6f2e9285ffe0f7c673102557167044a363db89594edc9"
   }
 }
