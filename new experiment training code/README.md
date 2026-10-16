@@ -95,3 +95,7 @@ python scripts/export_adaptive_q20_demo.py --task 1 --epoch 20 --count 50
 ```
 
 Task 0 is RML; task 1 is DiffuserCam. The exporter uses the first 50 test examples in manifest order and reports their actual coverage, mean width, PSNR and SSIM. Those 50-example aggregates are not full-test results. Baseline im2im, ensemble and MC-dropout RCPS pipelines remain separate and unchanged.
+
+## Additional controlled experiment
+
+See [the matched p=0 versus p=0.05 control](DROPOUT_CONTROL.md). It has separate output directories and does not alter the QUTCC training or earlier results.
