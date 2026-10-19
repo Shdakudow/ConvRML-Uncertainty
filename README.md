@@ -4,15 +4,32 @@ Compare how four lensless imaging methods reconstruct an image and estimate **wh
 
 The code is organized by experiment. Start with the folder that matches the comparison you want to inspect.
 
+## Latest experiments · October 2026
+
+The current Unicorn source is organized below. Each folder documents its settings and parent checkpoints; the older four-model comparisons remain available further down.
+
+| Folder | Purpose |
+| --- | --- |
+| [qutcc_paper_style_20261018](experiments/qutcc_paper_style_20261018/) | Original-style quantile training and separate calibration; RML/normalized DiffuserCam QUTCC and raw QUTCC/Im2im to 50 epochs. |
+| [raw_diffuser_continue80_20261019](experiments/raw_diffuser_continue80_20261019/) | Clean raw QUTCC and Im2im: full-state continuation from 50 to 80 epochs. |
+| [raw_diffuser_corruptions_20261018](experiments/raw_diffuser_corruptions_20261018/) | Reviewed fixed corruption dataset generator and 10-epoch adaptation pilot. |
+| [raw_corrupted_continue30_20261019](experiments/raw_corrupted_continue30_20261019/) | Same corrupted dataset: full-state continuation from 10 to 30 adaptation epochs. |
+
+Settings are in each `protocol.json`; source provenance is in [the snapshot manifest](experiments/latest_source_snapshot_20261019.json). This upload contains code and hyperparameters, not model-weight binaries. The demo is maintained in its separate repository.
+
+## Earlier four-model comparisons
+
+
+
 | Folder | What it contains |
 | --- | --- |
 | **[Original 50-epoch comparison](experiments/baseline_50epochs/)** | The earlier large-data RML and DiffuserCam study: im2im, five-member ensemble, 30-pass MC dropout, and the original final-feature-map quantile conditioner. |
-| **[Current adjusted comparison](experiments/adjusted_comparison_50epochs/)** | Corrected pinball-only QUTCC, end-to-end im2im, dropout throughout the network, independent ensemble shuffles, and separate lower/upper calibration scales. The corrected rerun is authorized. |
+| **[Earlier adjusted comparison](experiments/adjusted_comparison_50epochs/)** | Corrected pinball-only QUTCC, end-to-end im2im, dropout throughout the network, independent ensemble shuffles, and separate lower/upper calibration scales. The corrected rerun is authorized. |
 | **[Exploratory archive](archive/exploratory/)** | Toy experiments, smaller-data studies, CRPS/residual-distribution experiments, earlier pilots, and superseded approaches. |
 
 **Naming clarification:** the large-data comparisons use **60,000 training images and 50 epochs**, not 50,000 training images. Each camera also has 5,000 validation images, 5,000 test images, and 2,048 separate calibration images.
 
-## Current comparison
+## Earlier adjusted comparison
 
 | Method | What changes? |
 | --- | --- |

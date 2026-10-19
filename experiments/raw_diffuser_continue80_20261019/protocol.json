@@ -1,0 +1,17 @@
+{
+  "protocol": "paper_style_raw_resume50_to80_20261019_v1",
+  "parent": "qutcc_paper_style_20261018",
+  "parent_epoch": 50,
+  "target_epoch": 80,
+  "epochs_per_job": 5,
+  "models": [
+    "qutcc",
+    "im2im"
+  ],
+  "dataset": "original raw DiffuserCam, unchanged immutable split",
+  "initialization": "full optimizer/model/RNG resume from completed epoch-50 latest.pt",
+  "lr": "cosine restart from 1e-5 at epoch 51 to 1e-9 at epoch 80; no changes to previous 50 epochs",
+  "evaluation": "Independent calibration and full-test inference at epochs 55,60,65,70,75,80",
+  "original_checkpoints": "read-only, preserved",
+  "losses": "original paper-style QUTCC uniform quantile pinball only; Im2im end-to-end MSE center plus two pinball endpoints"
+}

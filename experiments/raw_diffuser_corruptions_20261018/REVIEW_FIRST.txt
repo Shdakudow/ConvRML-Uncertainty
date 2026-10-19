@@ -1,0 +1,5 @@
+User approved ten-epoch adaptation on 2026-10-18 after dataset review.
+Use the exact fixed reviewed inputs in dataset/manifest.json, with unchanged original targets.
+Each method initializes from its own epoch-30 clean-data checkpoint. Source weights remain unchanged.
+Two five-epoch training jobs per model; checkpoint and evaluate at adaptation epochs five and ten.
+Original experiment training continues separately.
