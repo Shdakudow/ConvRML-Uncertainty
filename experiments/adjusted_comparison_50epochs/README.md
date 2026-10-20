@@ -1,6 +1,8 @@
 # Corrected ConvRML comparison
 
-**Status: corrected rerun authorized; fresh training for all four methods.** The earlier comparison was stopped on October 6, 2026. Its code is preserved in [the superseded experiment archive](../../archive/superseded_adjusted_20261005/).
+**Reading this snapshot:** the normal-camera Im2im, ensemble, and MC models completed 50 epochs. Current QUTCC uses the separate [original-style implementation](../qutcc_paper_style_20261018/). The older conditioned/adaptive-selector paths here are retained for historical state dictionaries and imports. The scheduling and runtime notes below describe that earlier run, not current live job status.
+
+[Current workflow](../../docs/RUNNING_EXPERIMENTS.md) · [calibration and clipping](../../docs/METHODS_AND_METRICS.md) · [source/formatting provenance](../../provenance/README.md). The stopped October-5 variant remains in [the superseded archive](../../archive/superseded_adjusted_20261005/).
 
 [Parameters](configs/parameters.json) · [Model implementations](models/corrected_uncertainty.py) · [Trainer](scripts/corrected_comparison_study.py) · [Evaluator](scripts/corrected_comparison_evaluate.py)
 

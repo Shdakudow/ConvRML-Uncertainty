@@ -1,0 +1,2 @@
+# Formatting only; not required by training or inference.
+black==25.1.0

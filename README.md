@@ -1,76 +1,57 @@
-# ConvRML Uncertainty
+# ConvRML: reconstruction and uncertainty
 
-Compare how four lensless imaging methods reconstruct an image and estimate **where that reconstruction is uncertain**: im2im, MC dropout, deep ensemble, and quantile-conditioned ConvRML (QUTCC).
+Code for comparing **Im2im, deep ensemble, MC dropout, and quantile-conditioned ConvRML (QUTCC)** on RML and DiffuserCam measurements. Each method returns a reconstruction and lower/upper images. Uncertainty is the interval width, `upper - lower`.
 
-The code is organized by experiment. Start with the folder that matches the comparison you want to inspect.
+**Start here:** [training → calibration → inference guide](docs/RUNNING_EXPERIMENTS.md) · [model and metric definitions](docs/METHODS_AND_METRICS.md) · [source provenance and historical checkpoints](provenance/README.md).
 
-## Latest experiments · October 2026
-
-The current Unicorn source is organized below. Each folder documents its settings and parent checkpoints; the older four-model comparisons remain available further down.
-
-| Folder | Purpose |
-| --- | --- |
-| [qutcc_paper_style_20261018](experiments/qutcc_paper_style_20261018/) | Original-style quantile training and separate calibration; RML/normalized DiffuserCam QUTCC and raw QUTCC/Im2im to 50 epochs. |
-| [raw_diffuser_continue80_20261019](experiments/raw_diffuser_continue80_20261019/) | Clean raw QUTCC and Im2im: full-state continuation from 50 to 80 epochs. |
-| [raw_diffuser_corruptions_20261018](experiments/raw_diffuser_corruptions_20261018/) | Reviewed fixed corruption dataset generator and 10-epoch adaptation pilot. |
-| [raw_corrupted_continue30_20261019](experiments/raw_corrupted_continue30_20261019/) | Same corrupted dataset: full-state continuation from 10 to 30 adaptation epochs. |
-
-Settings are in each `protocol.json`; source provenance is in [the snapshot manifest](experiments/latest_source_snapshot_20261019.json). This upload contains code and hyperparameters, not model-weight binaries. The demo is maintained in its separate repository.
-
-[Experiment 2 LPIPS and uncertainty/error correlation analysis](experiments/experiment2_uncertainty_analysis_20261019/) includes the saved-example preview and frozen full-test evaluator.
-
-## Earlier four-model comparisons
-
-
+## Which experiment should I open?
 
 | Folder | What it contains |
 | --- | --- |
-| **[Original 50-epoch comparison](experiments/baseline_50epochs/)** | The earlier large-data RML and DiffuserCam study: im2im, five-member ensemble, 30-pass MC dropout, and the original final-feature-map quantile conditioner. |
-| **[Earlier adjusted comparison](experiments/adjusted_comparison_50epochs/)** | Corrected pinball-only QUTCC, end-to-end im2im, dropout throughout the network, independent ensemble shuffles, and separate lower/upper calibration scales. The corrected rerun is authorized. |
-| **[Exploratory archive](archive/exploratory/)** | Toy experiments, smaller-data studies, CRPS/residual-distribution experiments, earlier pilots, and superseded approaches. |
+| [Latest QUTCC and raw Im2im](experiments/qutcc_paper_style_20261018/) | ConvNeXt/FPN, uniform-quantile pinball training, 48 FiLM sites, and separate quantile-space calibration. RML/normalized DiffuserCam QUTCC and clean raw QUTCC/Im2im reached 50 epochs. |
+| [Four-model baseline implementation](experiments/adjusted_comparison_50epochs/) | End-to-end Im2im, independently shuffled NLL ensemble members, MC dropout throughout the network, asymmetric empirical/RCPS calibration, and milestone inference. Its older QUTCC/adaptive-selector paths are historical; use the latest QUTCC folder above. |
+| [Clean raw continuation](experiments/raw_diffuser_continue80_20261019/) | Full-state continuation after epoch 50. **Stopped at epoch 70 by request**; the folder name records its original 80-epoch plan. |
+| [Corrupted raw dataset and pilot](experiments/raw_diffuser_corruptions_20261018/) | Fixed, reviewed measurement corruptions with unchanged ground truth; ten adaptation epochs after 30 clean pretraining epochs. |
+| [Corrupted raw continuation](experiments/raw_corrupted_continue30_20261019/) | Continuation to **30 adaptation epochs**, retaining optimizer and RNG states. Both QUTCC and Im2im completed training and calibration/test evaluation. |
+| [Every-five-epoch evaluation](experiments/experiment2_uncertainty_analysis_20261019/) | Full 5,000-image LPIPS and pixel-wise width/error Pearson/Spearman metrics at epochs 5, 10, …, 50; checkpoint restoration and curve publication helpers. |
+| [Inference exports](experiments/raw_diffuser_demo_20261019/) | Saved-checkpoint image/bound exports, including the audited epoch-50 QUTCC export. |
 
-**Naming clarification:** the large-data comparisons use **60,000 training images and 50 epochs**, not 50,000 training images. Each camera also has 5,000 validation images, 5,000 test images, and 2,048 separate calibration images.
+The [original comparison](experiments/baseline_50epochs/), [older adaptive experiments](new%20experiment%20training%20code/), and [exploratory archive](archive/) are retained for provenance. Do not mix their checkpoints, objectives, or calibration reports with the current experiment.
 
-## Earlier adjusted comparison
+## Data and environment
 
-| Method | What changes? |
-| --- | --- |
-| **Im2im** | Train lower, center, and upper outputs jointly with the entire backbone; no freezing. |
-| **Deep ensemble** | Separate initialization and data-order seeds for each member; restore the shuffle RNG exactly on resume. |
-| **MC dropout** | Dropout in every encoder block and decoder refinement stage; tune `0.05`, `0.10`, and `0.20` on validation data. |
-| **Q-conditioned ConvRML (QUTCC)** | Pinball-only training with 48 FiLM sites; reconstruction comes from the `q=0.5` prediction. |
+| Dataset | Train | Validation | Test | Calibration |
+| --- | ---: | ---: | ---: | ---: |
+| RML | 60,000 | 5,000 | 5,000 | 2,048 |
+| Normalized DiffuserCam | 60,000 | 5,000 | 5,000 | 2,048 |
+| Raw / fixed corrupted raw DiffuserCam | 17,999 | 2,000 | 2,000 | 3,000 |
 
-**FiLM is only used in QUTCC.** The target is 50 total backbone epochs. The implementation retains two-epoch training chunks and checkpoints every five epochs. **Earlier comparison jobs are stopped. The corrected rerun trains all methods from scratch, using six independent job chains.**
+The requested raw training count was 18,000; 17,999 usable paired training images passed the dataset audit. Every split uses ground-truth pairs. Validation selects settings; calibration fits interval parameters; test data evaluates the frozen result.
 
-- [Current parameters](experiments/adjusted_comparison_50epochs/configs/parameters.json)
-- [Original comparison parameters](experiments/baseline_50epochs/configs/parameters.json)
-- [Current setup and execution instructions](experiments/adjusted_comparison_50epochs/README.md#setup-and-running)
+Use Python 3.11 and CUDA-compatible PyTorch/torchvision. Install [requirements.txt](requirements.txt) after PyTorch. Data, split manifests, and weight binaries are separate from this source repository. Existing archived baseline weights are listed in [GitHub Releases](https://github.com/Shdakudow/ConvRML-Uncertainty/releases); this update does not move or delete weights.
 
-The parameter JSON files document the settings. They are not trained weights and are not loaded automatically by the scripts.
+## Calibration is not clipping
 
-## Understanding the comparison
+Ground truth is normalized to `[0,1]` by dividing stored 8-bit image values by 255. Network outputs are unconstrained: **both uncalibrated and calibrated predictions/bounds can be outside `[0,1]`**. Calibration fits quantile levels or separate endpoint scales on the calibration split. Clipping is an explicit subsequent operation:
 
-Each model produces a reconstruction, a lower bound, and an upper bound. We compare:
+```python
+clipped = raw.clamp(0, 1)
+width = clipped_upper - clipped_lower
+coverage = ((target >= clipped_lower) & (target <= clipped_upper)).float().mean()
+```
 
-- **Reconstruction quality:** PSNR, SSIM, and absolute error against ground truth.
-- **Uncertainty width:** `upper bound - lower bound`.
-- **Coverage:** the fraction of ground-truth pixel-channel values inside the interval.
-- **Cost:** training and inference time.
+The latest QUTCC/raw evaluators save **both raw and clipped** metrics. The demo uses clipped metrics. Uncalibrated outputs are learned estimates, not arbitrary random values. See [the worked example](docs/METHODS_AND_METRICS.md#normalization-calibration-and-clipping).
 
-We want informative, narrow intervals while maintaining adequate coverage. The RCPS target is 90% coverage in expectation under its assumptions; it does not mean every test image must have exactly 90% coverage.
+## Readable source and reproducibility
 
-## Using this repository
+Current source is formatted with Black, using four-space indentation and expanded control flow. A byte-for-byte [Unicorn source archive](provenance/unicorn_source_20261020.tar.gz) preserves the source used for historical checkpoints; [the manifest](provenance/unicorn_source_20261020.json) records its hashes. Formatting changes source hashes, so a historical **training resume** must use the exact historical source and data identities. Fresh training can use the formatted source after its own smoke test. Frozen inference loads the saved state dictionary without relaxing the training resume checks.
 
-Each main experiment folder contains its own required Python modules, requirements file, and execution instructions. Run its commands **from that experiment folder**. Small shared modules are copied into both folders so each source package can be inspected without importing the exploratory archive.
+No training jobs are submitted by cloning the repository or reading these instructions. Submission commands are explicitly identified in [the workflow guide](docs/RUNNING_EXPERIMENTS.md).
 
-Datasets, split manifests, and trained checkpoints are not included. The corrected trainer rejects historical protocol checkpoints rather than silently resuming them under new objectives. The authorized rerun retrains all ten ensemble members with independent initialization and shuffle seeds.
+## Demo and references
 
-The stopped October 5 variant is preserved in [a separate archive](archive/superseded_adjusted_20261005/). Historical results and checkpoints remain distinct from the corrected protocol.
+- [Interactive demo](https://shdakudow.github.io/ConvRML-Uncertainty-Demo/) · [separate demo repository](https://github.com/Shdakudow/ConvRML-Uncertainty-Demo)
+- [Upstream ConvRML](https://github.com/lakabuli/ConvRML) · [QUTCC reference source used here](https://github.com/Shdakudow/code-for-quant)
+- [License](LICENSE) · [upstream citation](CITATION.cff)
 
-## Demo and sources
-
-- [Interactive demo](https://shdakudow.github.io/ConvRML-Uncertainty-Demo/) · [Separate demo repository](https://github.com/Shdakudow/ConvRML-Uncertainty-Demo)
-- [Upstream ConvRML](https://github.com/lakabuli/ConvRML) · [Original QUTCC source used here](https://github.com/Shdakudow/code-for-quant) (private)
-- [License](LICENSE) · [Upstream citation](CITATION.cff)
-
-The demo represents earlier completed experiments. Updating this code repository does not update or deploy the demo.
+This repository update publishes research source and instructions. The website is maintained separately.

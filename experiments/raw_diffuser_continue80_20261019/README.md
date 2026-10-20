@@ -1,5 +1,9 @@
 # Clean raw DiffuserCam · continuation from epoch 50 to 80
 
+[Step-by-step workflow](../../docs/RUNNING_EXPERIMENTS.md) · [models/calibration/clipping](../../docs/METHODS_AND_METRICS.md) · [exact source and resume](../../provenance/README.md)
+
+
+**Current status:** both models stopped at epoch 70 by request. The folder name and 80-epoch schedule describe the original plan; do not restart canceled epoch-75/80 jobs.
 QUTCC and Im2im each resume their own completed epoch-50 checkpoint from [the paper-style study](../qutcc_paper_style_20261018/). Full model, Adam moments, CPU/CUDA and quantile RNG states and counters are retained. Original checkpoints remain unchanged.
 
 The split stays 17,999 training / 2,000 validation / 2,000 test / 3,000 calibration. Learning rate restarts at 1e-5 and cosine-decays to 1e-9 over the additional 30 epochs. This explicit restart is part of the continuation protocol.

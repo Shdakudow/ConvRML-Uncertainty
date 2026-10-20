@@ -1,5 +1,9 @@
 # Corrupted raw DiffuserCam · continuation from adaptation epoch 10 to 30
 
+[Step-by-step workflow](../../docs/RUNNING_EXPERIMENTS.md) · [models/calibration/clipping](../../docs/METHODS_AND_METRICS.md) · [exact source and resume](../../provenance/README.md)
+
+
+**Current status:** QUTCC and Im2im completed all 30 adaptation epochs and their final calibration/test evaluations.
 This resumes [the reviewed corruption pilot](../raw_diffuser_corruptions_20261018/) at adaptation epoch 10, retaining model, Adam moments, RNG states and training counters. It uses the **same fixed corrupted PNGs, unchanged targets and split**. No new corruptions are sampled during training.
 
 Learning rate stays **1e-5**. Milestones are adaptation epochs **15, 20, 25, 30**, with five-epoch training jobs and separate calibration/full 2,000-image test evaluation. The final checkpoint has 30 clean pretraining epochs plus 30 corruption-adaptation epochs, not 30 epochs from scratch. Task 0 is QUTCC; task 1 is Im2im.

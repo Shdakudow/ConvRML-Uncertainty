@@ -1,6 +1,8 @@
 # Reference environment used by ConvRML (Python 3.11 recommended for training).
 # Install torch and torchvision from the platform-appropriate PyTorch index first.
 numpy==2.0.2
+Pillow>=10
+scipy>=1.13
 matplotlib==3.9.2
 scikit-image==0.24.0
 kornia==0.8.2

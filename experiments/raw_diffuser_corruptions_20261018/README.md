@@ -1,5 +1,7 @@
 # Fixed corrupted raw measurements · dataset construction and 10-epoch pilot
 
+[Step-by-step workflow](../../docs/RUNNING_EXPERIMENTS.md) · [models/calibration/clipping](../../docs/METHODS_AND_METRICS.md) · [exact source and resume](../../provenance/README.md)
+
 Only measurements are corrupted; ground-truth scenes remain unchanged. `build_dataset.py` creates fixed, deterministic reviewed PNG inputs with hashes and a manifest. `corruptions.py` implements the transformations. The split is **17,999 / 2,000 / 2,000 / 3,000** for training / validation / test / calibration.
 
 The reviewed mixture includes identity inputs and crop/resize, rotation, local rotations, intensity changes, missing pixels, reduced resolution, Gaussian and Poisson perturbations. Speckle, stripe, impulse and scrambling profiles are reserved for separate stress tests. These are sensor-domain stress tests, not a physical optical acquisition model.
