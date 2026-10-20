@@ -39,7 +39,7 @@ def main():
    means_u=np.array([v['scales']['0']['mean_width'] for v in rows]);means_e=np.array([v['scales']['0']['mae'] for v in rows]);summary['cameras'][camera][method]={'status':'complete','n_images':len(rows),'label':LABELS[method],'epoch':50,'lpips':describe([v['lpips'] for v in rows]),'scales':scales,'image_level_width_vs_mae':correlation(means_u,means_e),'source_report_sha256':fingerprint}
  (a.output/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
  with (a.output/'per_image_metrics.csv').open('w',newline='') as f:
-  writer=csv.DictWriter(f,fieldnames=['camera','method','epoch','id','index','lpips','sigma','pearson','spearman','mean_width','mae','n_valid_pixels']);writer.writeheader()
+  writer=csv.DictWriter(f,lineterminator='\n',fieldnames=['camera','method','epoch','id','index','lpips','sigma','pearson','spearman','mean_width','mae','n_valid_pixels']);writer.writeheader()
   for r in allrows:
    for sigma,values in r['scales'].items():writer.writerow({**{k:v for k,v in r.items() if k!='scales'},'sigma':sigma,**values})
  print('Saved',a.output/'summary.json',flush=True)
