@@ -17,6 +17,8 @@ The current Unicorn source is organized below. Each folder documents its setting
 
 Settings are in each `protocol.json`; source provenance is in [the snapshot manifest](experiments/latest_source_snapshot_20261019.json). This upload contains code and hyperparameters, not model-weight binaries. The demo is maintained in its separate repository.
 
+[Experiment 2 LPIPS and uncertainty/error correlation analysis](experiments/experiment2_uncertainty_analysis_20261019/) includes the saved-example preview and frozen full-test evaluator.
+
 ## Earlier four-model comparisons
 
 
