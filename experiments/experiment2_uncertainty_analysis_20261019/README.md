@@ -25,3 +25,12 @@ python experiments/experiment2_uncertainty_analysis_20261019/evaluate_full_test.
 Requirements: Python 3.11 for Unicorn; PyTorch, torchvision, torchmetrics, scipy, numpy, matplotlib. LPIPS needs the pretrained AlexNet weight file in the Torch cache. Reference: [original LPIPS implementation](https://github.com/richzhang/PerceptualSimilarity).
 
 Correlation quantifies association with realized reconstruction error. It does not establish interval calibration, equal accuracy, causality, or usefulness beyond the evaluated image distribution. Correlation differences and LPIPS differences should be assessed with paired image resampling before claiming a significant improvement.
+
+
+## Curves at every five epochs
+
+`evaluate_full_test.py --epoch 5` (and 10, …, 50) evaluates the same 5,000 held-out test images. Epoch 50 retains the existing result location and includes secondary smoothing scales; other milestones compute the primary unsmoothed correlations. Calibration factors or quantile levels are read from that exact checkpoint's completed calibration report.
+
+`milestone_pipeline.py` runs on the Mac with its existing GitHub/SSH authentication. It restores one milestone's archived baseline weights at a time, checks SHA-256, transfers them to the analysis-only Unicorn weights folder, and submits eight independent model/camera evaluations. Baseline jobs continue after their corresponding existing epoch-50 evaluations. Earlier QUTCC milestones use their already completed calibrations directly, so they do not wait for final epoch-50 calibration. Epoch-50 work is reused. After all eight results are complete and their test identities match within each camera, only the temporary restored copies for that milestone are removed. Original checkpoints and GitHub archives are preserved. The next milestone can then start. Maximum additional live checkpoint storage is one milestone (about 5 GB), and there are eight evaluation streams.
+
+LPIPS, mean per-image Pearson and mean per-image Spearman are plotted against **5, 10, 15, 20, 25, 30, 35, 40, 45, 50**. Full-test points and the 50-image preview are separate. Missing points remain pending; there is no interpolation through unevaluated epochs. Region-based metrics are excluded.

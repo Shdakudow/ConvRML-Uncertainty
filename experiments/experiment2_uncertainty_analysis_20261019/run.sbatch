@@ -12,5 +12,5 @@
 set -euo pipefail
 cd "$HOME/ConvRML"
 export OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
-"$HOME/.conda/envs/convrml/bin/python" -u experiments/experiment2_uncertainty_analysis_20261019/evaluate_full_test.py --camera "$1" --method "$2" --smoke
-"$HOME/.conda/envs/convrml/bin/python" -u experiments/experiment2_uncertainty_analysis_20261019/evaluate_full_test.py --camera "$1" --method "$2"
+"$HOME/.conda/envs/convrml/bin/python" -u experiments/experiment2_uncertainty_analysis_20261019/evaluate_full_test.py --camera "$1" --method "$2" --epoch "${3:-50}" --smoke
+"$HOME/.conda/envs/convrml/bin/python" -u experiments/experiment2_uncertainty_analysis_20261019/evaluate_full_test.py --camera "$1" --method "$2" --epoch "${3:-50}"
