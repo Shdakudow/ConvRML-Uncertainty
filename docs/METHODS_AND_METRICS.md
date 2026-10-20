@@ -1,6 +1,6 @@
 # Models, calibration, and metric definitions
 
-This document describes the current comparison. The latest QUTCC uses `qutcc_paper_style_20261018`; the other three methods use `adjusted_comparison_50epochs`.
+This document describes the current comparison. All four implementations now live in [`adjusted_comparison_50epochs`](../experiments/adjusted_comparison_50epochs/). Current QUTCC uses its `qutcc/` subfolder; the other three retain their corrected baseline modules. `run_model.py` selects the correct trainer and calibration procedure. The original `qutcc_paper_style_20261018` source location remains a historical/current-cluster snapshot.
 
 ## Shared reconstruction architecture
 

@@ -1,98 +1,101 @@
-# Corrected ConvRML comparison
+# Four-model ConvRML comparison
 
-**Reading this snapshot:** the normal-camera Im2im, ensemble, and MC models completed 50 epochs. Current QUTCC uses the separate [original-style implementation](../qutcc_paper_style_20261018/). The older conditioned/adaptive-selector paths here are retained for historical state dictionaries and imports. The scheduling and runtime notes below describe that earlier run, not current live job status.
+This folder contains the **current QUTCC, end-to-end Im2im, deep ensemble, and MC dropout implementations**. Start with `run_model.py`, which selects the correct training and calibration code for each method.
 
-[Current workflow](../../docs/RUNNING_EXPERIMENTS.md) · [calibration and clipping](../../docs/METHODS_AND_METRICS.md) · [source/formatting provenance](../../provenance/README.md). The stopped October-5 variant remains in [the superseded archive](../../archive/superseded_adjusted_20261005/).
+[Complete workflow](../../docs/RUNNING_EXPERIMENTS.md) · [losses and metrics](../../docs/METHODS_AND_METRICS.md) · [current parameters](configs/four_model_comparison.json) · [historical protocol notes](LEGACY_PROTOCOL.md)
 
-[Parameters](configs/parameters.json) · [Model implementations](models/corrected_uncertainty.py) · [Trainer](scripts/corrected_comparison_study.py) · [Evaluator](scripts/corrected_comparison_evaluate.py)
+## Models in this folder
 
-## What changed?
+| Method | Implementation | Training | Calibration |
+| --- | --- | --- | --- |
+| **QUTCC** | [`qutcc/model.py`](qutcc/model.py), [`qutcc/train.py`](qutcc/train.py) | Current original-style quantile embedding; 48 FiLM sites; one independent uniform q per image; pinball only | [`qutcc/calibration.py`](qutcc/calibration.py): separate Algorithm 1 search for global lower/upper q; no RCPS scale factors |
+| **Im2im** | [`models/corrected_uncertainty.py`](models/corrected_uncertainty.py): `EndToEndIm2Im` | Entire backbone and RGB lower/center/upper head trained jointly; center MSE + endpoint pinball | Independent lower/upper RCPS-HB scales |
+| **Deep ensemble** | [`baselines/deep_ensemble.py`](baselines/deep_ensemble.py), [`scripts/corrected_comparison_study.py`](scripts/corrected_comparison_study.py) | Gaussian NLL; separate initialization and shuffle sequence per member | Independent lower/upper RCPS-HB scales; calibrate five- and ten-member aggregates separately |
+| **MC dropout** | [`models/corrected_uncertainty.py`](models/corrected_uncertainty.py): `FullDropoutRML` | MSE; dropout at 36 encoder and 12 decoder sites | Independent lower/upper RCPS-HB scales; current default p=0.05, 30 stochastic passes |
 
-| Method | Corrected implementation |
-| --- | --- |
-| **Deep ensemble** | Gaussian NLL, with independent model initialization and independent per-epoch data shuffling for each member. The same data split is shared across methods. |
-| **Q-conditioned ConvRML (QUTCC)** | Uniformly sampled quantiles and **pinball loss only**. One training forward/backward pass. Reconstruction is the `q=0.5` output; native bounds use `q=0.05` and `q=0.95`. |
-| **Im2im** | A 9-channel RGB head produces lower/center/upper images. Train the entire backbone and head jointly with `MSE(center) + pinball(lower, 0.05) + pinball(upper, 0.95)`. No frozen MSE backbone. |
-| **MC dropout** | Elementwise dropout in all 36 ConvNeXt encoder residual branches and 12 decoder activation locations. Train with MSE; activate dropout during stochastic inference. |
+All use a ConvNeXtV2-Base/FPN reconstruction architecture. QUTCC retains its trained protocol: float32, Adam, effective batch four, 30% warmup followed by cosine decay. The three baseline trainers retain BF16, AdamW and batch two. This integration consolidates source and commands; it does not claim the optimizer/precision settings are identical or retrain completed models.
 
-FiLM remains exclusive to QUTCC, with 36 encoder and 12 decoder conditioning sites. MC dropout uses `nn.Dropout`, not FiLM or residual-path dropping. Its encoder dropout acts on each block's MLP output before residual addition.
+For each normal camera: 60,000 training, 5,000 validation, 5,000 test and 2,048 separate calibration pairs. Current QUTCC reconstructs at q=0.5; calibration selects its endpoint queries. QUTCC does not use the historical adaptive endpoint selector.
 
-## Independent shuffling and resume
+## Setup and running
 
-Ensemble member `i` uses initialization seed `20261006 + i` and data-generator seed `20281006 + i`. Each epoch reshuffles the training images. Each checkpoint stores the data, quantile, CPU, CUDA, and optimizer states so resuming does not reset or repeat the shuffle sequence.
-
-A protocol identifier rejects the older shared-shuffle, frozen-head, and hybrid-loss checkpoints. The rerun trains all ten ensemble members (`00` through `09`) from scratch, without reusing earlier member weights. MC-dropout candidates deliberately share initialization and data-order seeds to isolate the dropout-rate comparison.
-
-## Separate lower/upper calibration
-
-The evaluator learns distinct scales on the held-out calibration split:
-
-```text
-LB = prediction - lambda_lower * lower_distance
-UB = prediction + lambda_upper * upper_distance
-```
-
-Both empirical and RCPS calibration use separate scales for every evaluated method. With `alpha=0.10`, each tail targets risk `0.05`. RCPS divides the confidence-failure budget `delta=0.05` into `0.025` per tail, giving a joint bound through a union bound. An image is the calibration unit; its loss is its missed RGB fraction. This targets coverage under the calibration assumptions, not exactly 90% coverage on every image.
-
-Native distances from the reconstruction are floored at `1e-6`, consistent with the prior evaluator. Final predictions and bounds are clipped to `[0,1]` for the main reported metrics. The evaluator records both scales and their tail-risk audits.
-
-## Dataset and training settings
-
-RML and DiffuserCam are trained separately, each with 60,000 training, 5,000 validation, 5,000 test, and 2,048 separate calibration images. Images are RGB `256 x 256`. The retained settings are AdamW, learning rate `1e-4`, weight decay `1e-4`, batch size 2, BF16 autocast, and a 50-total-epoch target.
-
-MC dropout candidates are `0.05`, `0.10`, and `0.20`; final selection uses validation SSIM at 100 passes, with 30/60/100-pass trends. Training-time MC validation is deterministic; it is not the final stochastic comparison.
-
-The JSON file documents settings; the scripts do not read it as an executable configuration.
-
-## Setup and checks
-
-Run commands from this directory using the existing Python/PyTorch environment, or install CUDA-compatible PyTorch/torchvision and then:
+Use Python 3.11, CUDA-compatible PyTorch/torchvision, and the repository-root requirements. Run the commands below **from this folder**. `--project-root` identifies existing data and baseline results; it defaults to `CONVRML_PROJECT`, otherwise `$HOME/ConvRML`.
 
 ```bash
-python -m pip install -r requirements.txt
-python scripts/test_corrected_comparison.py
-python scripts/corrected_comparison_study.py --help
-python scripts/corrected_comparison_evaluate.py --help
+python run_model.py --help
+# Inspect commands first; these do not import models or run a GPU job:
+python run_model.py train --method qutcc --camera rml --epoch 5 --dry-run
+python run_model.py evaluate --method ensemble --camera diffuser --epoch 50 --dry-run
 ```
 
-Tests cover independent/resumable shuffles, pinball-only QUTCC, median reconstruction, backbone gradients from all im2im outputs, encoder/decoder dropout, inference-mode restoration, and asymmetric RCPS budgets.
-
-The trainer supports `smoke` and `train` actions and allows at most two new epochs per invocation. The submission workflow gates training behind GPU smoke tests and uses twelve independent sequential chains, limiting concurrent training GPU jobs to twelve without a global barrier after every two epochs. All methods can use H100, H200, RTX 6000 Ada, or A6000; Monakhova nodes remain excluded.
-
-Review cluster settings in `scripts/corrected_comparison.sbatch`, then submit from this directory:
+**GPU:** QUTCC smoke test and five-epoch training segments:
 
 ```bash
-python scripts/submit_corrected_comparison.py --dry-run
-python scripts/submit_corrected_comparison.py
+python run_model.py smoke --method qutcc --camera rml
+python run_model.py train --method qutcc --camera rml --epoch 5
+python run_model.py train --method qutcc --camera rml --epoch 10
+python run_model.py evaluate --method qutcc --camera rml --epoch 10
 ```
 
-The second command submits GPU jobs and refuses to overwrite an existing `jobs.json`. It schedules fresh 50-epoch training for ten ensemble members, QUTCC, im2im, and three dropout candidates on each camera; validation selection and calibrated evaluation follow automatically. Evaluation retains six-way concurrency after all twelve training chains finish.
+For Im2im and MC, the existing trainer advances at most **two new epochs per call**. `--epoch` is the absolute target, not the number to add:
 
-## Data and outputs
+```bash
+python run_model.py smoke --method im2im --camera rml
+python run_model.py train --method im2im --camera rml --epoch 2
+python run_model.py train --method im2im --camera rml --epoch 4
+python run_model.py train --method im2im --camera rml --epoch 5
+python run_model.py evaluate --method im2im --camera rml --epoch 5
 
-Data caches and weights are not included. The trainer expects paired `pairs.npy` arrays and `manifest.json` files at:
-
-```text
-data/optics_intervals_60k_5k_5k_20260928/
-data/diffuser_intervals_60k_5k_5k_20260928/
-data/formal_rml_calibration95/
-data/diffuser_intervals_calibration_20260928/
+python run_model.py smoke --method mc_dropout --camera diffuser --dropout 0.05
+python run_model.py train --method mc_dropout --camera diffuser --dropout 0.05 --epoch 2
 ```
 
-New checkpoints and evaluations use `results/corrected_comparison_20261006/`, separate from historical outputs. Older experimental weights have been selected for removal to free storage; historical metrics, reports, source code and the advisor baseline are retained.
+An ensemble trains each member independently on the complete training split:
 
-The [original large-data baseline](../baseline_50epochs/) and the [demo](https://shdakudow.github.io/ConvRML-Uncertainty-Demo/) show historical variants; they are not results for this corrected implementation.
+```bash
+python run_model.py smoke --method ensemble --member 0 --camera rml
+python run_model.py train --method ensemble --member 0 --camera rml --epoch 2
+# Repeat independent chains for members 0..4 (or 0..9 for the ten-member reference).
+python run_model.py evaluate --method ensemble --members 5 --camera rml --epoch 50
+```
 
-## Runtime optimization (October 9)
+Evaluation needs every selected member's requested checkpoint. Repeat evaluation at saved epochs **5,10,…,50** and for both cameras. Smoke tests do not save trained model weights. Train calls run immediately inside an existing GPU allocation; `run_model.py` does not submit Slurm jobs. Review the recorded `.sbatch` files if scheduling remotely, and never run two training writers for the same model/output folder.
 
-Training retains batch size 2, the same losses, seeds, data splits, learning rate, and 50-epoch target. Host-to-GPU copies are nonblocking. A separate benchmark compares the original runtime with channels-last convolution layout, cuDNN algorithm selection, and fused AdamW using copies of trained weights and their saved optimizer states. It never updates experiment checkpoints.
+## Where data, checkpoints, and results go
 
-Run `python scripts/benchmark_corrected_runtime.py` inside a GPU allocation. The trainer enables the faster runtime only when the completed benchmark matches the GPU model and PyTorch version, verifies full-model optimizer resume, including conversion of saved moment-tensor layouts, reports prediction mean absolute difference at most 0.002, and improves step time by more than 10%. Unsupported or unverified hardware keeps the original runtime. The benchmark uses two fixed training images and measures kernel throughput; it is not a full-epoch or accuracy evaluation.
+| Method | Dataset lookup | Output / checkpoint lookup |
+| --- | --- | --- |
+| Current QUTCC | `--project-root/data/…`, using `qutcc/data.py` | This folder's `qutcc/results/<camera>/qutcc/` |
+| Other three methods | `--project-root/data/…` | `--project-root/results/corrected_comparison_20261006/<camera>/<arm>/` |
+| Baseline interval evaluation | Same independent calibration and test caches | `--project-root/results/current_interval_curves_20261015/reports/<camera>/<method>/epoch_NNN.json` |
 
-Changes take effect at the next two-epoch job boundary and retain optimizer moments and RNG states. Runtime choice is recorded in every new checkpoint and history row. Different GPU kernels and tensor layouts can introduce floating-point differences; this is not bitwise-identical continuation. Tests: `python -m unittest scripts.test_corrected_runtime scripts.test_corrected_comparison`.
+QUTCC evaluation writes `qutcc/results/<camera>/qutcc/evaluation/epoch_NNN/{calibration.json,report.json,examples.npz}`. Restore the desired compact checkpoint under `qutcc/results/<camera>/qutcc/checkpoints/epoch_NNN.pt` for frozen inference. Existing historical result/weight directories are not automatically moved or overwritten by this integration.
 
-The initial rollout exposed an optimizer-layout incompatibility when resuming NCHW moments into channels-last parameters. The runtime now converts moment strides to match each parameter, and the benchmark must successfully train from actual saved optimizer states before activation. Completed experiment checkpoints were retained. `recover_runtime_jobs.py` repairs failed/cancelled dependency chains without restarting completed epochs.
+The included QUTCC files are exact copies of the current formatted [source snapshot](../qutcc_paper_style_20261018/); [provenance.json](qutcc/provenance.json) lists their hashes. Saved state-dictionary keys are unchanged. Historical full training resume still requires matching source/config/data identities; do not weaken those checks. Fresh training uses a new smoke report for this directory.
 
-The final full-optimizer benchmark on an A6000 measured about 3–7% throughput improvement, below the 10% activation threshold; the optimized layout therefore remains disabled for this report. The report is saved under `reports/`. Pending jobs prefer H100/H200/6000 Ada GPUs, with the existing A6000 eligibility retained as a fallback. Preference does not guarantee allocation or a specific runtime.
+## Curves, width, and clipping
 
-On October 9, the live training limit was increased from six to twelve public GPUs with user approval. Existing pending jobs were rewired in place; running jobs and completed epochs were retained. Each model remains in one chain, and the tuning barrier waits for all twelve training tails. Monakhova nodes remain excluded. `submit_corrected_comparison.py` now defaults to `--max-gpus 12`; `--max-gpus 6` remains available for smaller future runs. Scheduling tests: `python -m unittest scripts.test_expand_training_lanes`.
+Use [`tools/plot_learning_curves.py`](../../tools/plot_learning_curves.py) with the QUTCC evaluation directory and each baseline report directory to export SSIM, PSNR, actual coverage and mean width at evaluated epochs. The [workflow guide](../../docs/RUNNING_EXPERIMENTS.md#7-learning-curves-reconstruction-coverage-and-width) has the command.
+
+Uncertainty is `upper - lower`. Calibration is fitted on separate data, never test targets. Ground truth is normalized to [0,1]. Calibrated bounds remain unconstrained until explicit clipping; QUTCC reports raw and clipped metrics, and the demo uses clipped metrics. Alpha=0.10 targets coverage, not exactly 90% on every image.
+
+## Historical compatibility
+
+`models.corrected_uncertainty.PinballQUTCC`, the legacy `conditioned` arm, adaptive-selector dependencies and historical scheduling scripts remain for old checkpoints. They are **not** the current QUTCC path. `run_model.py --method qutcc` always selects `qutcc/train.py` / `qutcc/evaluate.py`. Historical parameter JSON files and [legacy notes](LEGACY_PROTOCOL.md) document earlier protocols; use [four_model_comparison.json](configs/four_model_comparison.json) for this consolidated layout.
+
+## Checks
+
+From the repository root:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+From this folder with the ML environment installed:
+
+```bash
+python qutcc/test_protocol.py
+python -m unittest scripts.test_corrected_comparison scripts.test_bayesian_baselines scripts.test_rcps_bounds
+```
+
+These cover current-QUTCC command routing/source identity, pinball training, optimizer/RNG resume, separate ensemble seeds, end-to-end head gradients, dropout behavior and calibration budgets. They do not rerun the full GPU benchmark.

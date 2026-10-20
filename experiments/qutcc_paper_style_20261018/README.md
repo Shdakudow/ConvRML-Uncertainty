@@ -1,5 +1,7 @@
 # Paper-style ConvNeXt QUTCC and raw Im2im · 50 epochs
 
+**Consolidated implementation:** current QUTCC is now also included in [`../adjusted_comparison_50epochs/qutcc`](../adjusted_comparison_50epochs/qutcc/). Use the parent [four-model entry point](../adjusted_comparison_50epochs/) for new code exploration. This original source location remains preserved for existing cluster jobs/checkpoints and raw-study provenance.
+
 [Step-by-step workflow](../../docs/RUNNING_EXPERIMENTS.md) · [models/calibration/clipping](../../docs/METHODS_AND_METRICS.md) · [exact source and resume](../../provenance/README.md)
 
 This replaces the superseded learned-adaptive-QUTCC experiment. It adapts the original QUTCC quantile embedding/training and calibration procedure to our ConvNeXt/FPN lensless reconstruction model; it does not reproduce the paper's attention U-Net backbone.

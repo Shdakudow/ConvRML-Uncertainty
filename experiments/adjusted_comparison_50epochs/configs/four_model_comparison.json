@@ -1,0 +1,66 @@
+{
+  "schema": "four_model_code_layout_20261020_v1",
+  "configuration_role": "documentation and command map; not loaded automatically by trainers",
+  "entrypoint": "run_model.py",
+  "cameras": [
+    "rml",
+    "diffuser"
+  ],
+  "split": {
+    "train": 60000,
+    "validation": 5000,
+    "test": 5000,
+    "calibration": 2048
+  },
+  "epochs": 50,
+  "checkpoint_interval": 5,
+  "models": {
+    "qutcc": {
+      "source": "qutcc/",
+      "protocol": "paper_qutcc_convnext_uniform_pinball_20261018_v1",
+      "training": "pinball only; per-image q ~ U(0,1)",
+      "optimizer": "Adam",
+      "effective_batch": 4,
+      "precision": "float32",
+      "calibration": "Algorithm 1 global quantile search; alpha=.10; no RCPS scales",
+      "parameters": "qutcc/protocol.json"
+    },
+    "im2im": {
+      "source": "models/corrected_uncertainty.py:EndToEndIm2Im",
+      "loss": "center MSE + endpoint pinball; end to end"
+    },
+    "ensemble": {
+      "source": "baselines/deep_ensemble.py",
+      "loss": "Gaussian NLL",
+      "independent_initialization": true,
+      "independent_shuffles": true,
+      "default_members": 5,
+      "reference_members": 10
+    },
+    "mc_dropout": {
+      "source": "models/corrected_uncertainty.py:FullDropoutRML",
+      "loss": "MSE",
+      "dropout_sites": 48,
+      "default_p": 0.05,
+      "inference_passes": 30
+    }
+  },
+  "baseline_protocol": {
+    "methods": [
+      "im2im",
+      "ensemble",
+      "mc_dropout"
+    ],
+    "optimizer": "AdamW",
+    "batch": 2,
+    "precision": "BF16",
+    "epochs_per_train_call": 2,
+    "calibration": "asymmetric RCPS-HB",
+    "alpha": 0.1,
+    "delta": 0.05
+  },
+  "historical_qutcc": {
+    "arm": "conditioned",
+    "status": "historical only; not selected by run_model.py"
+  }
+}

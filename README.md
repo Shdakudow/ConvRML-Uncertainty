@@ -8,8 +8,8 @@ Code for comparing **Im2im, deep ensemble, MC dropout, and quantile-conditioned 
 
 | Folder | What it contains |
 | --- | --- |
-| [Latest QUTCC and raw Im2im](experiments/qutcc_paper_style_20261018/) | ConvNeXt/FPN, uniform-quantile pinball training, 48 FiLM sites, and separate quantile-space calibration. RML/normalized DiffuserCam QUTCC and clean raw QUTCC/Im2im reached 50 epochs. |
-| [Four-model baseline implementation](experiments/adjusted_comparison_50epochs/) | End-to-end Im2im, independently shuffled NLL ensemble members, MC dropout throughout the network, asymmetric empirical/RCPS calibration, and milestone inference. Its older QUTCC/adaptive-selector paths are historical; use the latest QUTCC folder above. |
+| **[Current four-model implementation](experiments/adjusted_comparison_50epochs/)** | **Current QUTCC is included in `qutcc/`**, alongside end-to-end Im2im, independently shuffled NLL ensemble members and full-network MC dropout. Use `run_model.py` for all four methods. |
+| [Original-style QUTCC/raw source snapshot](experiments/qutcc_paper_style_20261018/) | Preserved source location for the completed RML/normalized QUTCC and raw QUTCC/Im2im jobs; current QUTCC is also integrated into the four-model folder above. |
 | [Clean raw continuation](experiments/raw_diffuser_continue80_20261019/) | Full-state continuation after epoch 50. **Stopped at epoch 70 by request**; the folder name records its original 80-epoch plan. |
 | [Corrupted raw dataset and pilot](experiments/raw_diffuser_corruptions_20261018/) | Fixed, reviewed measurement corruptions with unchanged ground truth; ten adaptation epochs after 30 clean pretraining epochs. |
 | [Corrupted raw continuation](experiments/raw_corrupted_continue30_20261019/) | Continuation to **30 adaptation epochs**, retaining optimizer and RNG states. Both QUTCC and Im2im completed training and calibration/test evaluation. |

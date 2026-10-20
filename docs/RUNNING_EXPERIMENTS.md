@@ -1,5 +1,7 @@
 # Run training, calibration, inference, and learning curves
 
+All four methods are included in [the consolidated implementation](../experiments/adjusted_comparison_50epochs/), with current QUTCC under `qutcc/` and a shared `run_model.py` command. The detailed entry points below remain available.
+
 These commands document the current experiment without submitting or restarting existing jobs. Read the folder/task table before choosing an entry point. Commands marked **GPU** need a GPU allocation; a login node is only for inspection and Slurm submission.
 
 ## 1. Install and locate the project
@@ -53,7 +55,7 @@ Baseline checkpoints archived in [Releases](https://github.com/Shdakudow/ConvRML
 From the repository root:
 
 ```bash
-cd experiments/qutcc_paper_style_20261018
+cd experiments/adjusted_comparison_50epochs/qutcc
 python test_protocol.py
 ```
 
@@ -143,7 +145,7 @@ python scripts/corrected_comparison_study.py --help
 python scripts/corrected_comparison_evaluate.py --help
 ```
 
-This directory is self-contained for its model/script imports; data and results are external. Fresh training uses `corrected_comparison_study.py` and the guarded submission workflow in its [README](../experiments/adjusted_comparison_50epochs/README.md). Each ensemble member has independent initialization and shuffle seeds, but uses the same train/validation/test split as the other methods. Legacy `conditioned` and adaptive-selector modules remain available for historical checkpoints; current QUTCC is trained in the newer folder in step 3.
+This directory is self-contained for its model/script imports; data and results are external. Fresh training uses `corrected_comparison_study.py` and the guarded submission workflow in its [README](../experiments/adjusted_comparison_50epochs/README.md). Each ensemble member has independent initialization and shuffle seeds, but uses the same train/validation/test split as the other methods. Legacy `conditioned` and adaptive-selector modules remain available for historical checkpoints; current QUTCC is trained in the included `qutcc/` subfolder in step 3. The common `run_model.py --method qutcc` entry point always selects that current implementation.
 
 **GPU**, evaluate independently calibrated baseline curves at a saved milestone:
 
