@@ -1,221 +1,157 @@
-# Run training, calibration, inference, and learning curves
+# Training, calibration, inference and curves
 
-All four methods are included in [the consolidated implementation](../experiments/adjusted_comparison_50epochs/), with current QUTCC under `qutcc/` and a shared `run_model.py` command. The detailed entry points below remain available.
+Use [Exp2](../experiments/experiment2/) for the four-model normalized-camera comparison and [Exp3](../experiments/experiment3/) for raw/corrupted QUTCC and Im2im. [Model differences](MODEL_COMPARISON.md) identifies the implementation behind each command.
 
-These commands document the current experiment without submitting or restarting existing jobs. Read the folder/task table before choosing an entry point. Commands marked **GPU** need a GPU allocation; a login node is only for inspection and Slurm submission.
-
-## 1. Install and locate the project
+## Setup and existing data
 
 ```bash
 git clone https://github.com/Shdakudow/ConvRML-Uncertainty.git
 cd ConvRML-Uncertainty
 python3.11 -m venv .venv
 source .venv/bin/activate
-# Install CUDA-compatible torch and torchvision for your machine first.
+# Install CUDA-compatible torch/torchvision for your system first.
 python -m pip install -r requirements.txt
-```
-
-The code repository is private; use your own authorized GitHub login. No credentials are included. PyTorch/torchvision are platform-specific and deliberately not pinned to an incompatible CUDA wheel in this source package. The cluster uses Python 3.11; LPIPS additionally downloads AlexNet weights into the Torch cache on first use.
-
-Latest dataset loaders default to `$HOME/ConvRML`. Set `CONVRML_PROJECT` when reading existing datasets from another project root:
-
-```bash
 export CONVRML_PROJECT="$HOME/ConvRML"
 ```
 
-That variable changes data/parent-checkpoint lookup, not every output path: latest trainers write beside their own source folder, while older baseline scripts use paths relative to the working directory. Follow each command's `cd` instruction. Saved manifests contain absolute source paths and are not portable merely by changing the environment variable.
+The source repository is private. Use your authorized GitHub login. `CONVRML_PROJECT` points to the existing data/checkpoint project, which is separate from this reorganized source checkout. Historical source contains absolute or project-relative cluster paths; the repository moves do not move those external files.
 
-## 2. Restore data and checkpoints separately
-
-Normal-camera datasets contain `pairs.npy` and `manifest.json` at:
-
-```text
-$CONVRML_PROJECT/data/optics_intervals_60k_5k_5k_20260928/
-$CONVRML_PROJECT/data/diffuser_intervals_60k_5k_5k_20260928/
-$CONVRML_PROJECT/data/formal_rml_calibration95/
-$CONVRML_PROJECT/data/diffuser_intervals_calibration_20260928/
-```
-
-`pairs.npy` is uint8 with shape `(N,2,3,H,W)`: measurement first, target second. A normal manifest has `train`, `val`, and `test` lists of records containing IDs. Its cache concatenates those splits in that order. Calibration has its own cache and `calibration` list. Loaders divide both images by 255.
-
-Raw splits are listed in:
-
-```text
-$CONVRML_PROJECT/experiments/dlmd_raw_adaptive_size_20261016/data/split.json
-```
-
-This manifest has `roles.train`, `roles.val`, `roles.test`, and `roles.calibration`. Each record includes an ID and `measurement.path` / `target.path`. The corrupted loader uses the separate reviewed `raw_diffuser_corruptions_20261018/dataset/manifest.json`. It reads fixed corrupted measurements and unchanged targets; it does not generate new corruption each epoch.
-
-The manifests/images are not bundled. The audit rejects missing pairs, split overlap, or wrong counts. Dataset SHA-256 identities are saved with checkpoints. Do not regenerate a split or replace targets to make an old checkpoint pass an audit.
-
-Baseline checkpoints archived in [Releases](https://github.com/Shdakudow/ConvRML-Uncertainty/releases) are not downloaded by `git clone`. Restore only the needed epoch/member and verify its archived SHA-256. Current QUTCC/raw checkpoints remain separate cluster outputs. A parameter JSON documents settings; it is not a weight file or an automatically loaded configuration.
-
-## 3. Latest QUTCC and clean raw Im2im training
-
-From the repository root:
-
-```bash
-cd experiments/adjusted_comparison_50epochs/qutcc
-python test_protocol.py
-```
-
-| Task | Dataset | Model |
-| ---: | --- | --- |
-| 0 | RML | QUTCC |
-| 1 | Normalized DiffuserCam | QUTCC |
-| 2 | Raw DiffuserCam | QUTCC |
-| 3 | Raw DiffuserCam | Im2im |
-
-**GPU, fresh experiment only:** run a smoke test before the first real segment. The smoke pass checks gradients, validation, and runtime; its weights are not the trained checkpoint.
-
-```bash
-python train.py --task 0 --smoke
-python train.py --task 0 --target-epoch 5
-python train.py --task 0 --target-epoch 10
-```
-
-`--target-epoch 10` means **continue until total epoch 10**, not add ten more epochs. The same experiment resumes `latest.pt`, with optimizer moments, quantile RNG, CPU/CUDA RNG, offsets, and learning-rate position. It does not reset learning rate at each job boundary. The original schedule spans 50 epochs; effective batch is four via microbatch accumulation. Checkpoints are saved every five epochs.
-
-| Output under `results/<camera>/<method>/` | Meaning |
+| Data | Historical location under `$CONVRML_PROJECT` |
 | --- | --- |
-| `config.json` | Actual hyperparameters and dataset/source identities |
-| `smoke.json` | Passed smoke/runtime gate for this exact source |
-| `latest.pt` | Resumable model + optimizer + RNG + partial-epoch progress |
-| `checkpoints/epoch_005.pt` | Compact five-epoch model snapshot for evaluation; not a full optimizer resume |
-| `history.json` | Training loss, validation metrics, LR, elapsed segment information |
-| `progress.json` | Last reported training/validation progress |
+| Exp2 RML pairs/manifest | `data/optics_intervals_60k_5k_5k_20260928/` |
+| Exp2 normalized DiffuserCam pairs/manifest | `data/diffuser_intervals_60k_5k_5k_20260928/` |
+| RML calibration | `data/formal_rml_calibration95/` |
+| Normalized DiffuserCam calibration | `data/diffuser_intervals_calibration_20260928/` |
+| Raw paired split | `experiments/dlmd_raw_adaptive_size_20261016/data/split.json` |
+| Fixed corrupted split | `experiments/raw_diffuser_corruptions_20261018/dataset/manifest.json` |
 
-Formatting the published files changes the source hash. Fresh formatted-source training is supported after its own smoke check. To continue historical training, restore [the exact source](../provenance/README.md) and the original full-state checkpoint/data. Do not delete the resume assertions or reuse a smoke report from different source.
+Normal caches contain uint8 `(N,2,3,H,W)` pairs, measurement first and target second; loaders divide by 255. Raw manifests reference paired image paths. Data, split files and weight binaries are not included in a clone. Restore needed weights from [Releases](https://github.com/Shdakudow/ConvRML-Uncertainty/releases) or their existing cluster outputs and verify recorded hashes.
 
-### Slurm execution
+Validation selects settings, calibration fits intervals, and test evaluates the frozen result. Do not substitute test pairs into calibration or regenerate split IDs for an existing checkpoint.
 
-Review environment paths, partition access, walltime, and GPU constraints in `run.sbatch`. The historical script excludes Monakhova and prefers shared fast GPUs. Later live jobs were explicitly moved into the authorized owner partition; that does not change this recorded script. A direct owner-partition override for **one authorized task** is:
-
-```bash
-mkdir -p logs
-sbatch --partition=monakhova --constraint=a6000 --prefer= \
-  --exclude=nikola-compute-15,bhattacharjee-compute-02 \
-  --time=04:00:00 run.sbatch train.py --task 0 --target-epoch 5
-```
-
-**This submits a GPU job.** It overrides the historical script's partition/constraint/preference and removes its Monakhova exclusion. Our live scheduling policy permits at most two project GPUs in that owner partition. Do not copy this partition choice to an account without access.
-
-`submit.py` and job JSON files preserve the original two-epoch schedule. `reschedule_five_epochs.sh` is a one-time historical migration, not a fresh generic launcher. For a new five-epoch chain, submit targets 5,10,…,50 with `afterok` dependencies and run each milestone's evaluation only after its training checkpoint exists. Never submit multiple training writers to the same `results/<camera>/<method>` concurrently.
-
-## 4. Separate calibration and full-test inference
-
-**GPU**, from the latest QUTCC folder after the checkpoint exists:
-
-```bash
-python evaluate.py --task 0 --epoch 5
-python evaluate.py --task 0 --epoch 50
-```
-
-This freezes the selected checkpoint, fits interval parameters using **only calibration pairs**, then evaluates the complete test split. QUTCC fits lower/upper q; raw Im2im fits independent endpoint scales. It writes:
-
-```text
-results/<camera>/<method>/evaluation/epoch_050/
-    calibration.json       # fitted q levels or endpoint scales
-    report.json            # full-test metrics, per-image rows, provenance
-    examples.npz           # fixed first 10 test image arrays
-```
-
-`report.json` separates `metrics.raw` and `metrics.clipped`. Do not interpret clipping as part of the calibration algorithm. Calibration can fail at an early checkpoint; check `failure.json` and the process log. A missing report is not a zero-valued result. Existing reports are reused rather than overwritten.
-
-For example, inspect final clipped metrics without a GPU:
-
-```bash
-python - <<'PY'
-import json
-from pathlib import Path
-report = json.loads(Path('results/rml/qutcc/evaluation/epoch_050/report.json').read_text())
-print(report['metrics']['clipped'])
-print(report['calibration'])
-PY
-```
-
-## 5. Im2im, ensemble, and MC baseline code
+## Experiment 2
 
 From the repository root:
 
 ```bash
-cd experiments/adjusted_comparison_50epochs
-python scripts/test_corrected_comparison.py
-python scripts/corrected_comparison_study.py --help
-python scripts/corrected_comparison_evaluate.py --help
+cd experiments/experiment2/four_models
+python run_model.py --help
+# Inspect routing without importing models, training or submitting a job:
+python run_model.py train --method qutcc --camera rml --epoch 5 --dry-run
+python run_model.py evaluate --method ensemble --camera diffuser --epoch 50 --dry-run
 ```
 
-This directory is self-contained for its model/script imports; data and results are external. Fresh training uses `corrected_comparison_study.py` and the guarded submission workflow in its [README](../experiments/adjusted_comparison_50epochs/README.md). Each ensemble member has independent initialization and shuffle seeds, but uses the same train/validation/test split as the other methods. Legacy `conditioned` and adaptive-selector modules remain available for historical checkpoints; current QUTCC is trained in the included `qutcc/` subfolder in step 3. The common `run_model.py --method qutcc` entry point always selects that current implementation.
-
-**GPU**, evaluate independently calibrated baseline curves at a saved milestone:
+**Inside a GPU allocation**, fresh QUTCC training and evaluation:
 
 ```bash
-python scripts/evaluate_interval_curves.py --camera rml --method im2im --epoch 5
-python scripts/evaluate_interval_curves.py --camera rml --method ensemble5 --epoch 5
-python scripts/evaluate_interval_curves.py --camera rml --method mc_005 --epoch 5
+python run_model.py smoke --method qutcc --camera rml
+python run_model.py train --method qutcc --camera rml --epoch 5
+python run_model.py train --method qutcc --camera rml --epoch 10
+python run_model.py evaluate --method qutcc --camera rml --epoch 10
 ```
 
-Repeat at 10,15,…,50 and for `--camera diffuser`. These write `results/current_interval_curves_20261015/reports/<camera>/<method>/epoch_005.json`. Each checkpoint is calibrated separately; using epoch-50 scales for all earlier epochs would change the experiment. The legacy `adaptive_qutcc` option in this script is not current QUTCC; use the latest `evaluate.py` for that model.
+`--epoch` is the absolute target, not extra epochs. The current QUTCC router selects `qutcc/train.py` and its own calibration evaluator, not the historical adaptive-selector arm. It writes `qutcc/results/<camera>/qutcc/` beside the source.
 
-For fixed-first-50 image exports with saved reconstructions/bounds:
+The preserved Im2im, MC and ensemble trainers advance at most **two new epochs per call**. For example:
 
 ```bash
-python scripts/export_corrected_milestone.py --task 1 --epoch 50 --count 50
-python scripts/export_corrected_milestone.py --task 3 --method mc_005 --epoch 50 --count 50
+python run_model.py smoke --method im2im --camera rml
+python run_model.py train --method im2im --camera rml --epoch 2
+python run_model.py train --method im2im --camera rml --epoch 4
+python run_model.py train --method im2im --camera rml --epoch 5
+python run_model.py evaluate --method im2im --camera rml --epoch 5
+
+python run_model.py smoke --method mc_dropout --camera diffuser --dropout 0.05
+python run_model.py train --method mc_dropout --camera diffuser --epoch 2
+
+python run_model.py smoke --method ensemble --camera rml --member 0
+python run_model.py train --method ensemble --camera rml --member 0 --epoch 2
+# Train independent chains for members 0..4, or 0..9 for the ten-member reference.
+python run_model.py evaluate --method ensemble --members 5 --camera rml --epoch 50
 ```
 
-Task `1` is RML Im2im. Task `3` with the explicit override is RML MC `p=0.05`; tasks `5`/`7` are the corresponding DiffuserCam cases. Ensemble exports use `export_ensemble_size_comparison.py`: tasks 0/1 are RML five/ten members; 2/3 are DiffuserCam five/ten. These scripts **fit calibration again** on the calibration split; they do not train model weights. Their results are separate from the newer frozen-calibration analysis.
+Each ensemble member sees the complete training split. Baseline data/results are resolved from `--project-root` (default `CONVRML_PROJECT`); baseline checkpoints remain under `results/corrected_comparison_20261006/<camera>/<arm>/`. Interval reports go to `results/current_interval_curves_20261015/reports/<camera>/<method>/epoch_NNN.json`.
 
-## 6. Raw and corrupted continuations
+Evaluate saved milestones 5,10,…,50 independently. Each calibration uses the separate calibration split for that checkpoint. Im2im/ensemble/MC use asymmetric RCPS-HB; QUTCC uses Algorithm 1 quantile search. An epoch-50 calibration must not silently replace an earlier checkpoint's calibration.
 
-`raw_diffuser_continue80_20261019` continues clean raw epoch-50 full states. It reached epoch 70 and was stopped by request. Do not run its historical submission script to restart the canceled 75/80-epoch jobs.
+See [the four-model README](../experiments/experiment2/four_models/README.md) for the full router options and export scripts. The saved dropout sweep compares p=0.05/0.10/0.20 at 30/60/100 passes; main demo inference uses p=0.05 and 30 passes.
 
-`raw_diffuser_corruptions_20261018` builds the reviewed fixed corruption dataset. `build_dataset.py --preview-only` prepares a review; full materialization must use the same approved protocol/manifest. Its ten-epoch pilot starts from clean **epoch-30 model weights**, with a new adaptation optimizer. The later `raw_corrupted_continue30_20261019` retains that pilot's **full optimizer/RNG state** through adaptation epoch 30.
+## Experiment 3
 
-From the corrupted continuation directory, task 0 is QUTCC and task 1 is Im2im:
+From the repository root, **inside a GPU allocation**:
 
 ```bash
+cd experiments/experiment3/clean
+python test_protocol.py
+python train.py --task 2 --smoke
+python train.py --task 2 --target-epoch 5
+python train.py --task 2 --target-epoch 10
+python evaluate.py --task 2 --epoch 10
+```
+
+Use **task 2 for raw QUTCC**, **task 3 for raw Im2im**. The same preserved source also contains historical normalized-camera tasks 0/1; the Exp2 router above is the clearer normalized-camera entry point.
+
+Both clean raw models train for 50 epochs using float32 Adam, effective batch four, and the recorded warmup/cosine schedule. QUTCC learns with sampled-q pinball only; Im2im learns center MSE plus two endpoint pinball losses. The raw wrapper pads/crops internally. Outputs go beside the source under `results/raw/<method>/`.
+
+### Fixed corruption adaptation
+
+Review [corrupted/](../experiments/experiment3/corrupted/) for dataset generation. The historical loader reads the existing reviewed manifest from the project paths in the table above. Ground truth remains unchanged; one fixed operation is assigned per measurement. Preview controls include additional stress tests that are not all in the training mixture.
+
+The corrupted pilot loads each clean epoch-30 checkpoint, starts a fresh adaptation optimizer and trains for ten epochs. A `TRAINING_APPROVED` marker gates that preserved pilot trainer; review/approval of a newly generated dataset is separate from historical authorization.
+
+The [continuation](../experiments/experiment3/corrupted_continuation/) retains model, optimizer and RNG state through adaptation epoch 30. Its task IDs are **0 QUTCC / 1 Im2im**:
+
+```bash
+# From experiments/experiment3/corrupted_continuation, GPU required for evaluation:
 python test_continuation.py
-# GPU; evaluate existing completed checkpoints without training:
 python evaluate.py --task 0 --epoch 30
 python evaluate.py --task 1 --epoch 30
 ```
 
-The final checkpoint is 30 clean pretraining epochs + 30 corruption-adaptation epochs. Parent checkpoints, reviewed manifests and their exact identities are required even when inspecting this source snapshot. Training is complete; `submit.py` is a historical launcher, not a progress-check command.
+Final corrupted checkpoints are 30 clean pretraining + 30 adaptation epochs. The clean 50→70 follow-up is retained in [clean_continuation_stopped/](../experiments/experiment3/clean_continuation_stopped/) with its stopped status; it is not the default clean 50-epoch comparison.
 
-## 7. Learning curves: reconstruction, coverage, and width
+## Checkpoint and report files
 
-Collect already evaluated reports into CSV/PNG without loading images or retraining:
+| File | Meaning |
+| --- | --- |
+| `config.json` / `protocol.json` | Hyperparameters and dataset/source identity; not model weights |
+| `latest.pt` | Full-state resumable checkpoint, including optimizer/RNG/progress |
+| `checkpoints/epoch_005.pt` | Compact milestone weights/history for frozen evaluation |
+| `history.json` | Training and validation history |
+| `evaluation/epoch_NNN/calibration.json` | Fitted quantile levels or endpoint scales |
+| `evaluation/epoch_NNN/report.json` | Full-test aggregates, per-image metrics and calibration provenance |
+| `evaluation/epoch_NNN/examples.npz` | Saved measurement, target, prediction and endpoint arrays |
+
+Formatting/publication and historical resume have different source byte hashes. [The original archive](../provenance/README.md) and migration map preserve that distinction. Resume checks must retain the original source/config/data identities. Fresh formatted-source training needs its own smoke report; a historical smoke report is not transferable.
+
+Training commands above execute within an allocation; they do not submit Slurm jobs. Recorded `.sbatch`/submission files contain historical cluster directories, partitions and job IDs. Review/adapt those before reuse. Never run concurrent training writers to the same method/output directory.
+
+## Inference and learning curves
+
+`evaluate.py` freezes a checkpoint, calibrates on the separate calibration split, then evaluates the test split. Existing complete reports may be reused. A failed early calibration is recorded in `failure.json`; it is not a zero-valued metric.
+
+QUTCC/raw reports distinguish raw and clipped metrics. Calibration changes q or interval scales; display clipping to [0,1] is a separate operation. See [metric definitions](METHODS_AND_METRICS.md).
+
+Collect completed five-epoch reports without retraining:
 
 ```bash
-cd /path/to/ConvRML-Uncertainty
+# From the repository root; replace paths with your completed evaluation folders.
 python tools/plot_learning_curves.py \
-  --series QUTCC=/path/to/qutcc/results/rml/qutcc/evaluation \
-  --series Im2im=/path/to/current_interval_curves/reports/rml/im2im \
-  --metric-space clipped --output /path/to/curve_export
+  --series QUTCC=/path/to/qutcc/evaluation \
+  --series Im2im=/path/to/im2im/reports \
+  --metric-space clipped --output /path/to/curves
 ```
 
-Add ensemble/MC series similarly. For corrupted raw, point both series at their `results/raw/<method>/evaluation` directories. Outputs are `learning_curves.csv` and `learning_curves.png`, with SSIM, PSNR, mean width and actual coverage. The script uses only completed reports, distinguishes raw/clipped data, and leaves missing five-epoch milestones as gaps. Labels/dataset choice are supplied by the caller: never compare different cameras or calibration protocols as though they were the same experiment.
+Add ensemble/MC series for Exp2. Outputs are CSV and a PNG containing PSNR, SSIM, width and actual coverage. Missing evaluated milestones remain gaps. Compare methods within the same camera/split and metric space.
 
-Full-test LPIPS and width/error Pearson/Spearman use `experiment2_uncertainty_analysis_20261019/evaluate_full_test.py --epoch 5` and subsequent five-epoch milestones. The evaluator expects the original `$HOME/ConvRML` project layout, exact checkpoint reports, and baseline weights under its temporary `weights/` tree. The Mac-only `milestone_pipeline.py` restores archived baseline checkpoints with hash checks and submits eight camera/model evaluations per milestone. It needs the existing release manifests, `gh` authentication, and SSH access; it is not a standalone dataset downloader.
+[Exp2 analysis](../experiments/experiment2/analysis/) adds LPIPS and within-image pixel-wise width/error Pearson/Spearman at five-epoch milestones. Those scripts retain their original external project/checkpoint lookup paths. [Exports](../experiments/experiment3/exports/) contains frozen-checkpoint image packing helpers for the separate demo repository; source publication alone does not deploy a website.
 
-`publish_curves.py` is the Mac/demo integration helper, not model training. It requires the separate demo checkout and local asset directories documented in the analysis README. The current website, raw exports, and code publication remain separate processes.
-
-## 8. Validate a source-only change
+## Source checks
 
 ```bash
 python tools/verify_source_release.py
 python -m unittest discover -s tests -v
-python experiments/experiment2_uncertainty_analysis_20261019/test_metrics.py
-# Development-only formatter:
-python -m pip install -r requirements-dev.txt
-python -m black --check experiments/adjusted_comparison_50epochs \
-  experiments/qutcc_paper_style_20261018 \
-  experiments/raw_diffuser_continue80_20261019 \
-  experiments/raw_diffuser_corruptions_20261018 \
-  experiments/raw_corrupted_continue30_20261019 \
-  experiments/raw_diffuser_demo_20261019 \
-  experiments/experiment2_uncertainty_analysis_20261019 tools tests
+python experiments/experiment2/analysis/test_metrics.py
 ```
 
-The source verifier checks archive hashes, Python syntax, and AST equivalence against the exact captured cluster source. This validates formatting equivalence; it does not replace an end-to-end CUDA/data smoke test. This publication does not rerun training or alter live experiment/checkpoint directories.
+The verifier resolves original source paths through [the migration map](../provenance/layout_migration_20261021.json), checks original archive hashes and compares published Python ASTs. It confirms model behavior was preserved by this organization; it does not replace a full CUDA/data smoke test.

@@ -1,6 +1,6 @@
 # Models, calibration, and metric definitions
 
-This document describes the current comparison. All four implementations now live in [`adjusted_comparison_50epochs`](../experiments/adjusted_comparison_50epochs/). Current QUTCC uses its `qutcc/` subfolder; the other three retain their corrected baseline modules. `run_model.py` selects the correct trainer and calibration procedure. The original `qutcc_paper_style_20261018` source location remains a historical/current-cluster snapshot.
+This document defines the metrics and calibration conventions for [Experiment 2](../experiments/experiment2/) and [Experiment 3](../experiments/experiment3/). For the classes, heads, losses and code-reading order, see [model-code comparison](MODEL_COMPARISON.md). Exp2's four-model router is in [four_models/](../experiments/experiment2/four_models/); Exp3's raw-compatible source is in [clean/](../experiments/experiment3/clean/).
 
 ## Shared reconstruction architecture
 

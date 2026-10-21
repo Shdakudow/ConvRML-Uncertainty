@@ -1,14 +1,21 @@
-# Fixed corrupted raw measurements · dataset construction and 10-epoch pilot
+# Clean raw DiffuserCam · continuation from epoch 50 to 80
 
-[Step-by-step workflow](../../docs/RUNNING_EXPERIMENTS.md) · [models/calibration/clipping](../../docs/METHODS_AND_METRICS.md) · [exact source and resume](../../provenance/README.md)
+[Step-by-step workflow](../../../docs/RUNNING_EXPERIMENTS.md) · [models/calibration/clipping](../../../docs/METHODS_AND_METRICS.md) · [exact source and resume](../../../provenance/README.md)
 
-Only measurements are corrupted; ground-truth scenes remain unchanged. `build_dataset.py` creates fixed, deterministic reviewed PNG inputs with hashes and a manifest. `corruptions.py` implements the transformations. The split is **17,999 / 2,000 / 2,000 / 3,000** for training / validation / test / calibration.
 
-The reviewed mixture includes identity inputs and crop/resize, rotation, local rotations, intensity changes, missing pixels, reduced resolution, Gaussian and Poisson perturbations. Speckle, stripe, impulse and scrambling profiles are reserved for separate stress tests. These are sensor-domain stress tests, not a physical optical acquisition model.
+**Current status:** both models stopped at epoch 70 by request. The folder name and 80-epoch schedule describe the original plan; do not restart canceled epoch-75/80 jobs.
+QUTCC and Im2im each resume their own completed epoch-50 checkpoint from [the paper-style study](../clean). Full model, Adam moments, CPU/CUDA and quantile RNG states and counters are retained. Original checkpoints remain unchanged.
 
-After dataset review, each method copied its own **clean epoch-30** checkpoint and adapted for **10 additional epochs**, using fresh Adam moments and constant LR 1e-5. Evaluations are at adaptation epochs 5 and 10. Task 0 is QUTCC; task 1 is Im2im. `submit.py` requires the local `TRAINING_APPROVED` marker after review; it is intentionally not supplied as a blanket approval for new datasets.
+The split stays 17,999 training / 2,000 validation / 2,000 test / 3,000 calibration. Learning rate restarts at 1e-5 and cosine-decays to 1e-9 over the additional 30 epochs. This explicit restart is part of the continuation protocol.
 
-The original `protocol.json` includes a submission-status field written before launch; consult the job record or Slurm for actual status. Dataset/review assets remain on Unicorn. [The continuation](../raw_corrupted_continue30_20261019/) extends this pilot to 30 adaptation epochs.
+Milestones: **55, 60, 65, 70, 75, 80**. Each method has five-epoch training segments and separate calibration/test jobs. Task 0 is QUTCC; task 1 is Im2im. `continuation.py` enforces the parent checkpoint and schedule. `submit.py` schedules a new chain only if there is no existing job record.
+
+```sh
+python test_continuation.py
+python train.py --task 0 --smoke
+python train.py --task 0 --target-epoch 55
+python evaluate.py --task 0 --epoch 55
+```
 
 ## Files and environment
 

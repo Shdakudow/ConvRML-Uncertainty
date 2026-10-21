@@ -1,8 +1,8 @@
 # Paper-style ConvNeXt QUTCC and raw Im2im · 50 epochs
 
-**Consolidated implementation:** current QUTCC is now also included in [`../adjusted_comparison_50epochs/qutcc`](../adjusted_comparison_50epochs/qutcc/). Use the parent [four-model entry point](../adjusted_comparison_50epochs/) for new code exploration. This original source location remains preserved for existing cluster jobs/checkpoints and raw-study provenance.
+**Exp3 clean source:** use tasks 2/3 for raw QUTCC/Im2im. The identical QUTCC source is included in [Exp2’s four-model implementation](../../experiment2/four_models/qutcc/) for normalized-camera runs. See the [Exp3 overview](../README.md) and [model-code comparison](../../../docs/MODEL_COMPARISON.md).
 
-[Step-by-step workflow](../../docs/RUNNING_EXPERIMENTS.md) · [models/calibration/clipping](../../docs/METHODS_AND_METRICS.md) · [exact source and resume](../../provenance/README.md)
+[Step-by-step workflow](../../../docs/RUNNING_EXPERIMENTS.md) · [models/calibration/clipping](../../../docs/METHODS_AND_METRICS.md) · [exact source and resume](../../../provenance/README.md)
 
 This replaces the superseded learned-adaptive-QUTCC experiment. It adapts the original QUTCC quantile embedding/training and calibration procedure to our ConvNeXt/FPN lensless reconstruction model; it does not reproduce the paper's attention U-Net backbone.
 

@@ -1,5 +1,5 @@
 {
-  "source": "experiments/qutcc_paper_style_20261018",
+  "source": "experiments/experiment3/clean",
   "purpose": "Current original-style QUTCC integrated into the four-model implementation; exact formatted-source copies, not old adaptive QUTCC",
   "sha256": {
     "model.py": "d607153ed5395d49df88f2e930527628d68fc0f6e9f8c4822f93e33d532273d7",

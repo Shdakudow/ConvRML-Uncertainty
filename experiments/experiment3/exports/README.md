@@ -2,7 +2,7 @@
 
 These are the actual image/bound export utilities captured from Unicorn. They run inference, not model training. The website frontend and its publishing scripts live in the [separate demo repository](https://github.com/Shdakudow/ConvRML-Uncertainty-Demo).
 
-[Complete workflow](../../docs/RUNNING_EXPERIMENTS.md) · [calibration/clipping definitions](../../docs/METHODS_AND_METRICS.md) · [source provenance](../../provenance/README.md)
+[Complete workflow](../../../docs/RUNNING_EXPERIMENTS.md) · [calibration/clipping definitions](../../../docs/METHODS_AND_METRICS.md) · [source provenance](../../../provenance/README.md)
 
 ## Files
 

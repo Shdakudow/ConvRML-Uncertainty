@@ -2,7 +2,7 @@
 
 This folder contains the **current QUTCC, end-to-end Im2im, deep ensemble, and MC dropout implementations**. Start with `run_model.py`, which selects the correct training and calibration code for each method.
 
-[Complete workflow](../../docs/RUNNING_EXPERIMENTS.md) · [losses and metrics](../../docs/METHODS_AND_METRICS.md) · [current parameters](configs/four_model_comparison.json) · [historical protocol notes](LEGACY_PROTOCOL.md)
+[Complete workflow](../../../docs/RUNNING_EXPERIMENTS.md) · [losses and metrics](../../../docs/METHODS_AND_METRICS.md) · [current parameters](configs/four_model_comparison.json) · [historical protocol notes](LEGACY_PROTOCOL.md)
 
 ## Models in this folder
 
@@ -71,11 +71,11 @@ Evaluation needs every selected member's requested checkpoint. Repeat evaluation
 
 QUTCC evaluation writes `qutcc/results/<camera>/qutcc/evaluation/epoch_NNN/{calibration.json,report.json,examples.npz}`. Restore the desired compact checkpoint under `qutcc/results/<camera>/qutcc/checkpoints/epoch_NNN.pt` for frozen inference. Existing historical result/weight directories are not automatically moved or overwritten by this integration.
 
-The included QUTCC files are exact copies of the current formatted [source snapshot](../qutcc_paper_style_20261018/); [provenance.json](qutcc/provenance.json) lists their hashes. Saved state-dictionary keys are unchanged. Historical full training resume still requires matching source/config/data identities; do not weaken those checks. Fresh training uses a new smoke report for this directory.
+The included QUTCC files are exact copies of the current formatted [source snapshot](../../experiment3/clean); [provenance.json](qutcc/provenance.json) lists their hashes. Saved state-dictionary keys are unchanged. Historical full training resume still requires matching source/config/data identities; do not weaken those checks. Fresh training uses a new smoke report for this directory.
 
 ## Curves, width, and clipping
 
-Use [`tools/plot_learning_curves.py`](../../tools/plot_learning_curves.py) with the QUTCC evaluation directory and each baseline report directory to export SSIM, PSNR, actual coverage and mean width at evaluated epochs. The [workflow guide](../../docs/RUNNING_EXPERIMENTS.md#7-learning-curves-reconstruction-coverage-and-width) has the command.
+Use [`tools/plot_learning_curves.py`](../../../tools/plot_learning_curves.py) with the QUTCC evaluation directory and each baseline report directory to export SSIM, PSNR, actual coverage and mean width at evaluated epochs. The [workflow guide](../../../docs/RUNNING_EXPERIMENTS.md#inference-and-learning-curves) has the command.
 
 Uncertainty is `upper - lower`. Calibration is fitted on separate data, never test targets. Ground truth is normalized to [0,1]. Calibrated bounds remain unconstrained until explicit clipping; QUTCC reports raw and clipped metrics, and the demo uses clipped metrics. Alpha=0.10 targets coverage, not exactly 90% on every image.
 

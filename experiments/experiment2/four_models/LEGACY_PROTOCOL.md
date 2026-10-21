@@ -1,8 +1,8 @@
 # Corrected ConvRML comparison
 
-**Reading this snapshot:** the normal-camera Im2im, ensemble, and MC models completed 50 epochs. Current QUTCC uses the separate [original-style implementation](../qutcc_paper_style_20261018/). The older conditioned/adaptive-selector paths here are retained for historical state dictionaries and imports. The scheduling and runtime notes below describe that earlier run, not current live job status.
+**Reading this snapshot:** the normal-camera Im2im, ensemble, and MC models completed 50 epochs. Current QUTCC uses the separate [original-style implementation](../../experiment3/clean). The older conditioned/adaptive-selector paths here are retained for historical state dictionaries and imports. The scheduling and runtime notes below describe that earlier run, not current live job status.
 
-[Current workflow](../../docs/RUNNING_EXPERIMENTS.md) · [calibration and clipping](../../docs/METHODS_AND_METRICS.md) · [source/formatting provenance](../../provenance/README.md). The stopped October-5 variant remains in [the superseded archive](../../archive/superseded_adjusted_20261005/).
+[Current workflow](../../../docs/RUNNING_EXPERIMENTS.md) · [calibration and clipping](../../../docs/METHODS_AND_METRICS.md) · [source/formatting provenance](../../../provenance/README.md). The stopped October-5 variant remains in [the superseded archive](../../../archive/superseded_adjusted_20261005).
 
 [Parameters](configs/parameters.json) · [Model implementations](models/corrected_uncertainty.py) · [Trainer](scripts/corrected_comparison_study.py) · [Evaluator](scripts/corrected_comparison_evaluate.py)
 
@@ -81,7 +81,7 @@ data/diffuser_intervals_calibration_20260928/
 
 New checkpoints and evaluations use `results/corrected_comparison_20261006/`, separate from historical outputs. Older experimental weights have been selected for removal to free storage; historical metrics, reports, source code and the advisor baseline are retained.
 
-The [original large-data baseline](../baseline_50epochs/) and the [demo](https://shdakudow.github.io/ConvRML-Uncertainty-Demo/) show historical variants; they are not results for this corrected implementation.
+The [original large-data baseline](../../../archive/legacy_baseline_50epochs) and the [demo](https://shdakudow.github.io/ConvRML-Uncertainty-Demo/) show historical variants; they are not results for this corrected implementation.
 
 ## Runtime optimization (October 9)
 

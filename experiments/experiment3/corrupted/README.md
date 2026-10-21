@@ -1,21 +1,14 @@
-# Corrupted raw DiffuserCam · continuation from adaptation epoch 10 to 30
+# Fixed corrupted raw measurements · dataset construction and 10-epoch pilot
 
-[Step-by-step workflow](../../docs/RUNNING_EXPERIMENTS.md) · [models/calibration/clipping](../../docs/METHODS_AND_METRICS.md) · [exact source and resume](../../provenance/README.md)
+[Step-by-step workflow](../../../docs/RUNNING_EXPERIMENTS.md) · [models/calibration/clipping](../../../docs/METHODS_AND_METRICS.md) · [exact source and resume](../../../provenance/README.md)
 
+Only measurements are corrupted; ground-truth scenes remain unchanged. `build_dataset.py` creates fixed, deterministic reviewed PNG inputs with hashes and a manifest. `corruptions.py` implements the transformations. The split is **17,999 / 2,000 / 2,000 / 3,000** for training / validation / test / calibration.
 
-**Current status:** QUTCC and Im2im completed all 30 adaptation epochs and their final calibration/test evaluations.
-This resumes [the reviewed corruption pilot](../raw_diffuser_corruptions_20261018/) at adaptation epoch 10, retaining model, Adam moments, RNG states and training counters. It uses the **same fixed corrupted PNGs, unchanged targets and split**. No new corruptions are sampled during training.
+The reviewed mixture includes identity inputs and crop/resize, rotation, local rotations, intensity changes, missing pixels, reduced resolution, Gaussian and Poisson perturbations. Speckle, stripe, impulse and scrambling profiles are reserved for separate stress tests. These are sensor-domain stress tests, not a physical optical acquisition model.
 
-Learning rate stays **1e-5**. Milestones are adaptation epochs **15, 20, 25, 30**, with five-epoch training jobs and separate calibration/full 2,000-image test evaluation. The final checkpoint has 30 clean pretraining epochs plus 30 corruption-adaptation epochs, not 30 epochs from scratch. Task 0 is QUTCC; task 1 is Im2im.
+After dataset review, each method copied its own **clean epoch-30** checkpoint and adapted for **10 additional epochs**, using fresh Adam moments and constant LR 1e-5. Evaluations are at adaptation epochs 5 and 10. Task 0 is QUTCC; task 1 is Im2im. `submit.py` requires the local `TRAINING_APPROVED` marker after review; it is intentionally not supplied as a blanket approval for new datasets.
 
-`continuation.py` verifies the parent checkpoint and optimizer state; `base_data.py` retains the original dataset checks. Parent data, manifests and checkpoints must be restored at the expected paths to run this source snapshot.
-
-```sh
-python test_continuation.py
-python train.py --task 0 --smoke
-python train.py --task 0 --target-epoch 15
-python evaluate.py --task 0 --epoch 15
-```
+The original `protocol.json` includes a submission-status field written before launch; consult the job record or Slurm for actual status. Dataset/review assets remain on Unicorn. [The continuation](../corrupted_continuation) extends this pilot to 30 adaptation epochs.
 
 ## Files and environment
 

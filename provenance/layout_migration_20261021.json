@@ -1,0 +1,16 @@
+{
+  "purpose": "Repository-only organization; model source bytes and historical cluster paths remain unchanged.",
+  "moves": {
+    "experiments/adjusted_comparison_50epochs": "experiments/experiment2/four_models",
+    "experiments/experiment2_uncertainty_analysis_20261019": "experiments/experiment2/analysis",
+    "experiments/qutcc_paper_style_20261018": "experiments/experiment3/clean",
+    "experiments/raw_diffuser_corruptions_20261018": "experiments/experiment3/corrupted",
+    "experiments/raw_corrupted_continue30_20261019": "experiments/experiment3/corrupted_continuation",
+    "experiments/raw_diffuser_continue80_20261019": "experiments/experiment3/clean_continuation_stopped",
+    "experiments/raw_diffuser_demo_20261019": "experiments/experiment3/exports",
+    "experiments/baseline_50epochs": "archive/legacy_baseline_50epochs",
+    "new experiment training code": "archive/adaptive_quantile_experiments",
+    "source_manifest.json": "archive/manifests/source_manifest_20261009.json",
+    "experiments/latest_source_snapshot_20261019.json": "provenance/source_snapshot_20261019.json"
+  }
+}

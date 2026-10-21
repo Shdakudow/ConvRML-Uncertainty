@@ -34,6 +34,18 @@ def verify():
     )
     archive_bytes = (ROOT / manifest["archive"]).read_bytes()
     assert hashlib.sha256(archive_bytes).hexdigest() == manifest["archive_sha256"]
+    # Archive member names record the original cluster/publication layout.
+    # Resolve repository-only moves without rewriting the captured archive.
+    moves = json.loads(
+        (ROOT / "provenance/layout_migration_20261021.json").read_text()
+    )["moves"]
+
+    def current_path(name):
+        for old, new in moves.items():
+            if name == old or name.startswith(old + "/"):
+                return ROOT / (new + name[len(old) :])
+        return ROOT / name
+
     python_count = 0
     with tarfile.open(fileobj=io.BytesIO(archive_bytes), mode="r:gz") as archive:
         assert set(archive.getnames()) == set(manifest["files"])
@@ -41,7 +53,7 @@ def verify():
             original = archive.extractfile(name).read()
             assert hashlib.sha256(original).hexdigest() == record["sha256"], name
             assert len(original) == record["bytes"], name
-            published = ROOT / name
+            published = current_path(name)
             assert published.is_file(), f"Missing published source: {name}"
             if published.suffix == ".py":
                 before = executable_ast(original)

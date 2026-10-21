@@ -1,20 +1,20 @@
-# Clean raw DiffuserCam · continuation from epoch 50 to 80
+# Corrupted raw DiffuserCam · continuation from adaptation epoch 10 to 30
 
-[Step-by-step workflow](../../docs/RUNNING_EXPERIMENTS.md) · [models/calibration/clipping](../../docs/METHODS_AND_METRICS.md) · [exact source and resume](../../provenance/README.md)
+[Step-by-step workflow](../../../docs/RUNNING_EXPERIMENTS.md) · [models/calibration/clipping](../../../docs/METHODS_AND_METRICS.md) · [exact source and resume](../../../provenance/README.md)
 
 
-**Current status:** both models stopped at epoch 70 by request. The folder name and 80-epoch schedule describe the original plan; do not restart canceled epoch-75/80 jobs.
-QUTCC and Im2im each resume their own completed epoch-50 checkpoint from [the paper-style study](../qutcc_paper_style_20261018/). Full model, Adam moments, CPU/CUDA and quantile RNG states and counters are retained. Original checkpoints remain unchanged.
+**Current status:** QUTCC and Im2im completed all 30 adaptation epochs and their final calibration/test evaluations.
+This resumes [the reviewed corruption pilot](../corrupted) at adaptation epoch 10, retaining model, Adam moments, RNG states and training counters. It uses the **same fixed corrupted PNGs, unchanged targets and split**. No new corruptions are sampled during training.
 
-The split stays 17,999 training / 2,000 validation / 2,000 test / 3,000 calibration. Learning rate restarts at 1e-5 and cosine-decays to 1e-9 over the additional 30 epochs. This explicit restart is part of the continuation protocol.
+Learning rate stays **1e-5**. Milestones are adaptation epochs **15, 20, 25, 30**, with five-epoch training jobs and separate calibration/full 2,000-image test evaluation. The final checkpoint has 30 clean pretraining epochs plus 30 corruption-adaptation epochs, not 30 epochs from scratch. Task 0 is QUTCC; task 1 is Im2im.
 
-Milestones: **55, 60, 65, 70, 75, 80**. Each method has five-epoch training segments and separate calibration/test jobs. Task 0 is QUTCC; task 1 is Im2im. `continuation.py` enforces the parent checkpoint and schedule. `submit.py` schedules a new chain only if there is no existing job record.
+`continuation.py` verifies the parent checkpoint and optimizer state; `base_data.py` retains the original dataset checks. Parent data, manifests and checkpoints must be restored at the expected paths to run this source snapshot.
 
 ```sh
 python test_continuation.py
 python train.py --task 0 --smoke
-python train.py --task 0 --target-epoch 55
-python evaluate.py --task 0 --epoch 55
+python train.py --task 0 --target-epoch 15
+python evaluate.py --task 0 --epoch 15
 ```
 
 ## Files and environment
