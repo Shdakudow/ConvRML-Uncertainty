@@ -34,7 +34,7 @@ def fit_tail_scale(scores, alpha=0.05, *, overwrite=False):
     # round identically. A few ULPs avoid excluding the selected boundary value.
     if scale > 0:
         dtype = working.dtype if working.dtype.kind == "f" else np.dtype("float64")
-        scale += 8 * np.finfo(dtype).eps * max(1.0, scale)
+        scale = float(scale + 8 * float(np.finfo(dtype).eps) * max(1.0, scale))
     missed = sum(
         int(np.count_nonzero(working[i : i + 1_000_000] > scale))
         for i in range(0, len(working), 1_000_000)

@@ -1,6 +1,7 @@
 """Calibration matching, ties, clipping boundaries, and q-search failure cases."""
 
 from pathlib import Path
+import json
 import sys
 import tempfile
 import unittest
@@ -35,6 +36,7 @@ class TightCoverage(unittest.TestCase):
             )
             scores[:] = np.arange(10000).reshape(100, 100)[::-1]
             result = fit_tail_scale(scores, overwrite=True)
+            json.dumps(result, allow_nan=False)
             self.assertAlmostEqual(result["risk"], 0.05)
             self.assertAlmostEqual(result["scale"], 9499, places=1)
 
