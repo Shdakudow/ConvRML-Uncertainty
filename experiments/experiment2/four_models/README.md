@@ -71,7 +71,7 @@ Evaluation needs every selected member's requested checkpoint. Repeat evaluation
 
 QUTCC evaluation writes `qutcc/results/<camera>/qutcc/evaluation/epoch_NNN/{calibration.json,report.json,examples.npz}`. Restore the desired compact checkpoint under `qutcc/results/<camera>/qutcc/checkpoints/epoch_NNN.pt` for frozen inference. Existing historical result/weight directories are not automatically moved or overwritten by this integration.
 
-The included QUTCC files are exact copies of the current formatted [source snapshot](../../experiment3/clean); [provenance.json](qutcc/provenance.json) lists their hashes. Saved state-dictionary keys are unchanged. Historical full training resume still requires matching source/config/data identities; do not weaken those checks. Fresh training uses a new smoke report for this directory.
+Common QUTCC code is stored once in [shared/](../../../shared/). This folder and [Exp3 clean](../../experiment3/clean/) use relative links to the same implementation; [provenance.json](qutcc/provenance.json) lists current and pre-refactor hashes. Saved state-dictionary keys are unchanged. Historical full training resume still requires matching source/config/data identities; do not weaken those checks. Fresh training uses a new smoke report for this directory.
 
 ## Curves, width, and clipping
 

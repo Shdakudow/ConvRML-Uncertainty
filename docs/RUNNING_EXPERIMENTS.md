@@ -2,6 +2,11 @@
 
 Use [Exp2](../experiments/experiment2/) for the four-model normalized-camera comparison and [Exp3](../experiments/experiment3/) for raw/corrupted QUTCC and Im2im. [Model differences](MODEL_COMPARISON.md) identifies the implementation behind each command.
 
+Identical implementations are stored once in [shared/](../shared/) and reached
+through relative links at the documented experiment paths. Preserve Git symlinks
+when copying the checkout. Run commands through those experiment entry points,
+which retain separate outputs/source guards; do not invoke shared engines directly.
+
 ## Setup and existing data
 
 ```bash

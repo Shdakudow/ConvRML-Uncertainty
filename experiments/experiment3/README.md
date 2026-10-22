@@ -27,4 +27,4 @@ The manifest assigns one fixed operation per image: identity, crop/resize, rotat
 
 The first ten adaptation epochs start from clean epoch-30 weights with a fresh optimizer. The continuation retains its state through adaptation epoch 30 at learning rate 1e-5. Final corrupted checkpoints represent **30 clean + 30 adaptation epochs**.
 
-The clean source retains historical normalized-camera task IDs 0/1 alongside raw tasks 2/3. Use **2 = raw QUTCC** and **3 = raw Im2im** here. These source files are preserved byte-for-byte for checkpoint provenance.
+Common code lives once in [shared/](../../shared/); the experiment filenames are relative links. Corruption/adaptation-specific files remain in their own folders. The clean entry point retains historical normalized-camera task IDs 0/1 alongside raw tasks 2/3. Use **2 = raw QUTCC** and **3 = raw Im2im** here. The original pre-refactor source remains in the provenance archive.

@@ -2,6 +2,10 @@
 
 [Exp2](../experiments/experiment2/) compares four methods on RML and normalized Cornell DiffuserCam. [Exp3](../experiments/experiment3/) compares QUTCC and Im2im on raw and fixed corrupted raw DiffuserCam.
 
+Common implementations now live once in [shared/](../shared/). Paths linked
+below remain valid experiment aliases. The [shared-code index](../shared/README.md)
+links directly to the canonical files and explains which files remain specific.
+
 ## Shared reconstruction backbone
 
 Read [`ShamusRML`](../experiments/experiment2/four_models/models/shamus_rml.py):
@@ -96,7 +100,7 @@ loss = maximum(q * error, (q - 1) * error).mean()
 
 There is no extra MSE term or learned endpoint-selector branch. Reconstruction queries q=0.5. Calibration selects **one global lower/upper q pair per camera/checkpoint**; two further queries produce the bounds. Global q still gives spatially varying pixel predictions. Shared weights/FiLM do not strictly enforce monotonic quantiles.
 
-Exp2's current QUTCC and Exp3's clean model files are identical; [provenance](../experiments/experiment2/four_models/qutcc/provenance.json) records their hashes. Superseded adaptive-q classes are compatibility paths, not the current router's QUTCC.
+Exp2's QUTCC and Exp3's clean model paths link to the same [implementation](../shared/models/quantile_model.py); [provenance](../experiments/experiment2/four_models/qutcc/provenance.json) records current and original hashes. Superseded adaptive-q classes are compatibility paths, not the current router's QUTCC.
 
 ## Calibration differences
 

@@ -4,8 +4,17 @@ The repository is now organized into `experiments/experiment2/` and
 `experiments/experiment3/`. `layout_migration_20261021.json` maps former source
 locations to current folders, including moves to `archive/`. The archive below
 keeps its original member names and hash; `tools/verify_source_release.py`
-resolves the migration before comparing the published code. Model source bytes,
-checkpoint parameter names and historical cluster data/output paths are preserved.
+resolves the migration before comparing the published code. Common implementations
+now live once in `shared/`, reached through relative links. The verifier accepts
+only explicit import-context/output-path changes and the extraction of identical
+FiLM classes; original algorithm ASTs are preserved. Checkpoint parameter names
+and historical cluster data/output paths are preserved.
+
+`shared_code_equivalence_20261021.json` records exact before/after CPU fingerprints
+of initialization, predictions, losses, gradients and RNG use for all four methods
+and raw Im2im. `shared/source_map.json` (at the repository root) maps every alias
+to its single source file. Exact historical full-state resume still uses the
+captured source below; this refactor does not bypass source-identity checks.
 
 `unicorn_source_20261020.tar.gz` contains the source captured from `/home/jy2228/ConvRML` on October 20, 2026. It includes the current QUTCC/raw studies, analysis/inference exports, and baseline scripts with their imported project dependencies. It excludes datasets, credentials, weights, logs and prediction arrays.
 

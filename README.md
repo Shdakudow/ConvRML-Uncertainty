@@ -9,6 +9,11 @@ Start with **Experiment 2** for the four-model comparison, or **Experiment 3** f
 
 **Review guide:** [model-code differences](docs/MODEL_COMPARISON.md) · [run commands](docs/RUNNING_EXPERIMENTS.md) · [metric definitions](docs/METHODS_AND_METRICS.md).
 
+**[shared/](shared/) contains each common implementation once.** Experiment
+folders link to those files and retain their distinct data/adaptation/baseline
+code. Existing experiment commands keep their own output directories. See the
+[exact-output equivalence check](provenance/shared_code_equivalence_20261021.json).
+
 ## What changes between the models?
 
 All use a ConvNeXtV2-Base encoder and convolutional FPN decoder.

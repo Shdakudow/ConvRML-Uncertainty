@@ -11,3 +11,6 @@ checkpoints/
 *.npy
 !**/homography_matrices/**/*.npy
 .env*
+# This is source code, not an image/cache dataset directory.
+!shared/data/
+!shared/data/*.py
