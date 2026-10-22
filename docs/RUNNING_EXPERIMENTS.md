@@ -79,6 +79,11 @@ Each ensemble member sees the complete training split. Baseline data/results are
 
 Evaluate saved milestones 5,10,…,50 independently. Each calibration uses the separate calibration split for that checkpoint. Im2im/ensemble/MC use asymmetric RCPS-HB; QUTCC uses Algorithm 1 quantile search. An epoch-50 calibration must not silently replace an earlier checkpoint's calibration.
 
+For the separate calibration comparison targeting **90.0–90.1%**, use
+`run_model.py evaluate ... --calibration tight90` and follow
+[close-to-90% calibration](COVERAGE90.md). This uses frozen weights and writes
+new empirical results; it does not replace reference RCPS/Algorithm 1 reports.
+
 See [the four-model README](../experiments/experiment2/README.md) for the full router options and export scripts. The saved dropout sweep compares p=0.05/0.10/0.20 at 30/60/100 passes; main demo inference uses p=0.05 and 30 passes.
 
 ## Experiment 3

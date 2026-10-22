@@ -35,6 +35,10 @@ The **raw-paper Im2im** evaluator instead uses the reference adjusted empirical 
 
 Neither procedure forces exactly 90% coverage on every test image. Test ground truth measures coverage; it does not select calibration parameters.
 
+For the separate empirical evaluation targeting **90.0–90.1% calibration coverage**, see
+[close-to-90% calibration](COVERAGE90.md). It preserves these reference protocols and
+does not claim an RCPS confidence guarantee.
+
 ## Normalization, calibration, and clipping
 
 Loaders divide existing RGB 8-bit values by 255. Ground truth and measurements therefore lie in `[0,1]`; this normalization is unrelated to calibration. The model handles its own encoder normalization; do not apply it again to dataset inputs.

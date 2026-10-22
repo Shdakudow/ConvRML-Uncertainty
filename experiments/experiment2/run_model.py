@@ -42,6 +42,17 @@ def arguments(argv=None):
     )
     parser.add_argument("--dropout", type=float, choices=[0.05, 0.1, 0.2], default=0.05)
     parser.add_argument(
+        "--calibration",
+        choices=["reference", "tight90"],
+        default="reference",
+        help="Evaluation only: retain reference calibration or match empirical coverage near 90%%",
+    )
+    parser.add_argument(
+        "--calibration-source",
+        type=Path,
+        help="Existing source/results folder for tight90; useful for original cluster paths",
+    )
+    parser.add_argument(
         "--project-root",
         type=Path,
         default=Path(os.environ.get("CONVRML_PROJECT", str(Path.home() / "ConvRML"))),
@@ -52,6 +63,12 @@ def arguments(argv=None):
         help="Print the command without importing models or running a job",
     )
     args = parser.parse_args(argv)
+    if args.action != "evaluate" and (
+        args.calibration != "reference" or args.calibration_source
+    ):
+        parser.error("Calibration options are only for evaluation")
+    if args.calibration_source and args.calibration != "tight90":
+        parser.error("--calibration-source requires --calibration tight90")
     if not 1 <= args.epoch <= 50:
         parser.error("--epoch must be in 1..50")
     if args.action == "evaluate" and args.epoch % 5:
@@ -71,6 +88,44 @@ def command(args):
     """Build a subprocess command without changing model or checkpoint protocols."""
     project = args.project_root.expanduser().resolve()
     env = dict(os.environ, CONVRML_PROJECT=str(project))
+    if args.action == "evaluate" and args.calibration == "tight90":
+        method = args.method
+        if method == "ensemble":
+            method = f"ensemble{args.members}"
+        elif method == "mc_dropout":
+            method = {0.05: "mc_005", 0.1: "mc_010", 0.2: "mc_020"}[args.dropout]
+        source = args.calibration_source or (
+            ROOT / "qutcc" if method == "qutcc" else ROOT
+        )
+        output = (
+            project
+            / "results/tight_coverage90"
+            / args.camera
+            / method
+            / f"epoch_{args.epoch:03d}"
+        )
+        return (
+            [
+                sys.executable,
+                str(ROOT.parents[1] / "tools/evaluate_coverage90.py"),
+                "--project-root",
+                str(project),
+                "--source-folder",
+                str(source.resolve()),
+                "--family",
+                "paper" if method == "qutcc" else "baseline",
+                "--camera",
+                args.camera,
+                "--method",
+                method,
+                "--epoch",
+                str(args.epoch),
+                "--output",
+                str(output),
+            ],
+            project,
+            env,
+        )
     if args.method == "qutcc":
         folder = ROOT / "qutcc"
         task = ["--task", str(["rml", "diffuser"].index(args.camera))]

@@ -68,6 +68,38 @@ class FourModelEntrypoint(unittest.TestCase):
         )
         self.assertEqual(cmd[cmd.index("--method") + 1], "ensemble10")
 
+    def test_tight_coverage_is_separate_from_reference_and_training(self):
+        cmd, _, _ = self.build(
+            "evaluate",
+            "--method",
+            "qutcc",
+            "--camera",
+            "rml",
+            "--epoch",
+            "50",
+            "--calibration",
+            "tight90",
+            "--calibration-source",
+            "/tmp/paper-source",
+        )
+        self.assertEqual(Path(cmd[1]), ROOT / "tools/evaluate_coverage90.py")
+        self.assertEqual(cmd[cmd.index("--family") + 1], "paper")
+        self.assertEqual(
+            cmd[cmd.index("--source-folder") + 1],
+            str(Path("/tmp/paper-source").resolve()),
+        )
+        self.assertIn("tight_coverage90", cmd[-1])
+        with self.assertRaises(SystemExit):
+            self.build(
+                "train",
+                "--method",
+                "im2im",
+                "--camera",
+                "rml",
+                "--calibration",
+                "tight90",
+            )
+
     def test_qutcc_copy_is_exact_current_source(self):
         metadata = json.loads((BASE / "qutcc/provenance.json").read_text())
         for relative, digest in metadata["sha256"].items():
