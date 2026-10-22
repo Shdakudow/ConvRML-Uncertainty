@@ -89,10 +89,7 @@ def check_shared_refactor(original, published):
                 "Path(__file__).absolute().parent", mode="eval"
             ).body
         return executable_ast(ast.unparse(tree)) == executable_ast(ast.unparse(after))
-    if (
-        published
-        == ROOT / "experiments/experiment2/four_models/models/convnext_norm_film.py"
-    ):
+    if published == ROOT / "experiments/experiment2/models/convnext_norm_film.py":
         before, after = ast.parse(original), ast.parse(published.read_bytes())
         shared = ast.parse((ROOT / "shared/models/film.py").read_bytes())
         names = {"NormFiLM", "FiLMBackbone"}
@@ -127,22 +124,45 @@ def check_shared_refactor(original, published):
 
 
 def verify():
+    cleanup = json.loads(
+        (ROOT / "archive/provenance/cleanup_20261022.json").read_text()
+    )["moves"]
+
+    def relocate(name):
+        for old, new in sorted(
+            cleanup.items(), key=lambda item: len(item[0]), reverse=True
+        ):
+            if name == old or name.startswith(old + "/"):
+                return new + name[len(old) :]
+        return name
+
+    index = json.loads((ROOT / "archive/index.json").read_text())
+    history_bytes = (ROOT / index["archive"]).read_bytes()
+    assert hashlib.sha256(history_bytes).hexdigest() == index["sha256"]
+    history = {}
+    with tarfile.open(fileobj=io.BytesIO(history_bytes), mode="r:gz") as bundle:
+        assert set(bundle.getnames()) == set(index["files"])
+        for name, record in index["files"].items():
+            data = bundle.extractfile(name).read()
+            assert hashlib.sha256(data).hexdigest() == record["sha256"], name
+            assert len(data) == record["bytes"], name
+            history[name] = data
     manifest = json.loads(
-        (ROOT / "provenance/unicorn_source_20261020.json").read_text()
+        (ROOT / "archive/provenance/unicorn_source_20261020.json").read_text()
     )
-    archive_bytes = (ROOT / manifest["archive"]).read_bytes()
+    archive_bytes = (ROOT / relocate(manifest["archive"])).read_bytes()
     assert hashlib.sha256(archive_bytes).hexdigest() == manifest["archive_sha256"]
     # Archive member names record the original cluster/publication layout.
     # Resolve repository-only moves without rewriting the captured archive.
     moves = json.loads(
-        (ROOT / "provenance/layout_migration_20261021.json").read_text()
+        (ROOT / "archive/provenance/layout_migration_20261021.json").read_text()
     )["moves"]
 
-    def current_path(name):
+    def previous_path(name):
         for old, new in moves.items():
             if name == old or name.startswith(old + "/"):
-                return ROOT / (new + name[len(old) :])
-        return ROOT / name
+                return new + name[len(old) :]
+        return name
 
     python_count = 0
     with tarfile.open(fileobj=io.BytesIO(archive_bytes), mode="r:gz") as archive:
@@ -151,19 +171,27 @@ def verify():
             original = archive.extractfile(name).read()
             assert hashlib.sha256(original).hexdigest() == record["sha256"], name
             assert len(original) == record["bytes"], name
-            published = current_path(name)
-            assert published.is_file(), f"Missing published source: {name}"
+            previous = previous_path(name)
+            published = ROOT / relocate(previous)
+            if previous in history:
+                current = history[previous]
+                target = index["files"][previous].get("shared_target")
+                if target:
+                    published = ROOT / target
+            else:
+                assert published.is_file(), f"Missing published source: {name}"
+                current = published.read_bytes()
             if published.suffix == ".py":
                 before = executable_ast(original)
-                after = executable_ast(published.read_bytes())
+                after = executable_ast(current)
                 assert before == after or check_shared_refactor(
                     original, published
                 ), f"Behavioral source change: {name}"
                 python_count += 1
             else:
-                assert published.read_bytes() == original, name
+                assert current == original, name
     print(
-        f"Verified {len(manifest['files'])} archived files; "
+        f"Verified {len(history)} bundled historical files and {len(manifest['files'])} captured files; "
         f"{python_count} published Python sources match, including reviewed shared-source moves."
     )
 

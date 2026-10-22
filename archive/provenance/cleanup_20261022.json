@@ -1,0 +1,22 @@
+{
+  "purpose": "Flatten Exp2 and bundle historical clutter; no model algorithm changes.",
+  "previous_commit": "63bb8e8",
+  "moves": {
+    "experiments/experiment2/four_models/baselines": "experiments/experiment2/baselines",
+    "experiments/experiment2/four_models/configs": "experiments/experiment2/configs",
+    "experiments/experiment2/four_models/models": "experiments/experiment2/models",
+    "experiments/experiment2/four_models/qutcc": "experiments/experiment2/qutcc",
+    "experiments/experiment2/four_models/reports": "experiments/experiment2/reports",
+    "experiments/experiment2/four_models/run_model.py": "experiments/experiment2/run_model.py",
+    "experiments/experiment2/four_models/scripts": "experiments/experiment2/scripts",
+    "experiments/experiment2/four_models/scripts/test_bayesian_baselines.py": "experiments/experiment2/tests/test_bayesian_baselines.py",
+    "experiments/experiment2/four_models/scripts/test_convnext_norm_film.py": "experiments/experiment2/tests/test_convnext_norm_film.py",
+    "experiments/experiment2/four_models/scripts/test_corrected_comparison.py": "experiments/experiment2/tests/test_corrected_comparison.py",
+    "experiments/experiment2/four_models/scripts/test_corrected_runtime.py": "experiments/experiment2/tests/test_corrected_runtime.py",
+    "experiments/experiment2/four_models/scripts/test_rcps_bounds.py": "experiments/experiment2/tests/test_rcps_bounds.py",
+    "experiments/experiment2/four_models/scripts/test_training_records.py": "experiments/experiment2/tests/test_training_records.py",
+    "experiments/experiment3/exports": "tools/export",
+    "provenance": "archive/provenance",
+    "experiments/experiment2/four_models": "experiments/experiment2"
+  }
+}

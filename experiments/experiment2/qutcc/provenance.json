@@ -1,0 +1,38 @@
+{
+  "source": "experiments/experiment3/clean",
+  "purpose": "Shared implementation reached through relative aliases; parameter names and numerical operations preserved.",
+  "sha256": {
+    "model.py": "d607153ed5395d49df88f2e930527628d68fc0f6e9f8c4822f93e33d532273d7",
+    "train.py": "2a4d3428dd70264d43c24a82331cffe58f4caf0a244aa1da042bd79c62532572",
+    "data.py": "1422cda436ee68d8c67888c1806c0377b38165236f9fe8a85d05e681e8428620",
+    "calibration.py": "ea900af9ecbf83499c70568c3553ff04f75cd507128f1cae5f74683865edc2f9",
+    "evaluate.py": "73ef8f7619caff7e0020c37d2bb781f415828e63344d66a86969ca88375327e8",
+    "test_protocol.py": "396771184bed1460b796a2bc07659d85776ec0a494cd335d59e83fe5abbdb7f6",
+    "protocol.json": "670bf4bd6da9db3594b62ce0d4f10189c8bc2b50d87be6e510689b80bfbbbc39",
+    ".gitignore": "b0c7f38ceb8c5b0268f66546c27a76aacb50a2183337bd7e81c8bba1d9eb06d0",
+    "models/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "models/shamus_rml.py": "26866a531ff151d50a276d71bf7e73a0c684dda4d381f823673b5214d0ad1b70",
+    "models/convnext_norm_film.py": "273da9d47ca331177a41c06c40327bb69393e1a3029b30ee96417bc4088a2bd9",
+    "models/qutcc_original/nn.py": "dd9bcdec6d034598355e1446dd948addbe14a62af46baed3669e17c031812b96",
+    "models/qutcc_original/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "original_sha256": {
+    "model.py": "d607153ed5395d49df88f2e930527628d68fc0f6e9f8c4822f93e33d532273d7",
+    "train.py": "17577a95164d55089454ea93c811efedefc7af0603e3add6bc0c7d1184bd66fc",
+    "data.py": "1422cda436ee68d8c67888c1806c0377b38165236f9fe8a85d05e681e8428620",
+    "calibration.py": "ea900af9ecbf83499c70568c3553ff04f75cd507128f1cae5f74683865edc2f9",
+    "evaluate.py": "4e5fb4e5bcdd5aff849eb3403554316f100f40bd5260affe0b9f00b9dc4a047c",
+    "test_protocol.py": "62a133a32b04416cf48bd3c7ac521ab1699640d60159f37ff8926912872d6eff",
+    "protocol.json": "670bf4bd6da9db3594b62ce0d4f10189c8bc2b50d87be6e510689b80bfbbbc39",
+    "run.sbatch": "1c778a605a395416476f4e1351c68f338164422495c713136197ea34c01ccfd9",
+    ".gitignore": "b0c7f38ceb8c5b0268f66546c27a76aacb50a2183337bd7e81c8bba1d9eb06d0",
+    "models/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "models/shamus_rml.py": "26866a531ff151d50a276d71bf7e73a0c684dda4d381f823673b5214d0ad1b70",
+    "models/convnext_norm_film.py": "273da9d47ca331177a41c06c40327bb69393e1a3029b30ee96417bc4088a2bd9",
+    "models/qutcc_original/nn.py": "dd9bcdec6d034598355e1446dd948addbe14a62af46baed3669e17c031812b96",
+    "models/qutcc_original/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "archived_sha256": {
+    "run.sbatch": "1c778a605a395416476f4e1351c68f338164422495c713136197ea34c01ccfd9"
+  }
+}

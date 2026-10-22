@@ -1,33 +1,8 @@
 # Models, calibration, and metric definitions
 
-This document defines the metrics and calibration conventions for [Experiment 2](../experiments/experiment2/) and [Experiment 3](../experiments/experiment3/). For the classes, heads, losses and code-reading order, see [model-code comparison](MODEL_COMPARISON.md). Exp2's four-model router is in [four_models/](../experiments/experiment2/four_models/); Exp3's raw-compatible source is in [clean/](../experiments/experiment3/clean/).
+This document defines the metrics and calibration conventions for [Experiment 2](../experiments/experiment2) and [Experiment 3](../experiments/experiment3). For the classes, heads, losses and code-reading order, see [model-code comparison](MODEL_COMPARISON.md). Exp2's four-model router is in [Exp2 source/](../experiments/experiment2); Exp3's raw-compatible source is in [clean/](../experiments/experiment3/clean).
 
-## Shared reconstruction architecture
-
-The network uses a ConvNeXtV2 Base encoder and an FPN-style convolutional decoder, followed by upsampling and a residual image head. This substitutes a lensless ConvNeXt/FPN backbone for the QUTCC reference paper's attention U-Net. It is an adaptation of that method, not an exact reproduction of its architecture.
-
-The latest raw-compatible model pads spatial dimensions to multiples of 32, then crops the output back to the original size. Padding pixels are excluded from losses and image metrics. Measurement and target must have the same supported RGB shape in this experiment; arbitrary unpaired raw sensor geometry is not handled by this loader.
-
-| Method | Training objective | Reconstruction | Native interval |
-| --- | --- | --- | --- |
-| Im2im | Center MSE + lower pinball at 0.05 + upper pinball at 0.95, updating the entire model | Learned center image | Direct lower/upper head outputs |
-| Deep ensemble | Gaussian NLL for each independently initialized and independently shuffled member | Mean of member means | Gaussian moment interval using predicted variance and variation of member means |
-| MC dropout | MSE; elementwise dropout during training | Mean of 30 stochastic predictions in the current demo/metric protocol | Gaussian moment interval from variation of the 30 predictions |
-| Current QUTCC | Pinball only; one independent uniform scalar q per image per training visit | Quantile image at q = 0.5 | Quantile images at calibration-selected global lower/upper q |
-
-The main ensemble uses fixed members 00–04; the ten-member reference uses 00–09 and is calibrated separately. Each member trains on the complete training split. They are not disjoint data shards of one model.
-
-MC dropout acts on the encoder MLP branch before residual addition: 36 encoder sites plus 12 decoder activation sites. The current demo uses `p=0.05` and 30 passes. The earlier validation study also compared 0.10/0.20 and 30/60/100 passes; those are distinct inference settings. Dropout remains stochastic at inference while other evaluation behavior stays fixed.
-
-FiLM is exclusive to QUTCC: 36 encoder residual blocks and 12 decoder sites. A quantile embedding supplies feature-wise scale and shift there. The current model does not learn an image/pixel-specific endpoint selector. It learns `(measurement, q) → quantile image`, and calibration selects one pair of q values per camera/checkpoint.
-
-## Losses in plain notation
-
-For residual `e = target - prediction`, pinball loss is `maximum(q*e, (q-1)*e).mean()`. Im2im adds center MSE and two endpoint pinball losses. QUTCC uses only pinball at sampled q. MC dropout uses MSE. Each ensemble member uses `0.5 * (log(variance) + (mean-target)**2 / variance).mean()`.
-
-Ensemble variance is `softplus(raw_variance) + 1e-6`. Total predictive variance is `mean(member_variance + member_mean**2) - ensemble_mean**2`. Native ensemble and MC intervals use approximately `mean ± 1.64485 * standard_deviation`, followed by separate calibration.
-
-Width measures predicted uncertainty; it need not equal realized absolute error for one image. A useful uncertainty map can correlate with error without matching it numerically.
+Architecture, output heads and training losses are explained once in the [model-code comparison](MODEL_COMPARISON.md). This page defines calibration, clipping and evaluation metrics.
 
 ## Two calibration protocols
 

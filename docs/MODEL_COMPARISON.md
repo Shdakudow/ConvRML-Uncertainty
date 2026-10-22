@@ -1,14 +1,14 @@
 # Model-code comparison
 
-[Exp2](../experiments/experiment2/) compares four methods on RML and normalized Cornell DiffuserCam. [Exp3](../experiments/experiment3/) compares QUTCC and Im2im on raw and fixed corrupted raw DiffuserCam.
+[Exp2](../experiments/experiment2) compares four methods on RML and normalized Cornell DiffuserCam. [Exp3](../experiments/experiment3) compares QUTCC and Im2im on raw and fixed corrupted raw DiffuserCam.
 
-Common implementations now live once in [shared/](../shared/). Paths linked
+Common implementations now live once in [shared/](../shared). Paths linked
 below remain valid experiment aliases. The [shared-code index](../shared/README.md)
 links directly to the canonical files and explains which files remain specific.
 
 ## Shared reconstruction backbone
 
-Read [`ShamusRML`](../experiments/experiment2/four_models/models/shamus_rml.py):
+Read [`ShamusRML`](../experiments/experiment2/models/shamus_rml.py):
 
 1. Standardize RGB input using stored ImageNet mean/std.
 2. ConvNeXtV2-Base returns four feature maps with 128, 256, 512 and 1,024 channels. `pretrained=False`: training starts from random weights.
@@ -35,7 +35,7 @@ Pass counts describe the current inference implementations; QUTCC queries may al
 
 ## Im2im
 
-**Exp2:** [`EndToEndIm2Im` / `training_loss`](../experiments/experiment2/four_models/models/corrected_uncertainty.py). **Exp3:** [`Model("im2im")`](../experiments/experiment3/clean/model.py).
+**Exp2:** [`EndToEndIm2Im` / `training_loss`](../experiments/experiment2/models/corrected_uncertainty.py). **Exp3:** [`Model("im2im")`](../experiments/experiment3/clean/model.py).
 
 The final RGB head becomes a nine-channel convolution, reshaped to `(batch, 3 heads, 3 RGB channels, height, width)`. Add the measurement to each residual. Head order is **lower, center, upper**.
 
@@ -49,7 +49,7 @@ All three terms update the entire backbone and head jointly. No pretrained backb
 
 ## Deep ensemble
 
-Read [`FormalRML("ensemble")`](../experiments/experiment2/four_models/baselines/formal_rml.py), [`DeepEnsembleMember`](../experiments/experiment2/four_models/baselines/deep_ensemble.py) and [`experiment_seeds`](../experiments/experiment2/four_models/models/corrected_uncertainty.py).
+Read [`FormalRML("ensemble")`](../experiments/experiment2/baselines/formal_rml.py), [`DeepEnsembleMember`](../experiments/experiment2/baselines/deep_ensemble.py) and [`experiment_seeds`](../experiments/experiment2/models/corrected_uncertainty.py).
 
 Each member keeps an RGB mean head and adds an RGB variance head. Variance is `softplus(raw_variance) + 1e-6`. Training minimizes Gaussian NLL, excluding a constant:
 
@@ -68,7 +68,7 @@ This combines predicted noise and disagreement between members. Native bounds ar
 
 ## MC dropout
 
-Read [`FullDropoutRML`](../experiments/experiment2/four_models/models/corrected_uncertainty.py) and [`dropout_inference`](../experiments/experiment2/four_models/baselines/mc_dropout.py).
+Read [`FullDropoutRML`](../experiments/experiment2/models/corrected_uncertainty.py) and [`dropout_inference`](../experiments/experiment2/baselines/mc_dropout.py).
 
 - Elementwise `nn.Dropout(p)` acts on the MLP branch output before residual addition in all **36 encoder blocks**.
 - Elementwise dropout follows GELU at all **12 decoder stages**.
@@ -81,7 +81,7 @@ The decoder-only `FormalRML("mc")` branch remains for compatibility. Current `ma
 
 ## QUTCC
 
-Read [`Model("qutcc")` / `training_loss`](../experiments/experiment2/four_models/qutcc/model.py) and [`FiLMBackbone`](../experiments/experiment2/four_models/qutcc/models/convnext_norm_film.py).
+Read [`Model("qutcc")` / `training_loss`](../experiments/experiment2/qutcc/model.py) and [`FiLMBackbone`](../experiments/experiment2/qutcc/models/convnext_norm_film.py).
 
 ```text
 measurement y ──► ConvNeXt/FPN with FiLM ──► RGB residual + y ──► Q(q | y)
@@ -100,7 +100,7 @@ loss = maximum(q * error, (q - 1) * error).mean()
 
 There is no extra MSE term or learned endpoint-selector branch. Reconstruction queries q=0.5. Calibration selects **one global lower/upper q pair per camera/checkpoint**; two further queries produce the bounds. Global q still gives spatially varying pixel predictions. Shared weights/FiLM do not strictly enforce monotonic quantiles.
 
-Exp2's QUTCC and Exp3's clean model paths link to the same [implementation](../shared/models/quantile_model.py); [provenance](../experiments/experiment2/four_models/qutcc/provenance.json) records current and original hashes. Superseded adaptive-q classes are compatibility paths, not the current router's QUTCC.
+Exp2's QUTCC and Exp3's clean model paths link to the same [implementation](../shared/models/quantile_model.py); [provenance](../experiments/experiment2/qutcc/provenance.json) records current and original hashes. Superseded adaptive-q classes are compatibility paths, not the current router's QUTCC.
 
 ## Calibration differences
 

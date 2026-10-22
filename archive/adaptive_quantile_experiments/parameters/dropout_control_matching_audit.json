@@ -1,9 +1,0 @@
-{
-  "passed": true,
-  "initial_state_sha256": "093dc8e59a347269ec0283e7138a9a149edd601dd5b2d5ea7ab25a83f03f3fd3",
-  "identical_initial_weights": true,
-  "matched_two_epoch_shuffle": true,
-  "zero_dropout_deterministic": true,
-  "p005_training_stochastic": true,
-  "sites": 48
-}

@@ -7,7 +7,7 @@ from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE = ROOT / "experiments/experiment2/four_models"
+BASE = ROOT / "experiments/experiment2"
 SPEC = importlib.util.spec_from_file_location("entrypoint", BASE / "run_model.py")
 entrypoint = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(entrypoint)

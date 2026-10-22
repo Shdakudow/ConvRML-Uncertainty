@@ -1,1 +1,0 @@
-../../../../shared/training/paper.py

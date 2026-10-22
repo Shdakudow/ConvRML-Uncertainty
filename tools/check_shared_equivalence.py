@@ -28,7 +28,7 @@ def case(name):
     torch.manual_seed(20261021)
     torch.use_deterministic_algorithms(True)
     paper = name in ("qutcc", "raw_im2im")
-    folder = ROOT / "experiments/experiment2/four_models"
+    folder = ROOT / "experiments/experiment2"
     sys.path.insert(0, str(folder / "qutcc" if paper else folder))
     if paper:
         from model import Model

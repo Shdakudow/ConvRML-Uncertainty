@@ -1,8 +1,8 @@
 # Training, calibration, inference and curves
 
-Use [Exp2](../experiments/experiment2/) for the four-model normalized-camera comparison and [Exp3](../experiments/experiment3/) for raw/corrupted QUTCC and Im2im. [Model differences](MODEL_COMPARISON.md) identifies the implementation behind each command.
+Use [Exp2](../experiments/experiment2) for the four-model normalized-camera comparison and [Exp3](../experiments/experiment3) for raw/corrupted QUTCC and Im2im. [Model differences](MODEL_COMPARISON.md) identifies the implementation behind each command.
 
-Identical implementations are stored once in [shared/](../shared/) and reached
+Identical implementations are stored once in [shared/](../shared) and reached
 through relative links at the documented experiment paths. Preserve Git symlinks
 when copying the checkout. Run commands through those experiment entry points,
 which retain separate outputs/source guards; do not invoke shared engines directly.
@@ -39,7 +39,7 @@ Validation selects settings, calibration fits intervals, and test evaluates the 
 From the repository root:
 
 ```bash
-cd experiments/experiment2/four_models
+cd experiments/experiment2
 python run_model.py --help
 # Inspect routing without importing models, training or submitting a job:
 python run_model.py train --method qutcc --camera rml --epoch 5 --dry-run
@@ -79,7 +79,7 @@ Each ensemble member sees the complete training split. Baseline data/results are
 
 Evaluate saved milestones 5,10,…,50 independently. Each calibration uses the separate calibration split for that checkpoint. Im2im/ensemble/MC use asymmetric RCPS-HB; QUTCC uses Algorithm 1 quantile search. An epoch-50 calibration must not silently replace an earlier checkpoint's calibration.
 
-See [the four-model README](../experiments/experiment2/four_models/README.md) for the full router options and export scripts. The saved dropout sweep compares p=0.05/0.10/0.20 at 30/60/100 passes; main demo inference uses p=0.05 and 30 passes.
+See [the four-model README](../experiments/experiment2/README.md) for the full router options and export scripts. The saved dropout sweep compares p=0.05/0.10/0.20 at 30/60/100 passes; main demo inference uses p=0.05 and 30 passes.
 
 ## Experiment 3
 
@@ -100,11 +100,11 @@ Both clean raw models train for 50 epochs using float32 Adam, effective batch fo
 
 ### Fixed corruption adaptation
 
-Review [corrupted/](../experiments/experiment3/corrupted/) for dataset generation. The historical loader reads the existing reviewed manifest from the project paths in the table above. Ground truth remains unchanged; one fixed operation is assigned per measurement. Preview controls include additional stress tests that are not all in the training mixture.
+Review [corrupted/](../experiments/experiment3/corrupted) for dataset generation. The historical loader reads the existing reviewed manifest from the project paths in the table above. Ground truth remains unchanged; one fixed operation is assigned per measurement. Preview controls include additional stress tests that are not all in the training mixture.
 
 The corrupted pilot loads each clean epoch-30 checkpoint, starts a fresh adaptation optimizer and trains for ten epochs. A `TRAINING_APPROVED` marker gates that preserved pilot trainer; review/approval of a newly generated dataset is separate from historical authorization.
 
-The [continuation](../experiments/experiment3/corrupted_continuation/) retains model, optimizer and RNG state through adaptation epoch 30. Its task IDs are **0 QUTCC / 1 Im2im**:
+The [continuation](../experiments/experiment3/corrupted_continuation) retains model, optimizer and RNG state through adaptation epoch 30. Its task IDs are **0 QUTCC / 1 Im2im**:
 
 ```bash
 # From experiments/experiment3/corrupted_continuation, GPU required for evaluation:
@@ -113,7 +113,7 @@ python evaluate.py --task 0 --epoch 30
 python evaluate.py --task 1 --epoch 30
 ```
 
-Final corrupted checkpoints are 30 clean pretraining + 30 adaptation epochs. The clean 50→70 follow-up is retained in [clean_continuation_stopped/](../experiments/experiment3/clean_continuation_stopped/) with its stopped status; it is not the default clean 50-epoch comparison.
+Final corrupted checkpoints are 30 clean pretraining + 30 adaptation epochs. The stopped clean 50→70 follow-up is preserved in the [history bundle](../archive/README.md).
 
 ## Checkpoint and report files
 
@@ -127,9 +127,9 @@ Final corrupted checkpoints are 30 clean pretraining + 30 adaptation epochs. The
 | `evaluation/epoch_NNN/report.json` | Full-test aggregates, per-image metrics and calibration provenance |
 | `evaluation/epoch_NNN/examples.npz` | Saved measurement, target, prediction and endpoint arrays |
 
-Formatting/publication and historical resume have different source byte hashes. [The original archive](../provenance/README.md) and migration map preserve that distinction. Resume checks must retain the original source/config/data identities. Fresh formatted-source training needs its own smoke report; a historical smoke report is not transferable.
+Formatting/publication and historical resume have different source byte hashes. [The original archive](../archive/provenance/README.md) and migration map preserve that distinction. Resume checks must retain the original source/config/data identities. Fresh formatted-source training needs its own smoke report; a historical smoke report is not transferable.
 
-Training commands above execute within an allocation; they do not submit Slurm jobs. Recorded `.sbatch`/submission files contain historical cluster directories, partitions and job IDs. Review/adapt those before reuse. Never run concurrent training writers to the same method/output directory.
+Training commands above execute within an allocation; they do not submit Slurm jobs. Historical cluster wrappers and submission records are in the [archive](../archive/README.md). Review their paths and resources before reuse. Never run concurrent training writers to the same method/output directory.
 
 ## Inference and learning curves
 
@@ -149,7 +149,7 @@ python tools/plot_learning_curves.py \
 
 Add ensemble/MC series for Exp2. Outputs are CSV and a PNG containing PSNR, SSIM, width and actual coverage. Missing evaluated milestones remain gaps. Compare methods within the same camera/split and metric space.
 
-[Exp2 analysis](../experiments/experiment2/analysis/) adds LPIPS and within-image pixel-wise width/error Pearson/Spearman at five-epoch milestones. Those scripts retain their original external project/checkpoint lookup paths. [Exports](../experiments/experiment3/exports/) contains frozen-checkpoint image packing helpers for the separate demo repository; source publication alone does not deploy a website.
+[Exp2 analysis](../experiments/experiment2/analysis) adds LPIPS and within-image pixel-wise width/error Pearson/Spearman at five-epoch milestones. Those scripts retain their original external project/checkpoint lookup paths. [Exports](../tools/export) contains frozen-checkpoint image packing helpers for the separate demo repository; source publication alone does not deploy a website.
 
 ## Source checks
 
@@ -159,4 +159,4 @@ python -m unittest discover -s tests -v
 python experiments/experiment2/analysis/test_metrics.py
 ```
 
-The verifier resolves original source paths through [the migration map](../provenance/layout_migration_20261021.json), checks original archive hashes and compares published Python ASTs. It confirms model behavior was preserved by this organization; it does not replace a full CUDA/data smoke test.
+The verifier resolves original source paths through [the migration map](../archive/provenance/layout_migration_20261021.json), checks original archive hashes and compares published Python ASTs. It confirms model behavior was preserved by this organization; it does not replace a full CUDA/data smoke test.

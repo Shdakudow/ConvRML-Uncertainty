@@ -15,7 +15,13 @@ ROOT = Path(__file__).resolve().parents[1]
 class SharedSourceLayout(unittest.TestCase):
     def test_aliases_resolve_to_the_recorded_implementation(self):
         record = json.loads((ROOT / "shared/source_map.json").read_text())
-        self.assertGreaterEqual(len(record["aliases"]), 40)
+        self.assertGreater(len(record["aliases"]), 0)
+        actual = {
+            str(path.relative_to(ROOT))
+            for path in (ROOT / "experiments").rglob("*")
+            if path.is_symlink() and (ROOT / "shared") in path.resolve().parents
+        }
+        self.assertEqual(actual, set(record["aliases"]))
         for alias, implementation in record["aliases"].items():
             with self.subTest(alias=alias):
                 source = ROOT / alias
@@ -26,16 +32,21 @@ class SharedSourceLayout(unittest.TestCase):
             self.assertEqual(actual, digest, implementation)
 
     def test_experiment_paths_are_distinct_even_when_code_is_shared(self):
-        exp2 = ROOT / "experiments/experiment2/four_models/qutcc/train.py"
+        exp2 = ROOT / "experiments/experiment2/qutcc/train.py"
         exp3 = ROOT / "experiments/experiment3/clean/train.py"
         self.assertEqual(exp2.resolve(), exp3.resolve())
         self.assertNotEqual(exp2.absolute().parent, exp3.absolute().parent)
         self.assertIn("ROOT = Path(__file__).absolute().parent", exp2.read_text())
 
-    @unittest.skipUnless(importlib.util.find_spec("torch"), "ML environment required")
+    @unittest.skipUnless(
+        all(
+            importlib.util.find_spec(name) for name in ["torch", "torchmetrics", "timm"]
+        ),
+        "ML environment required",
+    )
     def test_cli_aliases_and_output_roots(self):
         folders = [
-            ROOT / "experiments/experiment2/four_models/qutcc",
+            ROOT / "experiments/experiment2/qutcc",
             ROOT / "experiments/experiment3/clean",
         ]
         with tempfile.TemporaryDirectory() as elsewhere:

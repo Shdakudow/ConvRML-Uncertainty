@@ -1,15 +1,28 @@
-# Archived work
+# Historical material
 
-Current code is under [Experiment 2](../experiments/experiment2/) and [Experiment 3](../experiments/experiment3/).
+The active implementation is in [shared/](../shared/), [Exp2](../experiments/experiment2/) and [Exp3](../experiments/experiment3/).
 
-| Folder | What it contains |
+| Item | Contents |
 | --- | --- |
-| [legacy_baseline_50epochs/](legacy_baseline_50epochs/) | Earlier four-model protocol, before corrected end-to-end/pinball/full-network-dropout runs |
-| [adaptive_quantile_experiments/](adaptive_quantile_experiments/) | Superseded learned adaptive-q selectors, endpoint variants and dropout controls |
-| [exploratory/](exploratory/) | Toy work, exploratory architectures and rebuild notes |
-| [superseded_adjusted_20261005/](superseded_adjusted_20261005/) | Earlier adjusted comparison source |
-| [manifests/](manifests/) | Historical source manifest |
+| [history_20261022.tar.gz](history_20261022.tar.gz) | Earlier experiments, stopped clean continuation, obsolete job records, scheduler/recovery utilities and superseded instructions |
+| [index.json](index.json) | Every bundled path, size and SHA-256 |
+| [provenance/](provenance/) | Original captured source, source-layout maps and numerical equivalence report |
 
-Files are preserved for inspecting earlier results/checkpoints. Their instructions and cluster paths describe the historical layout; old relative links may refer to former locations. Use the current experiment guides for model selection and commands.
+Historical files were removed from the active tree after their exact contents
+were verified in this bundle. Checkpoints, datasets and the remote cluster were
+not deleted. Existing runtime code and its imported compatibility modules remain
+in the active implementation.
 
-The [migration map](../provenance/layout_migration_20261021.json) records moved paths. Repository organization does not delete or move trained weights, datasets, release assets, or remote cluster directories.
+Inspect or restore into a separate directory:
+
+```bash
+tar -tzf archive/history_20261022.tar.gz
+mkdir -p /tmp/convrml-history
+tar -xzf archive/history_20261022.tar.gz -C /tmp/convrml-history
+```
+
+Entries retain their former repository paths. Symlinks were stored as their
+source bytes to make historical files readable independently; the index records
+their original shared targets. Historical scripts may require their original
+cluster paths and source snapshots. [Source verification](../tools/verify_source_release.py)
+checks both this bundle and the original captured source.

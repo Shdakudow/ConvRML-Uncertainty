@@ -1,1 +1,0 @@
-../../../../shared/cluster/run.sbatch
