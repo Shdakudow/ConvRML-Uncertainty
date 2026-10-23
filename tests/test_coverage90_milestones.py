@@ -9,6 +9,7 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
 RUNNER = ROOT / "tools/run_coverage90_milestone.py"
 
 
@@ -43,7 +44,9 @@ class Milestones(unittest.TestCase):
                 [
                     sys.executable,
                     "-c",
-                    "print('ValueError: No feasible extreme quantile endpoints');raise SystemExit(1)",
+                    "import json,pathlib;pathlib.Path("
+                    + repr(str(folder / "out/failure.json"))
+                    + ").write_text(json.dumps(dict(status='calibration_infeasible',group='rml',method='qutcc',epoch=5,error_code='infeasible_bounds',error='No feasible extreme quantile endpoints',test_used_for_calibration=False)));raise SystemExit(2)",
                 ],
             )
             self.assertEqual(result.returncode, 0)
@@ -57,6 +60,23 @@ class Milestones(unittest.TestCase):
             folder = Path(directory)
             result = self.run_case(
                 folder, [sys.executable, "-c", "raise SystemExit(42)"]
+            )
+            self.assertEqual(result.returncode, 42)
+            self.assertEqual(
+                json.loads((folder / "out/failure.json").read_text())["status"],
+                "execution_failed",
+            )
+
+    def test_matching_log_phrase_does_not_fake_calibration_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            result = self.run_case(
+                folder,
+                [
+                    sys.executable,
+                    "-c",
+                    "print('No feasible extreme quantile endpoints');raise SystemExit(42)",
+                ],
             )
             self.assertEqual(result.returncode, 42)
             self.assertEqual(

@@ -9,6 +9,14 @@ import math
 import numpy as np
 
 
+class CalibrationError(ValueError):
+    """A measured quantile response cannot be accepted by this calibration search."""
+
+    def __init__(self, code, message):
+        super().__init__(message)
+        self.code = code
+
+
 def fit_tail_scale(scores, alpha=0.05, *, overwrite=False):
     """Smallest nonnegative scale covering at least 1-alpha of these scores.
 
@@ -61,6 +69,8 @@ def search_quantiles(
         raise ValueError("Invalid target/tolerance")
     if not 0 <= initial[0] <= initial[1] <= 1:
         raise ValueError("Invalid initial quantile pair")
+    if q_tolerance <= 0 or max_iterations < 1:
+        raise ValueError("Quantile tolerance and iteration count must be positive")
     target = alpha / 2
     trace = []
     samples = [{}, {}]
@@ -78,8 +88,9 @@ def search_quantiles(
             vals = [v for _, v in ordered]
             changes = np.diff(vals) * (1 if side == 0 else -1)
             if np.any(changes < -1e-6):
-                raise ValueError(
-                    "Observed nonmonotone q response; calibration not certified"
+                raise CalibrationError(
+                    "nonmonotone_response",
+                    "Observed nonmonotone q response; calibration not certified",
                 )
         return risks
 
@@ -126,16 +137,18 @@ def search_quantiles(
     if any(v is None for v in valid):
         extreme_risks = check(0.0, 1.0)
         if any(v > target for v in extreme_risks):
-            raise ValueError("No feasible extreme quantile endpoints")
+            raise CalibrationError(
+                "infeasible_bounds", "No feasible extreme quantile endpoints"
+            )
         for side in range(2):
             if valid[side] is None:
                 valid[side] = ((0.0, 1.0)[side], extreme_risks[side])
     lo, hi = (v[0] for v in valid)
     if lo > hi:
-        raise ValueError("Quantile endpoints reversed")
+        raise CalibrationError("reversed_quantiles", "Quantile endpoints reversed")
     lower_risk, upper_risk = check(lo, hi)
     if max(lower_risk, upper_risk) > target:
-        raise ValueError("Final calibration recheck failed")
+        raise CalibrationError("failed_recheck", "Final calibration recheck failed")
     coverage_bound = 1 - lower_risk - upper_risk
     return dict(
         lower_q=lo,

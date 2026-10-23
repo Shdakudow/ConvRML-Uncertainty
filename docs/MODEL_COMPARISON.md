@@ -75,7 +75,7 @@ Read [`FullDropoutRML`](../experiments/experiment2/models/corrected_uncertainty.
 - Training uses MSE; there is no variance head or q conditioning.
 - Inference enables dropout while retaining other evaluation behavior. Thirty masked predictions supply the mean and variance (divisor T in this implementation).
 
-Native bounds are mean ± 1.64485 × std, then receive independent lower/upper RCPS scales. Main inference uses **p=0.05, 30 passes**. The saved validation sweep compares p=0.05/0.10/0.20 at 30/60/100 passes on 5,000 validation images.
+Native bounds are mean ± 1.64485 × std, then receive independent lower/upper calibration scales. Reference evaluation uses RCPS-HB; the [near-90% evaluation](COVERAGE90.md) uses empirical calibration on a separate split. Main inference uses **p=0.05, 30 passes**. The saved validation sweep compares p=0.05/0.10/0.20 at 30/60/100 passes on 5,000 validation images.
 
 The decoder-only `FormalRML("mc")` branch remains for compatibility. Current `make_model("mc_005")` selects **`FullDropoutRML`**, not that older branch.
 

@@ -15,6 +15,8 @@ from pathlib import Path
 import shlex
 import subprocess
 
+from coverage90_cluster import validate_manifest
+
 WORK = Path.home() / ".local/share/convrml-coverage90-20261022"
 ARCHIVE = Path.home() / ".local/share/convrml-checkpoint-archive"
 REMOTE = "/home/jy2228/ConvRML/experiments/coverage90_20261022"
@@ -38,8 +40,16 @@ def run(command, **kwargs):
     ).strip()
 
 
-def remote(code):
-    return json.loads(run(SSH + ["python3 -c " + shlex.quote(code)], timeout=300))
+def remote(action, payload, timeout=300):
+    """Send structured input instead of constructing Python source inside SSH."""
+    command = shlex.join(
+        [
+            "/home/jy2228/.conda/envs/convrml/bin/python",
+            REMOTE + "/coverage90_cluster.py",
+            action,
+        ]
+    )
+    return json.loads(run(SSH + [command], input=json.dumps(payload), timeout=timeout))
 
 
 def digest(path):
@@ -63,37 +73,12 @@ def entries(epoch):
             ):
                 assert not p.is_absolute() and ".." not in p.parts
                 result.append(dict(entry, release=manifest["release"]))
-    if len(result) != 14:
-        raise ValueError(
-            f"Expected fourteen independent baseline checkpoints at epoch {epoch}"
-        )
+    validate_manifest(epoch, result)
     return result
 
 
 def inventory(epoch, required):
-    return remote(
-        f"""from pathlib import Path
-import hashlib,json,os
-root=Path({REMOTE!r})/"weights"/{('epoch_'+str(epoch).zfill(3))!r}
-root.mkdir(parents=True,exist_ok=True)
-shared=Path("/home/jy2228/ConvRML/experiments/experiment2_uncertainty_analysis_20261019/weights")
-required=json.loads({json.dumps(required)!r});missing=[]
-def valid(p,e):
- if not p.is_file() or p.stat().st_size!=e["size"]:return False
- h=hashlib.sha256()
- with p.open("rb") as f:
-  for b in iter(lambda:f.read(8*1024*1024),b""):h.update(b)
- return h.hexdigest()==e["sha256"]
-for e in required:
- p=root/e["path"]
- if valid(p,e):continue
- source=shared/e["path"]
- if not p.exists() and valid(source,e):
-  p.parent.mkdir(parents=True,exist_ok=True);os.link(source.resolve(),p)
- else:missing.append(e["path"])
-print(json.dumps(dict(missing=missing)))
-"""
-    )
+    return remote("inventory", dict(epoch=epoch, entries=required))
 
 
 def download(epoch, entry):
@@ -170,45 +155,17 @@ def stage(epoch, required):
 
 
 def submit(epoch, tasks, kind="baseline"):
-    indices = ",".join(str(task["index"]) for task in tasks)
-    return remote(
-        f"""import subprocess,json
-job=subprocess.check_output(["/usr/local/slurm/current/bin/sbatch","--parsable","--array={indices}%1","--job-name=cov90-{kind}-{epoch:03d}","milestone.sbatch"],cwd={REMOTE!r},text=True).strip()
-print(json.dumps(dict(job=job)))
-"""
-    )["job"]
+    response = remote("submit", dict(epoch=epoch, tasks=tasks, kind=kind))
+    return response["job"]
 
 
 def status(job, tasks):
-    outputs = [task["output"] for task in tasks]
-    return remote(
-        f"""from pathlib import Path
-import json,subprocess
-lines=subprocess.check_output(["/usr/local/slurm/current/bin/squeue","-u","jy2228","-h","-o","%i|%T"],text=True).splitlines()
-active=[line for line in lines if line.split("|")[0]=={job!r} or line.split("|")[0].startswith({(job+'_')!r})]
-missing=[];complete=[]
-for folder in json.loads({json.dumps(outputs)!r}):
- p=Path(folder);failure=p/"failure.json"
- if (p/"report.json").exists() or (failure.exists() and json.loads(failure.read_text()).get("status")=="calibration_infeasible"):complete.append(folder)
- else:missing.append(folder)
-print(json.dumps(dict(active=active,complete=complete,missing=missing)))
-"""
-    )
+    return remote("status", dict(job=job, tasks=tasks))
 
 
-def cleanup(epoch, required):
-    # These are this dispatcher's disposable links/copies. Original snapshots,
-    # the analysis pipeline's weights and GitHub Release assets remain intact.
-    remote(
-        f"""from pathlib import Path
-import json
-root=Path({REMOTE!r})/"weights"/{('epoch_'+str(epoch).zfill(3))!r}
-for e in json.loads({json.dumps(required)!r}):
- p=root/e["path"]
- if p.exists():p.unlink()
-print(json.dumps(dict(cleaned_epoch={epoch})))
-"""
-    )
+def cleanup(epoch, required, tasks):
+    """Only discard this pipeline's copies after every member has a valid result."""
+    remote("cleanup", dict(epoch=epoch, entries=required, tasks=tasks))
     for entry in required:
         target = WORK / "milestone_cache" / f"epoch_{epoch:03d}" / entry["path"]
         target.unlink(missing_ok=True)
@@ -243,7 +200,11 @@ def main():
         )
         paper["progress"] = status(paper["job"], paper_tasks)
         if paper["progress"]["active"]:
-            paper["status"] = "evaluating"
+            paper["status"] = (
+                "running"
+                if any(job["state"] == "RUNNING" for job in paper["progress"]["active"])
+                else "queued"
+            )
         elif not paper["progress"]["missing"]:
             paper["status"] = "complete"
         elif paper["attempts"] < 3:
@@ -261,11 +222,12 @@ def main():
             paper["status"] = "needs_attention"
         save()
         for epoch in range(5, 50, 5):
-            selected = [
+            round_tasks = [
                 task
                 for task in tasks
                 if task["epoch"] == epoch and "--weights-root" in task["command"]
             ]
+            to_submit = round_tasks
             row = state["rounds"].setdefault(
                 str(epoch), dict(status="pending", attempts=0)
             )
@@ -273,14 +235,18 @@ def main():
                 continue
             required = entries(epoch)
             if row.get("job"):
-                progress = status(row["job"], selected)
+                progress = status(row["job"], round_tasks)
                 row["progress"] = progress
                 if progress["active"]:
-                    row["status"] = "evaluating"
+                    row["status"] = (
+                        "running"
+                        if any(job["state"] == "RUNNING" for job in progress["active"])
+                        else "queued"
+                    )
                     save()
                     return
                 if not progress["missing"]:
-                    cleanup(epoch, required)
+                    cleanup(epoch, required, round_tasks)
                     row["status"] = "complete"
                     save()
                     continue
@@ -288,17 +254,21 @@ def main():
                     row["status"] = "needs_attention"
                     save()
                     return
-                selected = [
-                    task for task in selected if task["output"] in progress["missing"]
+                to_submit = [
+                    task
+                    for task in round_tasks
+                    if task["output"] in progress["missing"]
                 ]
             row["status"] = "restoring_verified_checkpoints"
             save()
             stage(epoch, required)
-            row.update(
-                job=submit(epoch, selected),
-                status="submitted",
-                attempts=row["attempts"] + 1,
-            )
+            job = submit(epoch, to_submit)
+            if job is None:
+                cleanup(epoch, required, round_tasks)
+                row["status"] = "complete"
+                save()
+                continue
+            row.update(job=job, status="submitted", attempts=row["attempts"] + 1)
             state.pop("last_error", None)
             save()
             print("Submitted baseline epoch", epoch, "job", row["job"], flush=True)

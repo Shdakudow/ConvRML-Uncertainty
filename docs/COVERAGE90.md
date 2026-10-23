@@ -5,6 +5,20 @@ retraining. Its target is **90.0–90.1% calibration coverage** (a 0.1 percentag
 numerical tolerance). This is an empirical matched-coverage comparison, **not an
 RCPS certificate**. Reference calibration/results remain unchanged.
 
+## Read the code in this order
+
+| File | Responsibility |
+| --- | --- |
+| [`shared/calibration/coverage90.py`](../shared/calibration/coverage90.py) | Fit independent endpoint scales or search global q values |
+| [`tools/evaluate_coverage90.py`](../tools/evaluate_coverage90.py) | Load a frozen checkpoint, fit on calibration, then measure the full test set |
+| [`tools/run_coverage90_milestone.py`](../tools/run_coverage90_milestone.py) | Run one task; keep calibration failures separate from execution errors |
+| [`tools/dispatch_coverage90_milestones.py`](../tools/dispatch_coverage90_milestones.py) | Restore verified weights and advance the two evaluation streams |
+| [`tools/coverage90_cluster.py`](../tools/coverage90_cluster.py) | Readable cluster commands, report checks, submission receipts and safe cleanup |
+
+For the backbone, output heads and losses, start with the separate
+[model comparison](MODEL_COMPARISON.md). Scheduling and publishing do not alter
+model weights, losses or calibration mathematics.
+
 - Im2im, deep ensemble and MC dropout: independent lower and upper scales are
   selected by calibration score order statistics, with 5% misses per tail. This
   avoids a coarse scale grid and RCPS confidence margins. A few floating-point
@@ -79,6 +93,8 @@ coverage are saved without redundant image caches. The fifty latest-checkpoint
 demo examples remain unchanged. `tools/run_coverage90_milestone.py` runs an entry
 from the prepared task list and records genuine calibration infeasibility as a
 gap, distinct from interrupted jobs or other execution failures.
+Failures are explicit JSON records with an error code. A matching phrase in a log
+cannot classify an unrelated execution error as a scientific calibration failure.
 
 The project dispatcher, `tools/dispatch_coverage90_milestones.py`, uses the existing
 SHA-256 release manifests under `~/.local/share/convrml-checkpoint-archive` and
@@ -92,6 +108,23 @@ up to three submissions; unresolved failures are recorded for attention.
 `milestone_dispatch.json` records restoration, submission, progress and retry
 state. Stable copies of the operations scripts run from that same local work
 folder, avoiding dependencies on experimental-source folder rearrangements.
+Cluster calls pass JSON to a normal Python module rather than embedding Python
+source in SSH commands. Submission receipts and a lock per stream prevent a
+lost connection from creating duplicate GPU jobs. Reports are checked against
+the requested camera, epoch, full test count, distinct ensemble members and
+initialization/data-order seeds before being accepted. The curve collector also
+recomputes aggregate metrics from all saved per-image metrics and checks matching
+dataset split identities.
+
+Cleanup requires valid results for all six baseline tasks at that epoch. It
+removes only this pipeline's disposable copies; the original archived weights
+remain available. These conditions use explicit exceptions, so Python's `-O`
+option cannot disable them.
+
+During code maintenance, the deployed evaluator is versioned and source hashes
+are captured at job startup. A running job retains its original evaluator;
+future tasks use the reviewed version. Already completed reports are audited
+and retained rather than rewritten with new provenance.
 The demo's separate `publish_coverage90_curves.py` publishes completed metrics
 every five minutes. Pending checkpoints and infeasible calibrations remain
 explicit; curve values are never fabricated or interpolated.

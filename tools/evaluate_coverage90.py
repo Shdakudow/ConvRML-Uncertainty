@@ -18,7 +18,19 @@ import numpy as np
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPOSITORY))
-from shared.calibration.coverage90 import fit_tail_scale, search_quantiles
+from shared.calibration.coverage90 import (
+    CalibrationError,
+    fit_tail_scale,
+    search_quantiles,
+)
+from coverage90_cluster import validate_report
+
+# Capture provenance before inference starts. Updating a source file while a
+# long job runs must not attribute its old computation to a newer file version.
+EVALUATOR_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+CALIBRATION_SHA256 = hashlib.sha256(
+    (REPOSITORY / "shared/calibration/coverage90.py").read_bytes()
+).hexdigest()
 
 
 def write(path, value):
@@ -69,6 +81,8 @@ def arguments(argv=None):
     args = parser.parse_args(argv)
     if args.epoch <= 0 or args.examples < 0:
         parser.error("Invalid epoch/example count")
+    if args.examples > (2000 if args.camera == "raw" else 5000):
+        parser.error("Requested examples exceed the held-out test split")
     if not 0 < args.coverage_tolerance < 0.1:
         parser.error("Coverage tolerance must be in (0,.1)")
     if args.family == "baseline" and (args.camera == "raw" or args.method == "qutcc"):
@@ -112,6 +126,10 @@ def main(args):
         old = json.loads((out / "report.json").read_text())
         if old["request"] != request:
             raise ValueError("Refusing to overwrite results from a different request")
+        task = dict(camera=args.camera, method=args.method, epoch=args.epoch)
+        validate_report(task, old, required_examples=args.examples)
+        if args.examples and not (out / "examples.npz").is_file():
+            raise ValueError("Saved report is missing its example arrays")
         print("Already complete", out, flush=True)
         return
 
@@ -397,9 +415,8 @@ def main(args):
                 calibration_seconds=calibration_seconds,
                 inference_seconds=time.monotonic() - started,
                 gpu=torch.cuda.get_device_name(),
-                evaluator_sha256=hashlib.sha256(
-                    Path(__file__).read_bytes()
-                ).hexdigest(),
+                evaluator_sha256=EVALUATOR_SHA256,
+                calibration_code_sha256=CALIBRATION_SHA256,
                 notes="Checkpoint frozen. Empirical matched coverage, not RCPS. Test never selects endpoints. Raw and clipped metrics kept separately; uncertainty is upper-lower.",
             ),
         )
@@ -407,4 +424,21 @@ def main(args):
 
 
 if __name__ == "__main__":
-    main(arguments())
+    args = arguments()
+    try:
+        main(args)
+    except CalibrationError as error:
+        write(
+            args.output / "failure.json",
+            dict(
+                status="calibration_infeasible",
+                camera=args.camera,
+                method=args.method,
+                epoch=args.epoch,
+                error=str(error),
+                error_code=error.code,
+                test_used_for_calibration=False,
+            ),
+        )
+        print("Calibration failed:", error, file=sys.stderr, flush=True)
+        raise SystemExit(2)
