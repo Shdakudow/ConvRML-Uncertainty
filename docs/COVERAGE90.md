@@ -65,3 +65,33 @@ per-image metrics, split identity, source provenance and GPU timing. `examples.n
 contains the first 50 fixed test examples with clipped reconstruction and bounds.
 Temporary calibration scores are deleted after fitting. Existing reports are
 reused only for identical requests. No demo is changed automatically by this tool.
+
+## Every five epochs
+
+The milestone run evaluates epochs **5, 10, …, 50** for Exp2 and clean raw Exp3.
+Corrupted raw has only **5, 10, …, 30 adaptation epochs**; no 35–50 checkpoints are
+invented. This makes 112 model/camera/checkpoint evaluations, including the twelve
+latest evaluations already completed. The same calibration/test IDs are retained
+at every epoch. Each checkpoint fits its own interval parameters.
+
+Earlier milestones use `--examples 0`: full held-out PSNR, SSIM, MAE, width and
+coverage are saved without redundant image caches. The fifty latest-checkpoint
+demo examples remain unchanged. `tools/run_coverage90_milestone.py` runs an entry
+from the prepared task list and records genuine calibration infeasibility as a
+gap, distinct from interrupted jobs or other execution failures.
+
+The project dispatcher, `tools/dispatch_coverage90_milestones.py`, uses the existing
+SHA-256 release manifests under `~/.local/share/convrml-checkpoint-archive` and
+the task list under `~/.local/share/convrml-coverage90-20261022`. It restores only
+one baseline epoch at a time, verifies all five ensemble members for both cameras,
+and removes only its disposable weight copies/links after their evaluations.
+Original snapshots and GitHub Releases remain intact. One paper-model array and
+one baseline array run at most two GPU tasks in total. Failed execution is retried
+up to three submissions; unresolved failures are recorded for attention.
+
+`milestone_dispatch.json` records restoration, submission, progress and retry
+state. Stable copies of the operations scripts run from that same local work
+folder, avoiding dependencies on experimental-source folder rearrangements.
+The demo's separate `publish_coverage90_curves.py` publishes completed metrics
+every five minutes. Pending checkpoints and infeasible calibrations remain
+explicit; curve values are never fabricated or interpolated.
