@@ -108,8 +108,12 @@ files after interruptions and verify size and SHA-256 before publishing a file.
 The dispatcher sends no checkpoint bytes through the laptop. Temporary URLs are
 not saved in manifests or logs. A direct-download receipt records bytes and timing.
 
-One paper-model array uses one GPU; the baseline array allows up to six concurrent
-one-GPU tasks on the public `gpu` partition, one per camera/method. This changes
+One paper-model array uses one GPU; the baseline array allows up to four concurrent
+one-GPU tasks on `monakhova,gpu`, one per camera/method. The account's permitted
+`normal` QoS is explicit; priority comes from Monakhova's reserved partition tier,
+not an unauthorized QoS or administrator-only numeric priority. The four-task
+limit leaves at least half of the reserved node's eight GPUs for other group work.
+Public GPUs remain eligible as a fallback. This changes
 scheduling only: model execution, random seeds and datasets stay the same. Only
 one baseline epoch is staged at a time to bound storage consumption. Actual GPU
 allocation still depends on Slurm availability. Failed execution is retried

@@ -342,6 +342,11 @@ def submit(request):
         raise ValueError("Evaluation parallelism must be an integer from one to six")
     if kind != "baseline" and parallelism != 1:
         raise ValueError("Only baseline evaluations use parallel GPU tasks")
+    partitions = request.get("partitions", "gpu")
+    if partitions not in {"gpu", "monakhova", "monakhova,gpu"}:
+        raise ValueError("Unknown evaluation partitions")
+    if "monakhova" in partitions and parallelism > 4:
+        raise ValueError("Reserve at least half of Monakhova's eight GPUs for the group")
     token = hashlib.sha256(json.dumps(tasks, sort_keys=True).encode()).hexdigest()[:10]
     name = f"cov90-{kind}-{request['epoch']:03d}-{token}"
     directory = RUN_ROOT / "dispatch"
@@ -380,7 +385,7 @@ def submit(request):
                 "--job-name=" + name,
             ]
             if kind == "baseline":
-                command.append("--partition=gpu")
+                command.extend(["--partition=" + partitions, "--qos=normal"])
             command.append("milestone.sbatch")
             job = (
                 subprocess.check_output(command, cwd=RUN_ROOT, text=True)
@@ -389,7 +394,10 @@ def submit(request):
             )
             if not re.fullmatch(r"\d+", job):
                 raise RuntimeError("Slurm did not return a valid job ID")
-            result = dict(job=job, recovered=False, parallelism=parallelism)
+            result = dict(
+                job=job, recovered=False, parallelism=parallelism,
+                partitions=partitions,
+            )
         write_json(receipt, result)
         return result
 

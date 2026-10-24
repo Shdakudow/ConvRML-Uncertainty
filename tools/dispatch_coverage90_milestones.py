@@ -1,7 +1,7 @@
 """Restore one baseline epoch at a time and evaluate without retraining.
 
 Uses the verified GitHub Release manifests already created for this project.
-The paper-model array uses one GPU; baseline evaluations use up to six public GPUs.
+The paper-model array uses one GPU; baseline evaluations use up to four GPUs.
 Temporary restored weights are removed only after every task in their round has
 a result.
 """
@@ -129,9 +129,12 @@ def stage(epoch, required):
 
 
 def submit(epoch, tasks, kind="baseline"):
-    parallelism = 6 if kind == "baseline" else 1
+    parallelism = 4 if kind == "baseline" else 1
     response = remote(
-        "submit", dict(epoch=epoch, tasks=tasks, kind=kind, parallelism=parallelism)
+        "submit", dict(
+            epoch=epoch, tasks=tasks, kind=kind, parallelism=parallelism,
+            partitions="monakhova,gpu",
+        )
     )
     return response["job"]
 

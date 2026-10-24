@@ -173,6 +173,24 @@ class ClusterOperations(unittest.TestCase):
         with self.assertRaises(ValueError):
             cluster.submit(dict(epoch=5, kind="baseline", tasks=tasks, parallelism=7))
 
+    def test_reserved_partition_keeps_four_gpus_for_other_group_work(self):
+        request = dict(epoch=5, kind="baseline", tasks=[self.task],
+                       parallelism=4, partitions="monakhova,gpu")
+        with (
+            patch.object(cluster, "jobs", return_value=[]),
+            patch.object(cluster, "finished", return_value=False),
+            patch.object(cluster.subprocess, "check_output", return_value="1234\n") as submit,
+        ):
+            cluster.submit(request)
+            command = submit.call_args.args[0]
+            self.assertIn("--partition=monakhova,gpu", command)
+            self.assertIn("--qos=normal", command)
+            self.assertIn("--array=1%4", command)
+        with self.assertRaisesRegex(ValueError, "half"):
+            cluster.submit(dict(request, parallelism=6))
+        with self.assertRaisesRegex(ValueError, "partitions"):
+            cluster.submit(dict(request, partitions="another-group"))
+
     def test_direct_download_resumes_and_publishes_only_verified_checkpoint(self):
         payload = b"checkpoint"
         entry = dict(
