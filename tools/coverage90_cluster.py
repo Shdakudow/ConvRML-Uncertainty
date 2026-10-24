@@ -1,11 +1,12 @@
 """Readable cluster operations for the frozen-checkpoint evaluation pipeline.
 
-The dispatcher sends JSON on stdin. This module performs only four operations:
-inspect verified checkpoint copies, inspect results/jobs, submit once, and remove
-its own disposable checkpoint copies. Model training and inference live elsewhere.
+The dispatcher sends JSON on stdin. This module restores verified checkpoints,
+inspects results/jobs, submits once, and removes its own disposable checkpoint
+copies. Model training and inference live elsewhere.
 """
 
 import argparse
+import concurrent.futures
 import fcntl
 import hashlib
 import json
@@ -15,6 +16,9 @@ from pathlib import Path
 import re
 import subprocess
 import tempfile
+import time
+import urllib.parse
+import urllib.request
 
 RUN_ROOT = Path(__file__).resolve().parent
 SLURM = Path("/usr/local/slurm/current/bin")
@@ -250,6 +254,80 @@ def inventory(request):
     return dict(missing=missing)
 
 
+def download_checkpoint(root, entry):
+    """Download on Unicorn; publish a checkpoint only after its hash matches."""
+    target = root / entry["path"]
+    if valid_file(target, entry):
+        return 0
+    url = urllib.parse.urlsplit(entry["download_url"])
+    if url.scheme != "https" or url.hostname != "release-assets.githubusercontent.com":
+        raise ValueError("Expected a temporary GitHub Release download URL")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    partial = target.with_suffix(".pt.partial")
+    transferred = 0
+    for attempt in range(3):
+        try:
+            offset = partial.stat().st_size if partial.exists() else 0
+            if offset >= entry["size"]:
+                if valid_file(partial, entry):
+                    partial.replace(target)
+                    return transferred
+                partial.unlink()
+                offset = 0
+            headers = {"Range": f"bytes={offset}-"} if offset else {}
+            request = urllib.request.Request(entry["download_url"], headers=headers)
+            with urllib.request.urlopen(request, timeout=60) as response:
+                # An ignored Range request must replace the partial file.
+                append = offset > 0 and response.status == 206
+                written = offset if append else 0
+                with partial.open("ab" if append else "wb") as stream:
+                    while block := response.read(8 * 1024 * 1024):
+                        written += len(block)
+                        if written > entry["size"]:
+                            raise ValueError("Downloaded checkpoint exceeds manifest size")
+                        stream.write(block)
+                        transferred += len(block)
+            if not valid_file(partial, entry):
+                partial.unlink(missing_ok=True)
+                raise ValueError("Checkpoint SHA-256 or size does not match archive")
+            partial.replace(target)
+            return transferred
+        except Exception:
+            if attempt == 2:
+                # Never log signed URLs from an HTTP exception.
+                raise RuntimeError(
+                    "Direct checkpoint download failed: " + entry["path"]
+                ) from None
+    raise RuntimeError("Checkpoint was not restored")
+
+
+def restore(request):
+    """Fetch four files at a time, directly from GitHub to cluster storage."""
+    epoch, entries = request["epoch"], request["entries"]
+    validate_manifest(epoch, entries)
+    root = RUN_ROOT / "weights" / f"epoch_{epoch:03d}"
+    root.mkdir(parents=True, exist_ok=True)
+    with (root / ".restore.lock").open("a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        started = time.monotonic()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+            sizes = list(
+                pool.map(lambda entry: download_checkpoint(root, entry), entries)
+            )
+        remaining = inventory(request)["missing"]
+        if remaining:
+            raise ValueError("Incomplete direct checkpoint restoration")
+        result = dict(
+            epoch=epoch,
+            verified=len(entries),
+            downloaded_bytes=sum(sizes),
+            seconds=round(time.monotonic() - started, 2),
+            route="github-to-unicorn",
+        )
+        write_json(root / "restoration.json", result)
+        return result
+
+
 def submit(request):
     """Recover an accepted Slurm job after a lost SSH response instead of duplicating it."""
     tasks = request["tasks"]
@@ -259,6 +337,11 @@ def submit(request):
     kind = request["kind"]
     if kind not in {"baseline", "paper-retry"}:
         raise ValueError("Unknown evaluation stream")
+    parallelism = request.get("parallelism", 1)
+    if type(parallelism) is not int or not 1 <= parallelism <= 6:
+        raise ValueError("Evaluation parallelism must be an integer from one to six")
+    if kind != "baseline" and parallelism != 1:
+        raise ValueError("Only baseline evaluations use parallel GPU tasks")
     token = hashlib.sha256(json.dumps(tasks, sort_keys=True).encode()).hexdigest()[:10]
     name = f"cov90-{kind}-{request['epoch']:03d}-{token}"
     directory = RUN_ROOT / "dispatch"
@@ -293,10 +376,12 @@ def submit(request):
             command = [
                 str(SLURM / "sbatch"),
                 "--parsable",
-                "--array=" + ",".join(map(str, indices)) + "%1",
+                "--array=" + ",".join(map(str, indices)) + f"%{parallelism}",
                 "--job-name=" + name,
-                "milestone.sbatch",
             ]
+            if kind == "baseline":
+                command.append("--partition=gpu")
+            command.append("milestone.sbatch")
             job = (
                 subprocess.check_output(command, cwd=RUN_ROOT, text=True)
                 .strip()
@@ -304,7 +389,7 @@ def submit(request):
             )
             if not re.fullmatch(r"\d+", job):
                 raise RuntimeError("Slurm did not return a valid job ID")
-            result = dict(job=job, recovered=False)
+            result = dict(job=job, recovered=False, parallelism=parallelism)
         write_json(receipt, result)
         return result
 
@@ -389,6 +474,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     actions = dict(
         inventory=inventory,
+        restore=restore,
         status=status,
         submit=submit,
         cleanup=cleanup,

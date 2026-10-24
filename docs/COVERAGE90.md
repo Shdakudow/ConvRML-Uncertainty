@@ -101,8 +101,18 @@ SHA-256 release manifests under `~/.local/share/convrml-checkpoint-archive` and
 the task list under `~/.local/share/convrml-coverage90-20261022`. It restores only
 one baseline epoch at a time, verifies all five ensemble members for both cameras,
 and removes only its disposable weight copies/links after their evaluations.
-Original snapshots and GitHub Releases remain intact. One paper-model array and
-one baseline array run at most two GPU tasks in total. Failed execution is retried
+Original snapshots and GitHub Releases remain intact. Checkpoints download
+directly from GitHub to Unicorn, four files at a time, using temporary single-file
+URLs. GitHub credentials stay on the local computer. Downloads resume partial
+files after interruptions and verify size and SHA-256 before publishing a file.
+The dispatcher sends no checkpoint bytes through the laptop. Temporary URLs are
+not saved in manifests or logs. A direct-download receipt records bytes and timing.
+
+One paper-model array uses one GPU; the baseline array allows up to six concurrent
+one-GPU tasks on the public `gpu` partition, one per camera/method. This changes
+scheduling only: model execution, random seeds and datasets stay the same. Only
+one baseline epoch is staged at a time to bound storage consumption. Actual GPU
+allocation still depends on Slurm availability. Failed execution is retried
 up to three submissions; unresolved failures are recorded for attention.
 
 `milestone_dispatch.json` records restoration, submission, progress and retry

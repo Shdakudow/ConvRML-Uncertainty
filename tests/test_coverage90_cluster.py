@@ -2,6 +2,7 @@
 
 import copy
 import hashlib
+import io
 from pathlib import Path
 import sys
 import tempfile
@@ -156,6 +157,70 @@ class ClusterOperations(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "still active"):
                 cluster.submit(dict(epoch=5, kind="baseline", tasks=[self.task]))
             submit.assert_not_called()
+
+    def test_baselines_can_use_six_public_gpus_without_changing_tasks(self):
+        with (
+            patch.object(cluster, "jobs", return_value=[]),
+            patch.object(cluster, "finished", return_value=False),
+            patch.object(cluster.subprocess, "check_output", return_value="1234\n") as submit,
+        ):
+            tasks = [dict(self.task, index=i) for i in range(6)]
+            result = cluster.submit(dict(epoch=5, kind="baseline", tasks=tasks, parallelism=6))
+            command = submit.call_args.args[0]
+            self.assertIn("--array=0,1,2,3,4,5%6", command)
+            self.assertIn("--partition=gpu", command)
+            self.assertEqual(result["parallelism"], 6)
+        with self.assertRaises(ValueError):
+            cluster.submit(dict(epoch=5, kind="baseline", tasks=tasks, parallelism=7))
+
+    def test_direct_download_resumes_and_publishes_only_verified_checkpoint(self):
+        payload = b"checkpoint"
+        entry = dict(
+            path="rml/im2im/checkpoints/epoch_005.pt", size=len(payload),
+            sha256=hashlib.sha256(payload).hexdigest(),
+            download_url="https://release-assets.githubusercontent.com/temporary",
+        )
+        target = self.root / entry["path"]
+        target.parent.mkdir(parents=True)
+        partial = target.with_suffix(".pt.partial")
+        partial.write_bytes(payload[:4])
+        response = io.BytesIO(payload[4:])
+        response.status = 206
+        with patch.object(cluster.urllib.request, "urlopen", return_value=response) as fetch:
+            self.assertEqual(cluster.download_checkpoint(self.root, entry), 6)
+            self.assertEqual(fetch.call_args.args[0].get_header("Range"), "bytes=4-")
+        self.assertEqual(target.read_bytes(), payload)
+        self.assertFalse(partial.exists())
+        with patch.object(cluster.urllib.request, "urlopen") as fetch:
+            self.assertEqual(cluster.download_checkpoint(self.root, entry), 0)
+            fetch.assert_not_called()
+
+    def test_server_ignoring_range_replaces_partial_file(self):
+        payload = b"checkpoint"
+        entry = dict(path="checkpoint.pt", size=len(payload),
+                     sha256=hashlib.sha256(payload).hexdigest(),
+                     download_url="https://release-assets.githubusercontent.com/temporary")
+        (self.root / "checkpoint.pt.partial").write_bytes(b"old")
+        response = io.BytesIO(payload)
+        response.status = 200
+        with patch.object(cluster.urllib.request, "urlopen", return_value=response):
+            cluster.download_checkpoint(self.root, entry)
+        self.assertEqual((self.root / "checkpoint.pt").read_bytes(), payload)
+
+    def test_bad_hash_never_becomes_a_checkpoint_or_exposes_signed_url(self):
+        entry = dict(path="checkpoint.pt", size=3,
+                     sha256=hashlib.sha256(b"yes").hexdigest(),
+                     download_url="https://release-assets.githubusercontent.com/secret")
+        def response(*args, **kwargs):
+            result = io.BytesIO(b"bad")
+            result.status = 200
+            return result
+        with patch.object(cluster.urllib.request, "urlopen", side_effect=response) as fetch:
+            with self.assertRaisesRegex(RuntimeError, "checkpoint.pt") as error:
+                cluster.download_checkpoint(self.root, entry)
+            self.assertEqual(fetch.call_count, 3)
+            self.assertNotIn("secret", str(error.exception))
+        self.assertFalse((self.root / "checkpoint.pt").exists())
 
     def test_cleanup_preserves_original_weights_and_waits_for_all_six_tasks(self):
         shared = self.root.parent / "experiment2_uncertainty_analysis_20261019/weights"

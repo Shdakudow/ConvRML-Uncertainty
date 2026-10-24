@@ -1,19 +1,21 @@
 """Restore one baseline epoch at a time and evaluate without retraining.
 
 Uses the verified GitHub Release manifests already created for this project.
-The paper-model array uses one GPU; each baseline array uses one more. Temporary
-restored weights are removed only after every task in their round has a result.
+The paper-model array uses one GPU; baseline evaluations use up to six public GPUs.
+Temporary restored weights are removed only after every task in their round has
+a result.
 """
 
 import concurrent.futures
 import datetime
 import fcntl
-import hashlib
 import json
-import os
 from pathlib import Path
 import shlex
 import subprocess
+import time
+import urllib.error
+import urllib.request
 
 from coverage90_cluster import validate_manifest
 
@@ -29,6 +31,10 @@ SSH = [
     str(Path.home() / ".ssh/id_ed25519"),
     "-o",
     "ConnectTimeout=20",
+    "-o",
+    "ServerAliveInterval=15",
+    "-o",
+    "ServerAliveCountMax=3",
     HOST,
 ]
 ARMS = {"im2im", "mc_005", *(f"ensemble_{i:02d}" for i in range(5))}
@@ -52,14 +58,6 @@ def remote(action, payload, timeout=300):
     return json.loads(run(SSH + [command], input=json.dumps(payload), timeout=timeout))
 
 
-def digest(path):
-    h = hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(8 * 1024 * 1024), b""):
-            h.update(block)
-    return h.hexdigest()
-
-
 def entries(epoch):
     result = []
     for camera in ("rml", "diffuser"):
@@ -71,7 +69,6 @@ def entries(epoch):
                 and p.parts[1] in ARMS
                 and p.name == f"epoch_{epoch:03d}.pt"
             ):
-                assert not p.is_absolute() and ".." not in p.parts
                 result.append(dict(entry, release=manifest["release"]))
     validate_manifest(epoch, result)
     return result
@@ -81,81 +78,61 @@ def inventory(epoch, required):
     return remote("inventory", dict(epoch=epoch, entries=required))
 
 
-def download(epoch, entry):
-    folder = WORK / "milestone_cache" / f"epoch_{epoch:03d}"
-    target = folder / entry["path"]
-    target.parent.mkdir(parents=True, exist_ok=True)
-    if (
-        target.exists()
-        and target.stat().st_size == entry["size"]
-        and digest(target) == entry["sha256"]
-    ):
-        return
-    local = (
-        Path.home()
-        / ".local/share/convrml-exp2-analysis-20261019/milestones"
-        / f"epoch_{epoch:03d}"
-        / entry["path"]
-    )
-    if (
-        not target.exists()
-        and local.exists()
-        and local.stat().st_size == entry["size"]
-        and digest(local) == entry["sha256"]
-    ):
-        os.link(local, target)
-    else:
-        run(
-            [
-                "gh",
-                "release",
-                "download",
-                entry["release"],
-                "--repo",
-                "Shdakudow/ConvRML-Uncertainty",
-                "--pattern",
-                entry["name"],
-                "--dir",
-                target.parent,
-                "--clobber",
-            ],
-            timeout=1800,
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+def signed_entries(required):
+    """Authorize individual downloads locally; never send GitHub credentials to SSH."""
+    token = run(["gh", "auth", "token"])
+    assets = {}
+    for release in {entry["release"] for entry in required}:
+        metadata = json.loads(run(
+            ["gh", "api", f"repos/Shdakudow/ConvRML-Uncertainty/releases/tags/{release}"],
+            timeout=60,
+        ))
+        assets[release] = {asset["name"]: asset for asset in metadata["assets"]}
+
+    def sign(entry):
+        asset = assets[entry["release"]][entry["name"]]
+        if asset["size"] != entry["size"]:
+            raise ValueError("Release asset size differs from archived manifest")
+        request = urllib.request.Request(
+            asset["url"] + "?download=" + str(time.time_ns()),
+            headers={
+                "Authorization": "Bearer " + token,
+                "Accept": "application/octet-stream",
+            },
         )
-        fetched = target.parent / entry["name"]
-        if (
-            fetched.stat().st_size != entry["size"]
-            or digest(fetched) != entry["sha256"]
-        ):
-            raise ValueError("Checkpoint archive verification failed: " + entry["path"])
-        fetched.replace(target)
-    print("Verified archive checkpoint", entry["path"], flush=True)
+        try:
+            urllib.request.build_opener(NoRedirect).open(request, timeout=30).close()
+        except urllib.error.HTTPError as error:
+            if error.code in (301, 302, 303, 307, 308):
+                return dict(entry, download_url=error.headers["Location"])
+            raise RuntimeError(
+                f"Download authorization failed: HTTP {error.code}"
+            ) from None
+        raise RuntimeError("Expected a temporary GitHub Release download URL")
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+        return list(pool.map(sign, required))
 
 
 def stage(epoch, required):
-    missing = set(inventory(epoch, required)["missing"])
-    if missing:
-        selected = [entry for entry in required if entry["path"] in missing]
-        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
-            list(pool.map(lambda entry: download(epoch, entry), selected))
-        source = WORK / "milestone_cache" / f"epoch_{epoch:03d}"
-        run(
-            [
-                "rsync",
-                "-az",
-                "-e",
-                "ssh -o BatchMode=yes -i "
-                + shlex.quote(str(Path.home() / ".ssh/id_ed25519")),
-                str(source) + "/",
-                HOST + ":" + REMOTE + f"/weights/epoch_{epoch:03d}/",
-            ],
-            timeout=7200,
+    if inventory(epoch, required)["missing"]:
+        # Only small, temporary single-file URLs cross SSH, never checkpoint bytes.
+        result = remote(
+            "restore", dict(epoch=epoch, entries=signed_entries(required)), timeout=1800
         )
-        if inventory(epoch, required)["missing"]:
-            raise ValueError("Incomplete checkpoint transfer after verification")
+        print("Direct checkpoint restoration", json.dumps(result), flush=True)
 
 
 def submit(epoch, tasks, kind="baseline"):
-    response = remote("submit", dict(epoch=epoch, tasks=tasks, kind=kind))
+    parallelism = 6 if kind == "baseline" else 1
+    response = remote(
+        "submit", dict(epoch=epoch, tasks=tasks, kind=kind, parallelism=parallelism)
+    )
     return response["job"]
 
 
