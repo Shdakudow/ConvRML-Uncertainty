@@ -1,30 +1,51 @@
 # Lensless reconstruction and uncertainty
 
-Compare reconstructions and uncertainty intervals from ConvNeXt/FPN models.
-Uncertainty is `upper - lower`.
+ConvNeXt/FPN implementations of **Im2im, deep ensemble, MC dropout and QUTCC**.
+Each model predicts a reconstruction and native uncertainty bounds. Interval
+width is `upper - lower`; calibration is fitted separately on held-out pairs.
 
-| Open | Contents |
-| --- | --- |
-| **[shared/](shared/)** | One implementation of the backbone, FiLM, quantile model and common pipeline |
-| **[Experiment 2](experiments/experiment2/)** | RML / normalized DiffuserCam: Im2im, ensemble, MC dropout and QUTCC |
-| **[Experiment 3](experiments/experiment3/)** | Raw / corrupted raw DiffuserCam: Im2im and QUTCC |
-| [tools/](tools/) | Plot curves, export saved predictions and check source/equivalence |
-| [tests/](tests/) | Shared layout, routing and report checks |
-| [archive/](archive/) | Bundled historical code, run records and reproducibility evidence |
+| Experiment | Model code | Measurements |
+| --- | --- | --- |
+| **[Experiment 2](experiments/experiment2/)** | [Four models](experiments/experiment2/models/) | RML and normalized DiffuserCam, RGB 256×256 |
+| **[Experiment 3](experiments/experiment3/)** | [Two models](experiments/experiment3/models/) | Clean/corrupted raw DiffuserCam, RGB 270×480 |
 
-**Start:** [run commands](docs/RUNNING_EXPERIMENTS.md) · [model differences](docs/MODEL_COMPARISON.md) · [metrics/calibration](docs/METHODS_AND_METRICS.md).
-
-## Setup
-
-Use Python 3.11 and install CUDA-compatible PyTorch/torchvision first:
-
-```bash
-python -m pip install -r requirements.txt
-python experiments/experiment2/run_model.py --help
+```text
+experiments/
+  experiment2/models/    im2im.py  ensemble.py  mc_dropout.py  qutcc.py
+  experiment3/models/    im2im.py  qutcc.py
+convrml/                 Shared backbone, FiLM, losses, data loaders and intervals
 ```
 
-Data and weights are separate from source. [Checkpoint releases](https://github.com/Shdakudow/ConvRML-Uncertainty/releases) contain archived weights; the workflow guide explains existing cluster data paths.
+The experiment folders contain only their README and model definitions.
+QUTCC uses the same implementation in both experiments. Raw Im2im preserves
+its checkpoint-specific wrapper and adds padding/cropping for rectangular images.
 
-Common files are linked from experiment entry points. Preserve Git symlinks when copying the checkout. Experiment-specific settings and output directories stay separate. The [equivalence report](archive/provenance/shared_code_equivalence_20261021.json) records matching fixed-seed CPU predictions and gradients.
+## Getting started
 
-[Interactive demo](https://shdakudow.github.io/ConvRML-Uncertainty-Demo/) · [upstream ConvRML](https://github.com/lakabuli/ConvRML) · [QUTCC reference](https://github.com/Shdakudow/code-for-quant) · [license](LICENSE)
+Use a CUDA-compatible PyTorch installation for GPU execution. From a clone:
+
+```bash
+python -m pip install -e .
+```
+
+```python
+from experiments.experiment2.models import Im2im, EnsembleMember, DeepEnsemble, MCDropout, QUTCC
+from experiments.experiment3.models import Im2im as RawIm2im
+
+model = QUTCC()  # Randomly initialized; load a trained checkpoint before evaluation.
+```
+
+Read **[model differences](docs/MODEL_COMPARISON.md)**,
+**[data formats](convrml/README.md)** and **[usage](docs/RUNNING_EXPERIMENTS.md)**.
+The class APIs do not automatically calibrate or clip outputs.
+
+Datasets are not included. Trained checkpoints are stored in
+[Releases](https://github.com/Shdakudow/ConvRML-Uncertainty/releases).
+Original training/evaluation engines and run settings are preserved under
+[archive/reproduction](archive/reproduction/), separate from the model interface.
+The [equivalence report](archive/provenance/publication_model_equivalence_20261025.json)
+checks unchanged state keys, initialized weights, predictions, gradients and RNG.
+
+[Interactive results](https://shdakudow.github.io/ConvRML-Uncertainty-Demo/) ·
+[ConvRML](https://github.com/lakabuli/ConvRML) ·
+[QUTCC reference](https://github.com/Shdakudow/code-for-quant) · [License](LICENSE)

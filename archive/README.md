@@ -1,6 +1,8 @@
 # Historical material
 
-The active implementation is in [shared/](../shared/), [Exp2](../experiments/experiment2/) and [Exp3](../experiments/experiment3/).
+The publication model interface is in [Exp2](../experiments/experiment2/models/), [Exp3](../experiments/experiment3/models/) and [convrml/](../convrml/).
+
+[reproduction/](reproduction/) preserves the full Experiment 2/3 engines and their original import layout, apart from the concise model interface.
 
 | Item | Contents |
 | --- | --- |
@@ -10,8 +12,7 @@ The active implementation is in [shared/](../shared/), [Exp2](../experiments/exp
 
 Historical files were removed from the active tree after their exact contents
 were verified in this bundle. Checkpoints, datasets and the remote cluster were
-not deleted. Existing runtime code and its imported compatibility modules remain
-in the active implementation.
+not deleted. Historical engines and imported compatibility modules remain readable under `reproduction/`.
 
 Inspect or restore into a separate directory:
 

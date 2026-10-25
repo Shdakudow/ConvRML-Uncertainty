@@ -8,6 +8,7 @@ from pathlib import Path
 import tarfile
 
 ROOT = Path(__file__).resolve().parents[1]
+PRESERVED = ROOT / "archive/reproduction"
 
 
 def executable_ast(source):
@@ -30,7 +31,7 @@ def executable_ast(source):
 
 def check_shared_refactor(original, published):
     """Accept only the two documented structural changes, not arbitrary edits."""
-    target = published.resolve().relative_to(ROOT).as_posix()
+    target = published.resolve().relative_to(PRESERVED).as_posix()
     entrypoints = {
         "shared/training/paper.py",
         "shared/evaluation/paper.py",
@@ -89,9 +90,9 @@ def check_shared_refactor(original, published):
                 "Path(__file__).absolute().parent", mode="eval"
             ).body
         return executable_ast(ast.unparse(tree)) == executable_ast(ast.unparse(after))
-    if published == ROOT / "experiments/experiment2/models/convnext_norm_film.py":
+    if published == PRESERVED / "experiments/experiment2/models/convnext_norm_film.py":
         before, after = ast.parse(original), ast.parse(published.read_bytes())
-        shared = ast.parse((ROOT / "shared/models/film.py").read_bytes())
+        shared = ast.parse((PRESERVED / "shared/models/film.py").read_bytes())
         names = {"NormFiLM", "FiLMBackbone"}
         for name in names:
             old = next(
@@ -173,11 +174,13 @@ def verify():
             assert len(original) == record["bytes"], name
             previous = previous_path(name)
             published = ROOT / relocate(previous)
+            if previous.startswith(("experiments/", "shared/")):
+                published = PRESERVED / relocate(previous)
             if previous in history:
                 current = history[previous]
                 target = index["files"][previous].get("shared_target")
                 if target:
-                    published = ROOT / target
+                    published = PRESERVED / target
             else:
                 assert published.is_file(), f"Missing published source: {name}"
                 current = published.read_bytes()

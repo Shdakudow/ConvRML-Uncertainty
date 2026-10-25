@@ -39,12 +39,12 @@ model weights, losses or calibration mathematics.
 Run from the repository using the model environment and existing dataset/checkpoints:
 
 ```bash
-python experiments/experiment2/run_model.py evaluate \
+python archive/reproduction/experiments/experiment2/run_model.py evaluate \
   --method im2im --camera rml --epoch 50 \
   --project-root /home/jy2228/ConvRML --calibration tight90
 
 # Original cluster QUTCC result location, if not copied beside the published code:
-python experiments/experiment2/run_model.py evaluate \
+python archive/reproduction/experiments/experiment2/run_model.py evaluate \
   --method qutcc --camera diffuser --epoch 50 \
   --project-root /home/jy2228/ConvRML --calibration tight90 \
   --calibration-source /home/jy2228/ConvRML/experiments/qutcc_paper_style_20261018

@@ -1,0 +1,9 @@
+{
+  "purpose": "Publication model interfaces; original experiment engines preserved under archive/reproduction.",
+  "previous_commit": "6a6209f",
+  "moves": {
+    "experiments": "archive/reproduction/experiments",
+    "shared": "archive/reproduction/shared"
+  },
+  "weights_or_data_changed": false
+}

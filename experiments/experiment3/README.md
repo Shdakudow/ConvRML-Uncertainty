@@ -1,25 +1,40 @@
-# Experiment 3 · raw and corrupted raw DiffuserCam
+# Experiment 3: raw and corrupted raw DiffuserCam
 
-QUTCC and end-to-end Im2im on RGB 270×480 measurements. Split:
-**17,999 train / 2,000 validation / 2,000 test / 3,000 separate calibration pairs**.
+Two models use the same ConvNeXt/FPN backbone as Experiment 2.
+Open **[models/](models/)**; no separate architecture is introduced for corruption.
 
-| Folder | Role |
-| --- | --- |
-| **[clean/](clean/)** | Clean raw training from scratch, 50 epochs |
-| **[corrupted/](corrupted/)** | Reviewed fixed corruption dataset and first ten adaptation epochs |
-| **[corrupted_continuation/](corrupted_continuation/)** | Continues adaptation to epoch 30 with optimizer/RNG retained |
+| Model | File | Difference from Experiment 2 |
+| --- | --- | --- |
+| Im2im | [im2im.py](models/im2im.py) | Same lower/center/upper heads and MSE + pinball loss; raw-size padding/cropping and preserved `net.*` checkpoint names |
+| QUTCC | [qutcc.py](models/qutcc.py) | The exact same QUTCC implementation; only data and training protocol differ |
 
-Common model/pipeline implementations live once in [shared/](../../shared/).
-Raw inputs are padded internally to a multiple of 32, then outputs are cropped
-back. QUTCC uses pinball-only q conditioning; Im2im jointly learns center and
-endpoints. Clean raw tasks: **2 QUTCC / 3 Im2im**. Adaptation tasks: **0 QUTCC /
-1 Im2im**.
+## Dimensions and data loading
 
-Corruptions change measurements, with unchanged targets. Each image receives
-one fixed operation: identity, crop/resize, rotation, local patch rotation,
-intensity, missing pixels, reduced resolution, Gaussian or Poisson noise.
-Final adapted models have **30 clean + 30 adaptation epochs**.
+- Measurement and target: **RGB 270×480**.
+- Models replicate-pad right/bottom to **288×480**, then crop every output back.
+- Padding is excluded from losses and metrics by cropping the predictions first.
+- Loader: [`convrml.data.ImagePairs`](../../convrml/data.py), using a paired-file manifest.
+- Read RGB images, convert to float32 and divide by 255. The loader does not resize.
+- "Raw" identifies this dataset branch; the training loader reads its prepared RGB images, not native sensor-bit-depth arrays.
+- Split: **17,999 training / 2,000 validation / 2,000 test / 3,000 calibration** pairs.
 
-[Run instructions](../../docs/RUNNING_EXPERIMENTS.md#experiment-3) ·
-[model/calibration differences](../../docs/MODEL_COMPARISON.md) ·
-[prediction exports](../../tools/export/) · [stopped follow-ups and run history](../../archive/).
+```python
+from convrml.data import ImagePairs
+from experiments.experiment3.models import Im2im
+
+pairs = ImagePairs("split.json", split="train")
+measurement, target = pairs[0]
+model = Im2im()
+loss = model.loss(measurement[None], target[None])
+```
+
+Clean and fixed-corruption manifests have the same loader interface. For corrupted
+measurements, targets and split IDs remain unchanged; no new random corruption is
+applied while loading. Use each dataset's own checkpoints and calibration results.
+
+Clean models train from scratch for 50 epochs. Corruption adaptation starts from
+each clean epoch-30 checkpoint and adds 30 adaptation epochs at LR 1e-5. This is a
+training-protocol difference, not an additional model layer.
+
+[Data format](../../convrml/README.md) · [Model comparison](../../docs/MODEL_COMPARISON.md) ·
+[Original clean/adaptation trainers](../../archive/reproduction/experiments/experiment3/)

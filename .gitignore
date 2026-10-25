@@ -11,6 +11,9 @@ checkpoints/
 *.npy
 !**/homography_matrices/**/*.npy
 .env*
-# This is source code, not an image/cache dataset directory.
-!shared/data/
-!shared/data/*.py
+# Keep the archived loader source separate from excluded dataset payloads.
+!archive/reproduction/shared/data/
+!archive/reproduction/shared/data/*.py
+build/
+dist/
+*.egg-info/

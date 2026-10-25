@@ -12,6 +12,7 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 CASES = ["im2im", "ensemble", "mc_dropout", "qutcc", "raw_im2im"]
 
 
@@ -28,31 +29,26 @@ def case(name):
     torch.manual_seed(20261021)
     torch.use_deterministic_algorithms(True)
     paper = name in ("qutcc", "raw_im2im")
-    folder = ROOT / "experiments/experiment2"
-    sys.path.insert(0, str(folder / "qutcc" if paper else folder))
-    if paper:
-        from model import Model
-
-        model = Model("qutcc" if name == "qutcc" else "im2im")
-        # Exercise trained-like, nonidentity FiLM so conditioning is tested.
-        if name == "qutcc":
-            with torch.no_grad():
-                for film in model.net.films.values():
-                    film.projection[-1].weight.normal_(0, 0.002)
-                    film.projection[-1].bias.normal_(0, 0.002)
+    if name == "qutcc":
+        from experiments.experiment2.models.qutcc import QUTCC
+        model = QUTCC()
+        # Nonidentity modulation ensures q conditioning is actually exercised.
+        with torch.no_grad():
+            for film in model.net.films.values():
+                film.projection[-1].weight.normal_(0, 0.002)
+                film.projection[-1].bias.normal_(0, 0.002)
+    elif name == "raw_im2im":
+        from experiments.experiment3.models.im2im import Im2im
+        model = Im2im()
     elif name == "im2im":
-        from models.corrected_uncertainty import EndToEndIm2Im
-
-        model = EndToEndIm2Im()
+        from experiments.experiment2.models.im2im import Im2im
+        model = Im2im()
     elif name == "mc_dropout":
-        from models.corrected_uncertainty import FullDropoutRML
-
-        model = FullDropoutRML(0.05)
+        from experiments.experiment2.models.mc_dropout import MCDropout
+        model = MCDropout(0.05)
     else:
-        from baselines.deep_ensemble import DeepEnsembleMember
-        from baselines.formal_rml import FormalRML
-
-        model = DeepEnsembleMember(FormalRML("ensemble"))
+        from experiments.experiment2.models.ensemble import EnsembleMember
+        model = EnsembleMember()
     state = model.state_dict()
     initial = hashlib.sha256()
     schema = []
@@ -136,7 +132,7 @@ def main():
                 json.dumps(
                     dict(
                         status="pass",
-                        comparison="exact CPU fingerprints before/after shared-source refactor",
+                        comparison="exact CPU fingerprints before/after publication model interfaces",
                         seed=20261021,
                         device="cpu",
                         checks=[

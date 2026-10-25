@@ -1,6 +1,6 @@
 # Models, calibration, and metric definitions
 
-This document defines the metrics and calibration conventions for [Experiment 2](../experiments/experiment2) and [Experiment 3](../experiments/experiment3). For the classes, heads, losses and code-reading order, see [model-code comparison](MODEL_COMPARISON.md). Exp2's four-model router is in [Exp2 source/](../experiments/experiment2); Exp3's raw-compatible source is in [clean/](../experiments/experiment3/clean).
+This document defines the metrics and calibration conventions for [Experiment 2](../experiments/experiment2) and [Experiment 3](../experiments/experiment3). For the classes, heads, losses and code-reading order, see [model-code comparison](MODEL_COMPARISON.md). The model interfaces are in [Exp2](../experiments/experiment2/models); Exp3's raw-compatible source is in [clean/](../archive/reproduction/experiments/experiment3/clean).
 
 Architecture, output heads and training losses are explained once in the [model-code comparison](MODEL_COMPARISON.md). This page defines calibration, clipping and evaluation metrics.
 
