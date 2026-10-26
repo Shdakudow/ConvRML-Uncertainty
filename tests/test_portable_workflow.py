@@ -12,7 +12,9 @@ import numpy as np
 import torch
 from torch import nn
 
-from convrml import checkpoints, download, evaluate, protocol, train
+import train
+import infer as evaluate
+from convrml import checkpoints, download, protocol
 from models.qutcc import pinball
 
 

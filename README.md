@@ -15,8 +15,8 @@ changes the loader and recorded settings, not the model implementation.
 models/           im2im.py, qutcc.py, ensemble.py, mc_dropout.py — shared across datasets
 dataset.py        PLD NumPy-cache and DLMD paired-image loaders
 configs/          Recorded settings, seeds, split sizes and dataset descriptions
-train.py          Common training/resume entry point
-infer.py          Common calibration/evaluation entry point
+train.py          Training loop, validation and epoch checkpoints
+infer.py          Calibration, test predictions, metrics and export
 convrml/          Shared backbone, FiLM, runtime, calibration and metrics
 reproducibility/   Settings, ordered split IDs, checkpoint index and tested environment
 tests/             Local correctness checks
@@ -37,6 +37,19 @@ python -m convrml.download --help
 
 [Quick start](archive/publication_support/docs/RUNNING_EXPERIMENTS.md) · [Data formats](convrml/README.md) ·
 [Model differences](archive/publication_support/docs/MODEL_COMPARISON.md) · [Reproducibility](reproducibility/README.md)
+
+## Read the code
+
+Start with one file in [models/](models/): `forward` defines the network,
+`loss` defines its training objective, and `bounds` produces the center/lower/upper
+images. Then read [dataset.py](dataset.py) to see how paired images reach the model.
+
+In [train.py](train.py), `train_one_epoch` contains the forward/backward loop;
+`run_training` handles setup, validation and checkpoints. In [infer.py](infer.py),
+the workflow is `calibrate_checkpoint` → `evaluate_test_set` → `save_results`.
+[calibration.py](convrml/calibration.py) contains the calibration algorithms and
+[checkpoints.py](convrml/checkpoints.py) handles saving, strict loading and resume.
+Recorded experiment settings stay in [configs/](configs/).
 
 ## Weights and evaluation
 

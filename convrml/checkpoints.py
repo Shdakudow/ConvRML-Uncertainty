@@ -1,11 +1,11 @@
-"""Strict checkpoint loading with portable experiment identity and file hashes."""
+"""Save, resume and load checkpoints with strict experiment identity checks."""
 
 import hashlib
 from pathlib import Path
 
 import torch
 
-from .protocol import make_model, settings
+from .protocol import make_model, profile, settings
 
 
 def read_checkpoint(path):
@@ -90,3 +90,95 @@ def load_model(path, run, device, *, smoke=False, factory=None):
     model.load_state_dict(checkpoint["model"], strict=True)
     model.to(device).eval()
     return model, dict(info, file=Path(path).name, sha256=digest)
+
+
+def save_checkpoint(path, value):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(".tmp")
+    torch.save(value, temporary)
+    temporary.replace(path)
+
+
+def resume_training(
+    path, model, optimizer, expected, *, device, quantile_rng, data_rng
+):
+    """Validate a full training checkpoint, then restore optimizer and RNG states."""
+    checkpoint, _ = read_checkpoint(path)
+    if checkpoint.get("schema") != expected["run"]["schema"]:
+        raise ValueError("Historical optimizer/RNG states require the original engine")
+    if any(checkpoint[key] != expected[key] for key in ("run", "data", "smoke")):
+        raise ValueError("Resume configuration or dataset identity changed")
+    if any(checkpoint[key] != expected[key] for key in ("device", "workers")):
+        raise ValueError("Exact portable resume retains device and worker settings")
+    if checkpoint["source_sha256"] != expected["source_sha256"]:
+        raise ValueError(
+            "Portable training source changed; use its original release to resume"
+        )
+    if checkpoint["environment"] != expected["environment"]:
+        raise ValueError("Portable resume requires the same recorded software versions")
+
+    model.load_state_dict(checkpoint["model"], strict=True)
+    optimizer.load_state_dict(checkpoint["optimizer"])
+    torch.set_rng_state(checkpoint["rng"])
+    if device.type == "cuda":
+        torch.cuda.set_rng_state_all(checkpoint["cuda_rng"])
+    quantile_rng.set_state(checkpoint["quantile_rng"])
+    data_rng.set_state(checkpoint["data_rng"])
+    return checkpoint
+
+
+def initialize_from_clean(model, path, method, *, smoke=False):
+    """Initialize corruption adaptation from the same method's clean DLMD epoch 30."""
+    checkpoint, digest = read_checkpoint(path)
+    info = validate_identity(checkpoint, profile(3, "raw_clean", method), smoke=smoke)
+    if (info["method"], info["dataset"], info["epoch"]) != (method, "raw_clean", 30):
+        raise ValueError("Adaptation parent must be this method's clean raw epoch 30")
+    model.load_state_dict(checkpoint["model"], strict=True)
+    return dict(sha256=digest, **info)
+
+
+def model_checkpoint(checkpoint):
+    """Select inference fields from a full resume checkpoint, without optimizer state."""
+    keys = (
+        "schema",
+        "run",
+        "data",
+        "model",
+        "epoch",
+        "history",
+        "smoke",
+        "parent",
+        "source_sha256",
+        "environment",
+    )
+    return {key: checkpoint[key] for key in keys}
+
+
+def load_predictor(paths, run, device, *, smoke=False, model_loader=None):
+    """Load one model or aggregate independent, same-epoch ensemble members."""
+    loaded, provenance = [], []
+    for index, path in enumerate(paths):
+        member = index if run["method"] == "ensemble" else None
+        member_run = profile(run["experiment"], run["dataset"], run["method"], member)
+        model, info = (model_loader or load_model)(
+            path, member_run, device, smoke=smoke
+        )
+        loaded.append(model)
+        provenance.append(info)
+    if len({row["epoch"] for row in provenance}) != 1:
+        raise ValueError("Ensemble members must use the same completed epoch")
+    if run["method"] != "ensemble":
+        return loaded[0], provenance
+
+    for field in ("initialization", "data"):
+        if len({row["seeds"].get(field) for row in provenance}) != len(provenance):
+            raise ValueError(
+                "Ensemble members need distinct initialization and data-order seeds"
+            )
+    from models import DeepEnsemble
+
+    model = (
+        DeepEnsemble(loaded, base_interval_alpha=settings()["alpha"]).to(device).eval()
+    )
+    return model, provenance

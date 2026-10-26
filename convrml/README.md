@@ -12,15 +12,17 @@ commands. Optional plotting, provenance tools and GitHub Actions live in
 | [intervals.py](intervals.py) | Native Gaussian-moment bounds before calibration |
 | [calibration.py](calibration.py) | Baseline RCPS-HB scales and QUTCC Algorithm 1 calibrated quantiles |
 | [dataset.py](../dataset.py) | PLD NumPy-cache and DLMD RGB paired-file datasets |
-| [train.py](train.py) / [evaluate.py](evaluate.py) | Training/resume and held-out calibrated evaluation |
+| [../train.py](../train.py) / [../infer.py](../infer.py) | Training loop and calibration → test → export workflow |
 | [metrics.py](metrics.py) | SSIM, PSNR, MAE, LPIPS, coverage, width, crossings and uncertainty/error correlations |
 | [protocol.py](protocol.py) / [experiment_settings.json](../configs/experiment_settings.json) | Model/data selection, recorded settings, identity and resume checks |
-| [checkpoints.py](checkpoints.py) | Strict loading and validation of saved weights |
+| [checkpoints.py](checkpoints.py) | Atomic saving, strict weight loading, resume and ensemble assembly |
 | [download.py](download.py) / [checkpoint_index.json](checkpoint_index.json) | Verified downloads of published checkpoint files |
 
 Training losses, including the pinball formula, are defined directly in each
 [Im2im/QUTCC model file](../models/). PLD and DLMD use the same Im2im and QUTCC
 classes; there are no dataset-specific copies of these losses or architectures.
+The small `convrml/train.py` and `convrml/evaluate.py` modules forward the older
+package commands to the root scripts; the workflows are implemented once.
 
 Both loaders return float32 `(2, 3, H, W)`: measurement first, target second.
 RGB uint8 values are divided by 255. Neither loader clips predictions, applies

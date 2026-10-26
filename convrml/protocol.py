@@ -67,11 +67,12 @@ def profile(experiment, dataset, method, member=None):
         )
     if member is not None and member not in range(10):
         raise ValueError("Ensemble member index must be 0..9")
-    family = (
-        "adaptation"
-        if dataset == "raw_corrupted"
-        else ("paper" if method == "qutcc" or experiment == 3 else "baseline")
-    )
+    if dataset == "raw_corrupted":
+        family = "adaptation"
+    elif method == "qutcc" or experiment == 3:
+        family = "paper"
+    else:
+        family = "baseline"
     result = dict(config["profiles"][family])
     if data["loader"] == "images":
         result["microbatch"] = 1
@@ -114,7 +115,9 @@ def make_model(run):
         return Im2im(checkpoint_prefix="net" if run["experiment"] == 3 else "base")
     if run["method"] == "mc_dropout":
         return MCDropout(run["dropout"])
-    return EnsembleMember()
+    if run["method"] == "ensemble":
+        return EnsembleMember()
+    raise ValueError("Unknown model method: " + run["method"])
 
 
 def dataset_for(dataset, manifest, pairs, split):
@@ -171,18 +174,16 @@ def autocast(run, device):
 
 
 def learning_rate(step, total_steps, run):
+    """Recorded constant or warmup/cosine schedule; resume keeps its full horizon."""
     peak = run["peak_lr"]
     if run["schedule"] == "constant":
         return peak
     fraction, low = step / total_steps, peak / 10
-    return (
-        low + fraction / 0.3 * (peak - low)
-        if fraction <= 0.3
-        else (
-            low / 1e4
-            + (peak - low / 1e4) / 2 * (math.cos(math.pi * (fraction - 0.3) / 0.7) + 1)
-        )
-    )
+    if fraction <= 0.3:
+        return low + fraction / 0.3 * (peak - low)
+    minimum = low / 1e4
+    cosine = math.cos(math.pi * (fraction - 0.3) / 0.7)
+    return minimum + (peak - minimum) / 2 * (cosine + 1)
 
 
 def center(model, method, y):
@@ -190,7 +191,7 @@ def center(model, method, y):
         return model(y)[0]
     if method == "mc_dropout":
         return model(y)
-    return model.center(y) if hasattr(model, "center") else model(y)[:, 1]
+    return model.center(y)
 
 
 def environment():

@@ -6,8 +6,14 @@ updates model weights or forces an exact coverage fraction on future test images
 """
 
 import math
+from pathlib import Path
+import tempfile
 
 import numpy as np
+import torch
+from torch.utils.data import DataLoader
+
+from .protocol import settings
 from scipy.special import xlogy
 from scipy.stats import binom
 
@@ -163,3 +169,108 @@ def paper_quantiles(risk, n, alpha=0.1, tol=1e-3, max_iterations=20):
         assumption="Quantile response should be monotone; shared weights do not strictly enforce it",
         calibrated_on="calibration split only",
     )
+
+
+def capture_rng(device):
+    return torch.get_rng_state(), (
+        torch.cuda.get_rng_state_all() if device.type == "cuda" else []
+    )
+
+
+def restore_rng(state):
+    torch.set_rng_state(state[0])
+    if state[1]:
+        torch.cuda.set_rng_state_all(state[1])
+
+
+def fit_calibration(calibration, predict, q_model, run, device, workers, output):
+    loader = DataLoader(calibration, batch_size=run["microbatch"], num_workers=workers)
+    target = settings()["alpha"]
+    rng_before, rng_after = capture_rng(device), None
+    if run["method"] == "qutcc":
+        cache = [{}, {}]
+
+        def risk(qlo, qhi):
+            qs = qlo, qhi
+            missing = [side for side in (0, 1) if qs[side] not in cache[side]]
+            counts, pixels = [0, 0], 0
+            if missing:
+                for batch in loader:
+                    y, x = batch[:, 0].to(device), batch[:, 1].to(device)
+                    for side in missing:
+                        endpoint = q_model(y, y.new_full((len(y),), qs[side]))
+                        if not torch.isfinite(endpoint).all():
+                            raise ValueError("Nonfinite quantile prediction")
+                        counts[side] += int(
+                            ((x < endpoint) if side == 0 else (x > endpoint)).sum()
+                        )
+                    pixels += x.numel()
+                for side in missing:
+                    cache[side][qs[side]] = counts[side] / pixels
+            return tuple(cache[side][qs[side]] for side in (0, 1))
+
+        fitted = paper_quantiles(risk, len(calibration), alpha=target)
+    else:
+        shape = (len(calibration), *calibration[0][0].shape)
+        with tempfile.TemporaryDirectory(
+            prefix="calibration-", dir=output
+        ) as temporary:
+            scores = [
+                np.lib.format.open_memmap(
+                    Path(temporary) / f"tail_{side}.npy",
+                    mode="w+",
+                    dtype=np.float32,
+                    shape=shape,
+                )
+                for side in (0, 1)
+            ]
+            offset = 0
+            try:
+                for batch in loader:
+                    y, x = batch[:, 0].to(device), batch[:, 1].to(device)
+                    center, lo, hi = predict(y)
+                    lower = (center - x) / (center - lo).clamp_min(1e-6)
+                    upper = (x - center) / (hi - center).clamp_min(1e-6)
+                    for dest, value in zip(scores, (lower, upper)):
+                        dest[offset : offset + len(batch)] = value.cpu().numpy()
+                    offset += len(batch)
+                fitted = rcps_scales(
+                    *scores, alpha=target, delta=settings()["calibration"]["delta"]
+                )
+            finally:
+                for array in scores:
+                    array._mmap.close()
+        rng_after = capture_rng(device)
+        # Replay the identical MC masks to audit the fitted calibration intervals.
+        restore_rng(rng_before)
+    covered, total, crossing = 0, 0, 0
+    for batch in loader:
+        y, x = batch[:, 0].to(device), batch[:, 1].to(device)
+        _, lo, hi = apply_calibration(y, predict, q_model, run["method"], fitted)
+        covered += int(((x >= lo) & (x <= hi)).sum())
+        crossing += int((lo > hi).sum())
+        total += x.numel()
+    if rng_after is not None:
+        restore_rng(rng_after)
+    coverage = covered / total
+    fitted.update(
+        calibration_coverage=coverage,
+        calibration_crossing=crossing / total,
+        target_coverage=1 - target,
+        n_images=len(calibration),
+        calibrated_on="calibration split only",
+        endpoint_clipping=None,
+        has_hb_certificate="certificate" in fitted,
+        calibration_mode="paper",
+    )
+    return fitted
+
+
+def apply_calibration(y, predict, q_model, method, fitted):
+    if method == "qutcc" and "lower_q" in fitted:
+        return q_model.bounds(y, fitted["lower_q"], fitted["upper_q"])
+    center, lo, hi = predict(y)
+    if "scales" in fitted:
+        lo = center - fitted["scales"]["lower"] * (center - lo).clamp_min(1e-6)
+        hi = center + fitted["scales"]["upper"] * (hi - center).clamp_min(1e-6)
+    return center, lo, hi

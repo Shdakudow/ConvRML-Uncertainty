@@ -166,5 +166,33 @@
   "consolidation": "Four method files; one Im2im class with legacy base/net checkpoint prefixes; shared QUTCC",
   "training_settings_sha256": "061d8e6f8fb30af1d8a2f201542b7f0d61b6e99b19dbde3fcf1ec180f4120acf",
   "training_settings_unchanged": true,
-  "additional_loss_checks": "Six FP32/BF16 actual model-loss cases: objectives, input/parameter gradients and RNG match prior implementation exactly"
+  "additional_loss_checks": "Six FP32/BF16 actual model-loss cases: objectives, input/parameter gradients and RNG match prior implementation exactly",
+  "readability_refactor": {
+    "status": "pass",
+    "date": "2026-10-26",
+    "compared_to_commit": "d4e6f81",
+    "active_tests_passed": 36,
+    "full_model_fingerprints_unchanged": true,
+    "paired_fixture_workflows": {
+      "methods": [
+        "im2im",
+        "qutcc",
+        "ensemble",
+        "mc_dropout"
+      ],
+      "comparison": "exact equality",
+      "checked": [
+        "trained tensors",
+        "optimizer state",
+        "CPU/data/quantile RNG state",
+        "training and validation history excluding timing",
+        "calibration",
+        "test metrics and valid counts",
+        "saved example arrays"
+      ],
+      "baseline_sha256": "00d3a31095e2f0b64a165ef37f9f2611660eb0d5a4fa543276d2fdfa344a868a"
+    },
+    "full_schedule_values_compared": 4002,
+    "limitations": "Full-model checks use synthetic CPU inputs. Workflow checks use tiny paired fixtures and lightweight test models. These checks do not certify bitwise equality across GPUs or an entire 50-epoch run."
+  }
 }

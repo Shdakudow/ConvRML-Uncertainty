@@ -10,6 +10,7 @@ The unwrapped state dictionary matches the trained ``mc_005`` checkpoints.
 from contextlib import contextmanager
 import torch
 from torch import nn
+from timm.models.convnext import ConvNeXtBlock
 
 from convrml.backbone import ConvNeXtFPN
 from convrml.intervals import gaussian_interval_from_mean_variance
@@ -17,6 +18,7 @@ from convrml.intervals import gaussian_interval_from_mean_variance
 
 @contextmanager
 def dropout_inference(model):
+    """Enable dropout for prediction and restore every module's mode afterward."""
     modes = {m: m.training for m in model.modules()}
     try:
         model.eval()
@@ -40,7 +42,7 @@ class MCDropout(ConvNeXtFPN):
         self.dropout_locations = []
         self._dropout_handles = []
         for name, block in list(self.encoder.named_modules()):
-            if block.__class__.__name__ == "ConvNeXtBlock":
+            if isinstance(block, ConvNeXtBlock):
                 key = name.replace(".", "__")
                 self.encoder_dropout[key] = nn.Dropout(p)
                 self._dropout_handles.append(
@@ -82,16 +84,17 @@ class MCDropout(ConvNeXtFPN):
         """
         if samples < 2:
             raise ValueError("At least two stochastic predictions are required")
-        mean = m2 = None
+        # Welford's update avoids retaining all stochastic images in memory.
+        mean = squared_deviations = None
         with dropout_inference(self):
             for i in range(samples):
                 sample = self(y).float()
                 if mean is None:
-                    mean, m2 = sample, torch.zeros_like(sample)
+                    mean, squared_deviations = sample, torch.zeros_like(sample)
                 else:
                     delta = sample - mean
                     mean = mean + delta / (i + 1)
-                    m2 = m2 + delta * (sample - mean)
-        variance = m2 / samples
+                    squared_deviations = squared_deviations + delta * (sample - mean)
+        variance = squared_deviations / samples
         lower, upper = gaussian_interval_from_mean_variance(mean, variance, alpha)
         return mean, lower, upper

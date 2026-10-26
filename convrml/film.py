@@ -6,14 +6,20 @@ residual branch (not the completed residual block). Sequential forwards only.
 
 from contextlib import contextmanager
 from torch import nn
+from timm.models.convnext import ConvNeXtBlock
 from .quantile_embedding import timestep_embedding
+
+QUANTILE_EMBED_DIM = 128
+CONDITION_DIM = 512
 
 
 class NormFiLM(nn.Module):
     def __init__(self, channels, channels_last=False):
         super().__init__()
         self.channels_last = channels_last
-        self.projection = nn.Sequential(nn.SiLU(), nn.Linear(512, 2 * channels))
+        self.projection = nn.Sequential(
+            nn.SiLU(), nn.Linear(CONDITION_DIM, 2 * channels)
+        )
         # Preserve the initialized reconstruction before FiLM learns its modulation.
         nn.init.zeros_(self.projection[-1].weight)
         nn.init.zeros_(self.projection[-1].bias)
@@ -29,16 +35,18 @@ class FiLMBackbone(nn.Module):
         super().__init__()
         self.base = base
         self.embedding = nn.Sequential(
-            nn.Linear(128, 512), nn.SiLU(), nn.Linear(512, 512)
+            nn.Linear(QUANTILE_EMBED_DIM, CONDITION_DIM),
+            nn.SiLU(),
+            nn.Linear(CONDITION_DIM, CONDITION_DIM),
         )
         self.films = nn.ModuleDict()
         self.locations = []
-        self._emb = None
-        self._handles = []
+        self._active_embedding = None
+        self._film_hook_handles = []
         for name, module in list(base.named_modules()):
             target = None
             channels_last = False
-            if module.__class__.__name__ == "ConvNeXtBlock":
+            if isinstance(module, ConvNeXtBlock):
                 target = module.norm
                 channels = module.conv_dw.out_channels
                 channels_last = not module.use_conv_mlp
@@ -55,7 +63,9 @@ class FiLMBackbone(nn.Module):
                 self.locations.append(
                     dict(module=site, channels=channels, channels_last=channels_last)
                 )
-                self._handles.append(target.register_forward_hook(self._hook(key)))
+                self._film_hook_handles.append(
+                    target.register_forward_hook(self._hook(key))
+                )
         if len(self.films) != 48:
             raise ValueError(
                 f"Expected 36 encoder + 12 decoder sites, got {len(self.films)}"
@@ -63,25 +73,28 @@ class FiLMBackbone(nn.Module):
 
     def _hook(self, key):
         def hook(module, inputs, output):
-            if self._emb is None:
+            if self._active_embedding is None:
                 raise RuntimeError("Backbone called outside FiLM context")
-            return self.films[key](output, self._emb)
+            return self.films[key](output, self._active_embedding)
 
         return hook
 
     @contextmanager
     def condition(self, y, q=None):
-        if self._emb is not None:
+        """Scope one image batch's q embedding; always clear it after the forward."""
+        if self._active_embedding is not None:
             raise RuntimeError("Concurrent/nested forwards are unsupported")
         if q is None:
             q = y.new_full((len(y),), 0.5)
         if q.shape != (len(y),):
             raise ValueError("One q per image required")
-        self._emb = self.embedding(timestep_embedding(q, 128))
+        self._active_embedding = self.embedding(
+            timestep_embedding(q, QUANTILE_EMBED_DIM)
+        )
         try:
             yield
         finally:
-            self._emb = None
+            self._active_embedding = None
 
     def forward(self, y, q=None):
         with self.condition(y, q):

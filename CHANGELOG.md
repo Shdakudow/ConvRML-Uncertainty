@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Make `train.py` and `infer.py` the readable workflow implementations, with named
+  epoch, calibration, evaluation and export steps. Group checkpoint save/resume
+  logic in `convrml/checkpoints.py` and calibration fitting in `calibration.py`.
+  Keep the older package commands as thin compatibility entry points.
+- Use explicit ConvNeXt block types, descriptive FiLM/dropout state names and
+  named embedding dimensions. Numerical behavior and serialized parameters stay
+  unchanged; add a short code-reading guide to the README.
 - Define the four methods once in `models/`, with shared adaptive-size Im2im/QUTCC
   and legacy checkpoint-name compatibility. Put data loading in `dataset.py`,
   recorded settings in `configs/`, and add common `train.py`/`infer.py` entry points.
