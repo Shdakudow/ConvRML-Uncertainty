@@ -9,6 +9,7 @@ and their runnable workflow.
 | [docs/](docs/) | Extended usage, model comparison, calibration and metric guides |
 | [tools/](tools/) | Learning-curve plotting, numerical equivalence and source checks |
 | [workflows/](workflows/) | Optional GitHub Actions test configuration; inactive here |
+| [calibration_legacy/](calibration_legacy/) | Superseded empirical modes and original source snapshots |
 
 Run archived tools from the checkout root, for example:
 

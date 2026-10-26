@@ -1,7 +1,7 @@
 """Calibrate frozen public models, then measure a separate held-out test split.
 
 Uses no archived trainers, cluster paths or test-driven parameter selection.
-Empirical equal-tail calibration is separate from historical RCPS results.
+Baselines use RCPS-HB; QUTCC selects quantile inputs with paper Algorithm 1.
 """
 
 import argparse
@@ -16,7 +16,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-from .calibration import CalibrationError, fit_tail_scale, search_quantiles
+from .calibration import CalibrationFailure, paper_quantiles, rcps_scales
 from .checkpoints import load_model
 from .metrics import interval_metrics
 from .protocol import (
@@ -30,12 +30,6 @@ from .protocol import (
     check_shape,
     source_fingerprint,
     hardware,
-)
-from .reference_calibration import (
-    PaperCalibrationFailure,
-    paper_quantiles,
-    select_asymmetric_factors,
-    tail_budget,
 )
 
 
@@ -63,8 +57,9 @@ def arguments(argv=None):
     parser.add_argument("--calibration-pairs", type=Path)
     parser.add_argument(
         "--calibration",
-        choices=["empirical", "reference", "native"],
-        default="empirical",
+        choices=["paper", "native"],
+        default="paper",
+        help="Paper: baseline RCPS or QUTCC Algorithm 1; native: uncalibrated control",
     )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
@@ -107,9 +102,7 @@ def restore_rng(state):
         torch.cuda.set_rng_state_all(state[1])
 
 
-def fit_calibration(
-    calibration, predict, q_model, run, device, workers, output, mode="empirical"
-):
+def fit_calibration(calibration, predict, q_model, run, device, workers, output):
     loader = DataLoader(calibration, batch_size=run["microbatch"], num_workers=workers)
     target = settings()["alpha"]
     rng_before, rng_after = capture_rng(device), None
@@ -125,8 +118,6 @@ def fit_calibration(
                     y, x = batch[:, 0].to(device), batch[:, 1].to(device)
                     for side in missing:
                         endpoint = q_model(y, y.new_full((len(y),), qs[side]))
-                        if mode == "empirical":
-                            endpoint = endpoint.clamp(0, 1)
                         if not torch.isfinite(endpoint).all():
                             raise ValueError("Nonfinite quantile prediction")
                         counts[side] += int(
@@ -137,13 +128,7 @@ def fit_calibration(
                     cache[side][qs[side]] = counts[side] / pixels
             return tuple(cache[side][qs[side]] for side in (0, 1))
 
-        fitted = (
-            paper_quantiles(risk, len(calibration), alpha=target)
-            if mode == "reference"
-            else search_quantiles(
-                risk, alpha=target, coverage_tolerance=settings()["coverage_tolerance"]
-            )
-        )
+        fitted = paper_quantiles(risk, len(calibration), alpha=target)
     else:
         shape = (len(calibration), *calibration[0][0].shape)
         with tempfile.TemporaryDirectory(
@@ -165,60 +150,12 @@ def fit_calibration(
                     center, lo, hi = predict(y)
                     lower = (center - x) / (center - lo).clamp_min(1e-6)
                     upper = (x - center) / (hi - center).clamp_min(1e-6)
-                    # Boundary targets remain covered by clipped endpoints.
-                    if mode == "empirical":
-                        lower[x == 1] = -torch.inf
-                        upper[x == 0] = -torch.inf
                     for dest, value in zip(scores, (lower, upper)):
                         dest[offset : offset + len(batch)] = value.cpu().numpy()
                     offset += len(batch)
-                if mode == "reference" and run["experiment"] == 2:
-                    factors, audit, _ = select_asymmetric_factors(
-                        *scores, alpha=target, delta=0.05
-                    )
-                    fitted = dict(
-                        scales=factors["rcps_hb"],
-                        certificate=audit,
-                        delta=0.05,
-                        procedure="reference asymmetric RCPS-HB",
-                    )
-                elif mode == "reference":
-                    budget, fitted_scales = tail_budget(target, len(calibration)), {}
-                    grid = np.linspace(0, 6, 1000)
-                    for side, values in zip(("lower", "upper"), scores):
-                        left, right = 0, len(grid) - 1
-                        if np.mean(values > grid[-1]) > budget:
-                            raise PaperCalibrationFailure(
-                                "No feasible Im2im scale in reference range 0..6"
-                            )
-                        while left < right:
-                            mid = (left + right) // 2
-                            if np.mean(values > grid[mid]) <= budget:
-                                right = mid
-                            else:
-                                left = mid + 1
-                        fitted_scales[side] = float(grid[left])
-                    fitted = dict(
-                        scales=fitted_scales,
-                        per_tail_target=budget,
-                        procedure="reference paper Im2im adjusted empirical scale search",
-                    )
-                else:
-                    tails = [
-                        fit_tail_scale(values, target / 2, overwrite=True)
-                        for values in scores
-                    ]
-                    fitted = dict(
-                        scales={
-                            side: value["scale"]
-                            for side, value in zip(("lower", "upper"), tails)
-                        },
-                        tail_risks={
-                            side: value["risk"]
-                            for side, value in zip(("lower", "upper"), tails)
-                        },
-                        procedure="empirical equal-tail scale order statistics; not RCPS",
-                    )
+                fitted = rcps_scales(
+                    *scores, alpha=target, delta=settings()["calibration"]["delta"]
+                )
             finally:
                 for array in scores:
                     array._mmap.close()
@@ -229,8 +166,6 @@ def fit_calibration(
     for batch in loader:
         y, x = batch[:, 0].to(device), batch[:, 1].to(device)
         _, lo, hi = apply_calibration(y, predict, q_model, run["method"], fitted)
-        if mode == "empirical":
-            lo, hi = lo.clamp(0, 1), hi.clamp(0, 1)
         covered += int(((x >= lo) & (x <= hi)).sum())
         crossing += int((lo > hi).sum())
         total += x.numel()
@@ -242,13 +177,10 @@ def fit_calibration(
         calibration_crossing=crossing / total,
         target_coverage=1 - target,
         n_images=len(calibration),
-        within_tolerance=1 - target
-        <= coverage
-        <= 1 - target + settings()["coverage_tolerance"],
         calibrated_on="calibration split only",
-        endpoint_clipping=[0, 1] if mode == "empirical" else None,
-        confidence_guarantee="certificate" in fitted,
-        calibration_mode=mode,
+        endpoint_clipping=None,
+        has_hb_certificate="certificate" in fitted,
+        calibration_mode="paper",
     )
     return fitted
 
@@ -273,6 +205,8 @@ def run_evaluation(args, *, model_loader=None):
 
 @torch.inference_mode()
 def _run_evaluation(args, *, model_loader=None):
+    if args.calibration not in ("paper", "native"):
+        raise ValueError("Calibration must be paper or native")
     source = source_fingerprint()
     software = environment()
     expected = (5, 10) if args.method == "ensemble" else (1,)
@@ -398,14 +332,13 @@ def _run_evaluation(args, *, model_loader=None):
                 device,
                 args.workers,
                 out,
-                args.calibration,
             )
-        except (CalibrationError, PaperCalibrationFailure) as error:
+        except CalibrationFailure as error:
             write_json(
                 out / "failure.json",
                 dict(
                     status="calibration_infeasible",
-                    error_code=getattr(error, "code", "reference_infeasible"),
+                    error_code="paper_calibration_infeasible",
                     error=str(error),
                     request=request,
                     provenance=provenance,

@@ -16,6 +16,7 @@ Historical source/cluster checks are optional and separate:
 ```bash
 python -m unittest discover -s archive/operations/tests -v
 python -m unittest discover -s archive/reproduction/tests -v
+python -m unittest discover -s archive/publication_support/calibration_legacy/tests -v
 python archive/publication_support/tools/verify_source_release.py
 ```
 

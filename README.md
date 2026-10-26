@@ -49,7 +49,7 @@ python -m convrml.evaluate --experiment 2 --dataset rml --method qutcc \
   --manifest /path/to/rml/manifest.json --pairs /path/to/rml/pairs.npy \
   --calibration-manifest /path/to/rml/calibration/manifest.json \
   --calibration-pairs /path/to/rml/calibration/pairs.npy \
-  --calibration empirical --output outputs/rml/qutcc/epoch_050 --device cuda
+  --calibration paper --output outputs/paper/rml/qutcc/epoch_050 --device cuda
 ```
 
 The [checkpoint index](reproducibility/checkpoints.json) identifies every saved
@@ -62,8 +62,10 @@ links the original datasets and specifies the exact input formats and split IDs.
 `python -m convrml.evaluate` loads frozen weights, fits on the separate calibration
 split and reports held-out SSIM, PSNR, MAE, coverage, width and crossings. It saves
 raw and clipped metrics, per-image CSV and optional reconstruction/bound arrays.
-[Calibration modes](archive/publication_support/docs/COVERAGE90.md) distinguish empirical matching, reference
-RCPS/Algorithm 1 and native intervals. Calibration does not force test coverage.
+[Calibration](archive/publication_support/docs/COVERAGE90.md) defaults to the paper
+procedures: RCPS-HB for Im2im, ensemble and MC dropout; Algorithm 1 calibrated
+quantiles for QUTCC. `--calibration native` is an uncalibrated control. Calibration
+does not force exact test coverage. Superseded empirical matching is archived.
 
 ## Verification and attribution
 

@@ -11,8 +11,7 @@ commands. Optional plotting, provenance tools and GitHub Actions live in
 | [quantile_embedding.py](quantile_embedding.py) | Sinusoidal scalar-q embedding |
 | [losses.py](losses.py) | Pixelwise pinball loss |
 | [intervals.py](intervals.py) | Native Gaussian-moment bounds before calibration |
-| [calibration.py](calibration.py) | Empirical endpoint scales and quantile search |
-| [reference_calibration.py](reference_calibration.py) | Reference RCPS-HB and Algorithm 1 formulas |
+| [calibration.py](calibration.py) | Baseline RCPS-HB scales and QUTCC Algorithm 1 calibrated quantiles |
 | [data.py](data.py) | Portable NumPy-cache and RGB paired-file datasets |
 | [train.py](train.py) / [evaluate.py](evaluate.py) | Training/resume and held-out calibrated evaluation |
 | [metrics.py](metrics.py) | SSIM, PSNR, MAE, coverage, width and crossing metrics |

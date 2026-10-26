@@ -39,8 +39,8 @@ width is not expected to equal a single observed absolute error.
 
 Alpha=0.10 specifies a target of 90%. Calibration coverage is measured on the
 calibration split; test coverage is measured on independent test pairs and can
-vary. Empirical fitting has no HB confidence certificate. Reference Exp2 RCPS
-uses delta=0.05 under its stated assumptions. See [calibration](COVERAGE90.md).
+vary. Baseline RCPS uses delta=0.05 under its stated assumptions; QUTCC uses
+its Algorithm 1 finite-N quantile search. See [calibration](COVERAGE90.md).
 Coverage/width assess intervals, not the accuracy of an entire probability density.
 
 ## Timing

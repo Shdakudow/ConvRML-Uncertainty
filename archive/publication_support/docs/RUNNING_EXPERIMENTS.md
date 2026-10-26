@@ -41,7 +41,7 @@ python -m convrml.evaluate --experiment 2 --dataset rml --method qutcc \
   --manifest "$CONVRML_DATA/rml/manifest.json" --pairs "$CONVRML_DATA/rml/pairs.npy" \
   --calibration-manifest "$CONVRML_DATA/rml/calibration/manifest.json" \
   --calibration-pairs "$CONVRML_DATA/rml/calibration/pairs.npy" \
-  --output outputs/empirical/rml/qutcc/epoch_050 --examples 10 --device cuda
+  --output outputs/paper/rml/qutcc/epoch_050 --examples 10 --device cuda
 ```
 
 Use the same arguments and dataset IDs with the other methods, changing the
@@ -59,7 +59,7 @@ python -m convrml.evaluate --experiment 3 --dataset raw_clean --method qutcc \
   --checkpoints weights/raw/qutcc/exp3__raw_clean__qutcc__epoch_050.pt \
   --manifest "$CONVRML_DATA/raw_clean/split.json" \
   --calibration-manifest "$CONVRML_DATA/raw_clean/split.json" \
-  --output outputs/empirical/raw_clean/qutcc/epoch_050 --examples 10 --device cuda
+  --output outputs/paper/raw_clean/qutcc/epoch_050 --examples 10 --device cuda
 ```
 
 Raw manifests contain separate roles in one file; the calibration/test role IDs
@@ -108,7 +108,7 @@ Plot complete milestones with the optional plotting dependencies:
 
 ```bash
 python -m pip install -e '.[plot]'
-python archive/publication_support/tools/plot_learning_curves.py --series QUTCC=outputs/empirical/rml/qutcc \
+python archive/publication_support/tools/plot_learning_curves.py --series QUTCC=outputs/paper/rml/qutcc \
   --metric-space clipped --output figures/rml
 ```
 

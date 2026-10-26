@@ -7,10 +7,10 @@ import unittest
 import numpy as np
 
 from convrml import download, protocol
-from convrml.reference_calibration import (
+from convrml.calibration import (
     paper_quantiles,
     risk_threshold,
-    select_asymmetric_factors,
+    rcps_scales,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -55,12 +55,18 @@ class ReleaseMetadata(unittest.TestCase):
     def test_hb_uses_whole_images_and_separate_tail_confidence_budgets(self):
         rng = np.random.default_rng(9)
         scores = rng.uniform(0, 2, (2048, 16)).astype(np.float32)
-        factors, audit, _ = select_asymmetric_factors(scores, scores * 2)
+        fitted = rcps_scales(scores, scores * 2)
+        audit = fitted["certificate"]
         self.assertEqual(audit["n_images"], 2048)
         self.assertEqual(audit["tail_delta"], 0.025)
         for side in ("lower", "upper"):
             self.assertGreaterEqual(
-                factors["rcps_hb"][side], factors["empirical"][side]
+                fitted["scales"][side],
+                float(
+                    np.quantile(
+                        scores if side == "lower" else scores * 2, 0.95, method="higher"
+                    )
+                ),
             )
             self.assertLess(audit["tail_hb_pvalues"][side], 0.025)
         with self.assertRaisesRegex(ValueError, "Insufficient"):

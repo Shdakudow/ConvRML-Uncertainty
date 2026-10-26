@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "verified_at": "2026-10-26T17:40:22.907094+00:00",
+  "source_sha256": "7ded10d177a77b4e5c8a70e0e779afb68d20b3aa41c905aa62605d0e9da4669c",
+  "default_calibration": "paper",
+  "baseline": "asymmetric RCPS-HB; alpha=0.10, delta=0.05",
+  "qutcc": "Algorithm 1 calibrated q with finite-N correction",
+  "tests": {
+    "active": 28,
+    "archived_empirical": 9,
+    "archived_operations": 18,
+    "archived_reproduction": 9
+  },
+  "total_tests": 64,
+  "numerical_checks": [
+    "RCPS scales and tail HB p-values match original certified branch exactly",
+    "QUTCC q values, trace and finite-N budget match original Algorithm 1 exactly",
+    "Raw Im2im routes to RCPS; MC fit/audit RNG replay matches",
+    "Calibration is frozen before test pixels are loaded"
+  ],
+  "unchanged_model_and_training_files": 14,
+  "training_settings_unchanged": true,
+  "package": {
+    "outside_checkout_cli_checks": "passed",
+    "archived_modes_excluded": true,
+    "local_wheel_sha256": "5844af9c377286c3035a7b088b33d83632e5cbdf66095cd5cb863758e9860aba"
+  },
+  "historical_source_check": "377 bundled files, 116 captured files, 106 Python sources verified",
+  "scope": "CPU fixtures and source comparisons; no full-dataset recalibration, retraining or demo update",
+  "behavior_change": "Raw Im2im now uses RCPS-HB; old finite-N scale-grid reports are retained unchanged"
+}

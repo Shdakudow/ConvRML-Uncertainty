@@ -67,14 +67,14 @@ class PortableWorkflow(unittest.TestCase):
         (self.root / "manifest.json").write_text(json.dumps(manifest))
         np.save(
             self.root / "calibration.npy",
-            rng.integers(0, 256, (4, 2, 3, 16, 16), dtype=np.uint8),
+            rng.integers(0, 256, (128, 2, 3, 16, 16), dtype=np.uint8),
         )
         (self.root / "calibration.json").write_text(
-            json.dumps({"calibration": [dict(id=f"cal{i}") for i in range(4)]})
+            json.dumps({"calibration": [dict(id=f"cal{i}") for i in range(128)]})
         )
         self.config = protocol.settings()
         self.config["datasets"]["rml"].update(
-            counts=dict(train=4, val=2, test=2, calibration=4),
+            counts=dict(train=4, val=2, test=2, calibration=128),
             shape=[3, 16, 16],
             id_hashes={},
         )
@@ -219,12 +219,22 @@ class PortableWorkflow(unittest.TestCase):
 
     def test_evaluation_fits_only_calibration_then_exports_exact_test_ids(self):
         args = self.evaluation_args()
-        report = evaluate.run_evaluation(args, model_loader=self.model_loader)
+        original = evaluate.dataset_for
+
+        def check_freeze(dataset, manifest, pairs, role):
+            if role == "test":
+                self.assertTrue((args.output / "calibration.json").exists())
+            return original(dataset, manifest, pairs, role)
+
+        with patch.object(evaluate, "dataset_for", side_effect=check_freeze):
+            report = evaluate.run_evaluation(args, model_loader=self.model_loader)
         self.assertEqual(report["test_count"], 2)
         self.assertEqual([row["id"] for row in report["per_image"]], ["test0", "test1"])
         self.assertFalse(report["request"]["test_used_for_calibration"])
-        self.assertEqual(report["calibration"]["n_images"], 4)
-        self.assertFalse(report["calibration"]["confidence_guarantee"])
+        self.assertEqual(report["calibration"]["n_images"], 128)
+        self.assertTrue(report["calibration"]["has_hb_certificate"])
+        self.assertEqual(report["request"]["calibration"], "paper")
+        self.assertEqual(report["calibration"]["procedure"], "asymmetric RCPS-HB")
         for mode in ("raw", "clipped"):
             for key, average in report["metrics"][mode].items():
                 self.assertEqual(
@@ -242,12 +252,8 @@ class PortableWorkflow(unittest.TestCase):
         path.write_text(
             json.dumps(
                 {
-                    "calibration": [
-                        dict(id="test0"),
-                        dict(id="c1"),
-                        dict(id="c2"),
-                        dict(id="c3"),
-                    ]
+                    "calibration": [dict(id="test0")]
+                    + [dict(id=f"cal{i}") for i in range(1, 128)]
                 }
             )
         )
@@ -276,7 +282,7 @@ class PortableWorkflow(unittest.TestCase):
             return original(dataset, manifest, pairs, role)
 
         with patch.object(evaluate, "dataset_for", side_effect=record):
-            with self.assertRaises(evaluate.CalibrationError):
+            with self.assertRaises(evaluate.CalibrationFailure):
                 evaluate.run_evaluation(args, model_loader=loader)
         self.assertNotIn("test", roles)
         self.assertTrue((args.output / "failure.json").exists())
@@ -305,6 +311,30 @@ class PortableWorkflow(unittest.TestCase):
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
             with self.assertRaises(BlockingIOError):
                 evaluate.run_evaluation(args, model_loader=self.model_loader)
+
+    def test_removed_calibration_modes_are_rejected_without_loading_weights(self):
+        for mode in ("empirical", "reference"):
+            args = self.evaluation_args("removed_" + mode)
+            args.calibration = mode
+            with self.assertRaisesRegex(ValueError, "paper or native"):
+                evaluate.run_evaluation(args, model_loader=self.model_loader)
+
+    def test_native_control_does_not_open_calibration_pixels(self):
+        args = self.evaluation_args("native")
+        args.calibration = "native"
+        args.calibration_manifest = None
+        args.calibration_pairs = None
+        original, roles = evaluate.dataset_for, []
+
+        def record(dataset, manifest, pairs, role):
+            roles.append(role)
+            return original(dataset, manifest, pairs, role)
+
+        with patch.object(evaluate, "dataset_for", side_effect=record):
+            report = evaluate.run_evaluation(args, model_loader=self.model_loader)
+        self.assertEqual(roles, ["test"])
+        self.assertEqual(report["request"]["calibration"], "native")
+        self.assertEqual(report["calibration"], {})
 
     def test_split_ids_dimensions_and_ensemble_seeds_are_checked(self):
         self.config["datasets"]["rml"]["id_hashes"] = {"train": "wrong"}

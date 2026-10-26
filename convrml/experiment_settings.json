@@ -2,7 +2,6 @@
   "schema": "convrml-portable-v1",
   "checkpoint_interval": 5,
   "alpha": 0.1,
-  "coverage_tolerance": 0.001,
   "dropout_probability": 0.05,
   "mc_samples": 30,
   "ensemble_members": 5,
@@ -182,14 +181,12 @@
     }
   },
   "calibration": {
-    "method": "empirical_equal_tail",
+    "method": "paper",
+    "baseline": "asymmetric_rcps_hb",
+    "qutcc": "paper_algorithm_1",
+    "delta": 0.05,
     "fit_on": "calibration only",
-    "endpoint_clipping": [
-      0,
-      1
-    ],
-    "confidence_guarantee": false,
-    "historical_rcps_is_separate": true
+    "endpoint_clipping": null
   },
   "checkpoint_protocols": {
     "baseline": [

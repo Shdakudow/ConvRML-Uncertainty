@@ -40,11 +40,12 @@ These historical runs are not an identical-optimizer ablation.
 ## Calibration and checkpoints
 
 Model `.bounds()` returns native intervals without fitting calibration or clipping.
-Calibration fits separate held-out pairs, after training. The close-to-90%
-comparison uses the common [empirical implementation](../../../convrml/calibration.py).
-`convrml.evaluate --calibration reference` reproduces RCPS-HB for Exp2 baselines
-and the paper-adjusted quantile/scale searches for QUTCC/raw Im2im. Default
-empirical results remain a distinct matched-coverage protocol.
+Calibration fits separate held-out pairs, after training. The shared
+[implementation](../../../convrml/calibration.py) uses RCPS-HB for Im2im,
+ensemble and MC dropout, and QUTCC Algorithm 1 to select quantile inputs.
+`convrml.evaluate --calibration paper` is the default; `native` is an uncalibrated
+control. Earlier empirical-matching and raw Im2im scale-grid reports remain
+historical and must not be relabelled as RCPS results.
 
 QUTCC weights are structurally shared across the experiments, but the trained
 weights and dataset identities differ. Im2im has different wrapper prefixes;

@@ -14,6 +14,7 @@ resume and calibrated evaluation.
 | [environment-tested.json](environment-tested.json) | Software used for release verification, with scope/device |
 | [verification.json](verification.json) | Automated checks and their practical scope |
 | [cleanup_verification.json](cleanup_verification.json) | Post-v0.1.0 archive/unused-code cleanup checks; original release evidence is retained |
+| [paper_calibration_verification.json](paper_calibration_verification.json) | Current paper-only calibration checks and unchanged model/training settings |
 | [model-equivalence.json](model-equivalence.json) | Exact original-versus-published CPU model fingerprints |
 | [constraints-tested.txt](constraints-tested.txt) | Tested numerical dependency versions |
 | [DATA.md](DATA.md) | Original datasets, prepared input formats and access requirements |
@@ -55,8 +56,11 @@ settings file and every portable checkpoint.
 
 Clean checkpoints are epochs 5,10,…,50. Corrupted checkpoints are adaptation
 5,10,…,30 following thirty clean epochs; do not label them as scratch training.
-Every model/camera/checkpoint is calibrated independently. Native outputs and
-reference RCPS/Algorithm 1 results are distinct from close-to-90% empirical fits.
+Every model/camera/checkpoint is calibrated independently. The default `paper`
+evaluation uses RCPS-HB for all baselines and Algorithm 1 for QUTCC. `native`
+is an uncalibrated control. Earlier empirical-matching reports remain historical;
+their values are not renamed or relabelled as paper calibration results.
+Old raw Im2im used a finite-N scale grid; new evaluations use RCPS-HB, as in Exp2.
 A failed calibration is a recorded gap, not a zero metric.
 
 The portable trainer uses an explicit new checkpoint schema. Saved historical

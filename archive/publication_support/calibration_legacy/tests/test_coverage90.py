@@ -8,8 +8,11 @@ import unittest
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from convrml.calibration import fit_tail_scale, search_quantiles
+sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
+from archive.publication_support.calibration_legacy.empirical import (
+    fit_tail_scale,
+    search_quantiles,
+)
 
 
 class TightCoverage(unittest.TestCase):

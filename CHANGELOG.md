@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Default to paper calibration only: RCPS-HB for all baselines, including raw
+  Im2im, and Algorithm 1 calibrated quantiles for QUTCC. Archive empirical matching
+  and the old combined reference evaluator; retain native intervals as a control.
 - Move optional guides, plotting/provenance tools and GitHub Actions configuration
   to `archive/publication_support/`; retain short runnable commands in the README.
 - Remove unused FiLM feature/head accessors, an unused import and the unused

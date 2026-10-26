@@ -18,7 +18,7 @@ import numpy as np
 
 REPOSITORY = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPOSITORY))
-from convrml.calibration import (
+from archive.publication_support.calibration_legacy.empirical import (
     CalibrationError,
     fit_tail_scale,
     search_quantiles,
@@ -29,7 +29,7 @@ from coverage90_cluster import validate_report
 # long job runs must not attribute its old computation to a newer file version.
 EVALUATOR_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 CALIBRATION_SHA256 = hashlib.sha256(
-    (REPOSITORY / "convrml/calibration.py").read_bytes()
+    (REPOSITORY / "archive/publication_support/calibration_legacy/empirical.py").read_bytes()
 ).hexdigest()
 
 
