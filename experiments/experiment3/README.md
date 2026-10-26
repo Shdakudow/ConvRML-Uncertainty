@@ -11,7 +11,7 @@ Open **[models/](models/)**; no separate architecture is introduced for corrupti
 ## Dimensions and data loading
 
 - Measurement and target: **RGB 270×480**.
-- Models replicate-pad right/bottom to **288×480**, then crop every output back.
+- Models replicate-pad right/bottom to **288×480**, then crop every output back. This makes encoder implementation easier.
 - Padding is excluded from losses and metrics by cropping the predictions first.
 - Loader: [`convrml.data.ImagePairs`](../../convrml/data.py), using a paired-file manifest.
 - Read RGB images, convert to float32 and divide by 255. The loader does not resize.
