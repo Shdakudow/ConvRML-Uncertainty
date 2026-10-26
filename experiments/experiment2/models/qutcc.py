@@ -13,7 +13,13 @@ from torch.nn import functional as F
 
 from convrml.backbone import ConvNeXtFPN
 from convrml.film import FiLMBackbone
-from convrml.losses import pinball
+
+
+def pinball(prediction, target, q):
+    """Pixelwise quantile loss, averaged over the batch, RGB channels and pixels."""
+    error = target - prediction
+    q = q.reshape(-1, 1, 1, 1)
+    return torch.maximum(q * error, (q - 1) * error).mean()
 
 
 class QUTCC(nn.Module):

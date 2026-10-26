@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Put pinball formulas directly in the Im2im/QUTCC model files and remove
+  `convrml/losses.py`; objectives, gradients and checkpoint parameters are unchanged.
 - Add evaluation LPIPS-AlexNet and per-image Pearson/Spearman uncertainty/error
   correlations, valid counts and five-epoch quality curves. Separate prediction
   timing from metric computation; omit region correlations and preserve models/losses.

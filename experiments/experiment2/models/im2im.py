@@ -6,10 +6,17 @@ Difference from QUTCC: three fixed heads; no quantile input or FiLM modulation.
 Historical checkpoint names retain the ``base.*`` prefix.
 """
 
+import torch
 from torch import nn
 
 from convrml.backbone import ConvNeXtFPN
-from convrml.losses import pinball
+
+
+def pinball(prediction, target, q):
+    """Pixelwise quantile loss used by the fixed lower and upper heads."""
+    error = target - prediction
+    q = q.reshape(-1, 1, 1, 1)
+    return torch.maximum(q * error, (q - 1) * error).mean()
 
 
 class Im2im(nn.Module):

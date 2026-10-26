@@ -30,6 +30,8 @@ loss = model.loss(measurement[None], target[None])
 ```
 
 These are the actual model definitions, with shared layers in [convrml/](../../convrml/).
+Each model file contains its complete training objective; Im2im and QUTCC include
+their pinball formula locally, so no shared loss file is needed.
 Models return native outputs; clipping and fitted interval calibration are separate.
 Ensemble members each train on the complete split with independent initialization
 and shuffle seeds. Historical training settings differ between QUTCC and baselines;

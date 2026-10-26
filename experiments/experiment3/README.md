@@ -2,6 +2,8 @@
 
 Two models use the same ConvNeXt/FPN backbone as Experiment 2.
 Open **[models/](models/)**; no separate architecture is introduced for corruption.
+Raw Im2im contains its pinball formula and full loss locally. QUTCC reuses the
+Experiment 2 class, including that class's self-contained loss implementation.
 
 | Model | File | Difference from Experiment 2 |
 | --- | --- | --- |

@@ -9,7 +9,6 @@ commands. Optional plotting, provenance tools and GitHub Actions live in
 | [backbone.py](backbone.py) | ConvNeXtV2-Base encoder, FPN decoder, RGB residual head |
 | [film.py](film.py) | Quantile modulation at 36 encoder + 12 decoder normalization sites |
 | [quantile_embedding.py](quantile_embedding.py) | Sinusoidal scalar-q embedding |
-| [losses.py](losses.py) | Pixelwise pinball loss |
 | [intervals.py](intervals.py) | Native Gaussian-moment bounds before calibration |
 | [calibration.py](calibration.py) | Baseline RCPS-HB scales and QUTCC Algorithm 1 calibrated quantiles |
 | [data.py](data.py) | Portable NumPy-cache and RGB paired-file datasets |
@@ -18,6 +17,10 @@ commands. Optional plotting, provenance tools and GitHub Actions live in
 | [protocol.py](protocol.py) / [experiment_settings.json](experiment_settings.json) | Model/data selection, recorded settings, identity and resume checks |
 | [checkpoints.py](checkpoints.py) | Strict loading and validation of saved weights |
 | [download.py](download.py) / [checkpoint_index.json](checkpoint_index.json) | Verified downloads of published checkpoint files |
+
+Training losses, including the pinball formula, are defined directly in each
+[Im2im/QUTCC model file](../experiments/experiment2/models/). Experiment 3 reuses
+the QUTCC class and defines its raw-size Im2im loss in its own model file.
 
 Both loaders return float32 `(2, 3, H, W)`: measurement first, target second.
 RGB uint8 values are divided by 255. Neither loader clips predictions, applies

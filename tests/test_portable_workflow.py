@@ -13,7 +13,7 @@ import torch
 from torch import nn
 
 from convrml import checkpoints, download, evaluate, protocol, train
-from convrml.losses import pinball
+from experiments.experiment2.models.qutcc import pinball
 
 
 class TinyQ(nn.Module):
