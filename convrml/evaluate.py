@@ -36,7 +36,9 @@ from .protocol import (
 
 def arguments(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--experiment", type=int, choices=[2, 3], required=True)
+    parser.add_argument(
+        "--experiment", type=int, choices=[2, 3], help=argparse.SUPPRESS
+    )
     parser.add_argument(
         "--dataset", choices=list(settings()["datasets"]), required=True
     )
@@ -88,7 +90,10 @@ def arguments(argv=None):
         action="store_true",
         help="Permit explicitly labelled small fixture data/checkpoints",
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.experiment is None:
+        args.experiment = settings()["datasets"][args.dataset]["experiment"]
+    return args
 
 
 def split_ids(path, split):
@@ -264,7 +269,7 @@ def _run_evaluation(args, *, model_loader=None):
                 raise ValueError(
                     "Ensemble members need distinct initialization and data-order seeds"
                 )
-        from experiments.experiment2.models import DeepEnsemble
+        from experiments.parallel_lensless.models import DeepEnsemble
 
         model = (
             DeepEnsemble(loaded, base_interval_alpha=settings()["alpha"])

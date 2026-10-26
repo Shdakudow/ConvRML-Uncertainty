@@ -33,10 +33,10 @@ is checked against the [index](../../../reproducibility/checkpoints.json). Corru
 uses adaptation epochs 5–30; clean models use epochs 5–50. A private repository
 requires an authenticated GitHub CLI with access, or manually supplied indexed files.
 
-## Evaluate Experiment 2
+## Evaluate RML / normalized DiffuserCam
 
 ```bash
-python -m convrml.evaluate --experiment 2 --dataset rml --method qutcc \
+python -m convrml.evaluate --dataset rml --method qutcc \
   --checkpoints weights/rml/qutcc/exp2__rml__qutcc__epoch_050.pt \
   --manifest "$CONVRML_DATA/rml/manifest.json" --pairs "$CONVRML_DATA/rml/pairs.npy" \
   --calibration-manifest "$CONVRML_DATA/rml/calibration/manifest.json" \
@@ -52,10 +52,10 @@ matches the captured predictor's initialization seed; `--seed` can explicitly
 select another draw sequence. Seed, batch shape and hardware affect stochastic results. `diffuser` selects the normalized
 parallel-camera data, distinct from raw DLMD.
 
-## Evaluate Experiment 3
+## Evaluate raw DiffuserCam
 
 ```bash
-python -m convrml.evaluate --experiment 3 --dataset raw_clean --method qutcc \
+python -m convrml.evaluate --dataset raw_clean --method qutcc \
   --checkpoints weights/raw/qutcc/exp3__raw_clean__qutcc__epoch_050.pt \
   --manifest "$CONVRML_DATA/raw_clean/split.json" \
   --calibration-manifest "$CONVRML_DATA/raw_clean/split.json" \
@@ -70,10 +70,10 @@ Models pad 270×480 internally to 288×480 and crop every output back.
 ## Train and resume
 
 ```bash
-python -m convrml.train --experiment 2 --dataset rml --method qutcc \
+python -m convrml.train --dataset rml --method qutcc \
   --manifest "$CONVRML_DATA/rml/manifest.json" --pairs "$CONVRML_DATA/rml/pairs.npy" \
   --output runs/rml/qutcc --epochs 5 --device cuda
-python -m convrml.train --experiment 2 --dataset rml --method qutcc \
+python -m convrml.train --dataset rml --method qutcc \
   --manifest "$CONVRML_DATA/rml/manifest.json" --pairs "$CONVRML_DATA/rml/pairs.npy" \
   --output runs/rml/qutcc --epochs 10 --resume --device cuda
 ```
@@ -90,7 +90,7 @@ and a distinct output directory per member; each member sees the entire training
 split with independent initialization and shuffle streams. Do not train concurrent
 writers into the same output directory.
 
-For raw clean training, use `--experiment 3 --dataset raw_clean`, the image-file
+For raw clean training, use `--dataset raw_clean`, the image-file
 manifest and no `--pairs`. Corruption adaptation uses `--dataset raw_corrupted`
 and `--initialize` with that method's clean epoch-30 checkpoint. It starts fresh
 Adam moments at LR 1e-5, then retains them through adaptation epoch 30. Existing

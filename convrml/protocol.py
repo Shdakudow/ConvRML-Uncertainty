@@ -29,7 +29,7 @@ def source_fingerprint():
     root = Path(__file__).resolve().parents[1]
     models = [
         path
-        for experiment in ("experiment2", "experiment3")
+        for experiment in ("parallel_lensless", "raw_diffusercam")
         for path in (root / "experiments" / experiment / "models").glob("*.py")
     ]
     files = sorted(list(Path(__file__).parent.glob("*.py")) + models + [SETTINGS_PATH])
@@ -107,14 +107,14 @@ def make_model(run):
     """Keep original parameter names and distinct ensemble initialization seeds."""
     torch.manual_seed(run["seeds"]["initialization"])
     if run["experiment"] == 2:
-        from experiments.experiment2.models import (
+        from experiments.parallel_lensless.models import (
             Im2im,
             QUTCC,
             MCDropout,
             EnsembleMember,
         )
     else:
-        from experiments.experiment3.models import Im2im, QUTCC
+        from experiments.raw_diffusercam.models import Im2im, QUTCC
     if run["method"] == "qutcc":
         return QUTCC()
     if run["method"] == "im2im":
@@ -127,10 +127,14 @@ def make_model(run):
 def dataset_for(dataset, manifest, pairs, split):
     if settings()["datasets"][dataset]["loader"] == "numpy":
         if pairs is None:
-            raise ValueError("Experiment 2 requires --pairs for its NumPy cache")
+            raise ValueError(
+                "Parallel lensless experiment requires --pairs for its NumPy cache"
+            )
         return NumpyPairs(pairs, manifest, split)
     if pairs is not None:
-        raise ValueError("Experiment 3 reads paired image paths, not a NumPy cache")
+        raise ValueError(
+            "Raw DiffuserCam experiment reads paired image paths, not a NumPy cache"
+        )
     return ImagePairs(manifest, split)
 
 

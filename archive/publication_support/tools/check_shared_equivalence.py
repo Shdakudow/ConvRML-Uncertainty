@@ -30,7 +30,8 @@ def case(name):
     torch.use_deterministic_algorithms(True)
     paper = name in ("qutcc", "raw_im2im")
     if name == "qutcc":
-        from experiments.experiment2.models.qutcc import QUTCC
+        from experiments.parallel_lensless.models.qutcc import QUTCC
+
         model = QUTCC()
         # Nonidentity modulation ensures q conditioning is actually exercised.
         with torch.no_grad():
@@ -38,16 +39,20 @@ def case(name):
                 film.projection[-1].weight.normal_(0, 0.002)
                 film.projection[-1].bias.normal_(0, 0.002)
     elif name == "raw_im2im":
-        from experiments.experiment3.models.im2im import Im2im
+        from experiments.raw_diffusercam.models.im2im import Im2im
+
         model = Im2im()
     elif name == "im2im":
-        from experiments.experiment2.models.im2im import Im2im
+        from experiments.parallel_lensless.models.im2im import Im2im
+
         model = Im2im()
     elif name == "mc_dropout":
-        from experiments.experiment2.models.mc_dropout import MCDropout
+        from experiments.parallel_lensless.models.mc_dropout import MCDropout
+
         model = MCDropout(0.05)
     else:
-        from experiments.experiment2.models.ensemble import EnsembleMember
+        from experiments.parallel_lensless.models.ensemble import EnsembleMember
+
         model = EnsembleMember()
     state = model.state_dict()
     initial = hashlib.sha256()

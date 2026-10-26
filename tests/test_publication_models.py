@@ -72,8 +72,8 @@ class PairedData(unittest.TestCase):
 
     def test_experiment_folders_have_only_the_six_public_models(self):
         for experiment, methods in [
-            ("experiment2", {"im2im", "ensemble", "mc_dropout", "qutcc"}),
-            ("experiment3", {"im2im", "qutcc"}),
+            ("parallel_lensless", {"im2im", "ensemble", "mc_dropout", "qutcc"}),
+            ("raw_diffusercam", {"im2im", "qutcc"}),
         ]:
             root = ROOT / "experiments" / experiment
             self.assertEqual(

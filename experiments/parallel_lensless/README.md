@@ -1,4 +1,4 @@
-# Experiment 2: RML and normalized DiffuserCam
+# RML and normalized DiffuserCam
 
 Four uncertainty methods use the same ConvNeXtV2-Base/FPN reconstruction backbone.
 Open **[models/](models/)**; each method has one annotated file.
@@ -21,7 +21,7 @@ Open **[models/](models/)**; each method has one annotated file.
 
 ```python
 from convrml.data import NumpyPairs
-from experiments.experiment2.models import QUTCC
+from experiments.parallel_lensless.models import QUTCC
 
 pairs = NumpyPairs("pairs.npy", "manifest.json", split="train")
 measurement, target = pairs[0]

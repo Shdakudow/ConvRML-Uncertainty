@@ -5,9 +5,10 @@ plotting/provenance tools and inactive GitHub Actions configuration.
 
 [operations/](operations/) preserves cluster/job/demo deployment tooling. The portable release needs none of it.
 
-The publication model interface is in [Exp2](../experiments/experiment2/models/), [Exp3](../experiments/experiment3/models/) and [convrml/](../convrml/).
+The publication model interface is in [parallel lensless](../experiments/parallel_lensless/models/), [raw DiffuserCam](../experiments/raw_diffusercam/models/) and [convrml/](../convrml/).
 
-[reproduction/](reproduction/) preserves the full Experiment 2/3 engines and their original import layout, apart from the concise model interface.
+[reproduction/](reproduction/) preserves the historical numbered-experiment engines
+and their original import layout, apart from the concise model interface.
 
 | Item | Contents |
 | --- | --- |

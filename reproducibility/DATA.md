@@ -8,8 +8,8 @@ their providers:
 - [DiffuserCam Lensless Mirflickr Dataset](https://waller-lab.github.io/LenslessLearning/dataset.html):
   the separate aligned DiffuserCam/lensed-image dataset used by the raw branch.
 
-Experiment 2's normalized parallel-camera DiffuserCam is not the raw DLMD branch
-in Experiment 3. Use the correct acquisition and prepared preprocessing for each
+The normalized parallel-camera DiffuserCam data differ from the raw DLMD branch
+in the raw DiffuserCam experiment. Use the correct acquisition and prepared preprocessing for each
 checkpoint. This release supplies the saved split IDs and loader schemas; it does
 not redistribute the image collections or silently replace preprocessing with a
 new resize/normalization recipe.

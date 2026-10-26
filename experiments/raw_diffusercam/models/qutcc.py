@@ -1,4 +1,4 @@
-"""Raw DiffuserCam QUTCC; the architecture is identical to Experiment 2.
+"""Raw DiffuserCam QUTCC; the architecture matches the parallel lensless models.
 
 Data: paired RGB image files via ``convrml.data.ImagePairs``; targets stay fixed
 for corrupted measurements. Normalize uint8 RGB by 255. Input/output shape is
@@ -6,6 +6,6 @@ for corrupted measurements. Normalize uint8 RGB by 255. Input/output shape is
 Only data, split sizes and training protocol differ; no extra model layers.
 """
 
-from experiments.experiment2.models.qutcc import QUTCC
+from experiments.parallel_lensless.models.qutcc import QUTCC
 
 __all__ = ["QUTCC"]

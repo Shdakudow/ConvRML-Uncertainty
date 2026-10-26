@@ -1,11 +1,11 @@
-# Experiment 3: raw and corrupted raw DiffuserCam
+# Clean and corrupted raw DiffuserCam
 
-Two models use the same ConvNeXt/FPN backbone as Experiment 2.
+Two models use the same ConvNeXt/FPN backbone as the parallel lensless experiment.
 Open **[models/](models/)**; no separate architecture is introduced for corruption.
 Raw Im2im contains its pinball formula and full loss locally. QUTCC reuses the
-Experiment 2 class, including that class's self-contained loss implementation.
+parallel lensless class, including that class's self-contained loss implementation.
 
-| Model | File | Difference from Experiment 2 |
+| Model | File | Difference from the parallel lensless models |
 | --- | --- | --- |
 | Im2im | [im2im.py](models/im2im.py) | Same lower/center/upper heads and MSE + pinball loss; raw-size padding/cropping and preserved `net.*` checkpoint names |
 | QUTCC | [qutcc.py](models/qutcc.py) | The exact same QUTCC implementation; only data and training protocol differ |
@@ -22,7 +22,7 @@ Experiment 2 class, including that class's self-contained loss implementation.
 
 ```python
 from convrml.data import ImagePairs
-from experiments.experiment3.models import Im2im
+from experiments.raw_diffusercam.models import Im2im
 
 pairs = ImagePairs("split.json", split="train")
 measurement, target = pairs[0]

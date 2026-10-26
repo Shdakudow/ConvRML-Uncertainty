@@ -15,7 +15,7 @@ from torch.utils.data import Dataset
 
 
 class NumpyPairs(Dataset):
-    """Experiment 2: memory-mapped (N, 2, 3, 256, 256) uint8 cache.
+    """Parallel lensless experiment: memory-mapped (N, 2, 3, 256, 256) uint8 cache.
 
     The manifest lists train/val/test IDs in their existing cache order, or lists a
     separate calibration split. Pass the calibration cache and its own manifest
@@ -55,7 +55,7 @@ class NumpyPairs(Dataset):
 
 
 class ImagePairs(Dataset):
-    """Experiment 3: paired RGB image paths in manifest['roles'][split].
+    """Raw DiffuserCam experiment: paired RGB image paths in manifest['roles'][split].
 
     Clean and fixed-corruption manifests use the same schema. Paths can be absolute
     or relative to the manifest. Models handle padding; this loader does not resize.

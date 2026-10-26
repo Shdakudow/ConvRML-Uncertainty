@@ -34,7 +34,9 @@ from .protocol import (
 
 def arguments(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--experiment", type=int, choices=[2, 3], required=True)
+    parser.add_argument(
+        "--experiment", type=int, choices=[2, 3], help=argparse.SUPPRESS
+    )
     parser.add_argument(
         "--dataset", choices=list(settings()["datasets"]), required=True
     )
@@ -65,7 +67,10 @@ def arguments(argv=None):
         action="store_true",
         help="Two batches, one epoch; explicitly marked, small data allowed",
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.experiment is None:
+        args.experiment = settings()["datasets"][args.dataset]["experiment"]
+    return args
 
 
 def save_checkpoint(path, value):

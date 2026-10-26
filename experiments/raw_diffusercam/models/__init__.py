@@ -1,4 +1,4 @@
-"""Experiment 3: raw-compatible Im2im and QUTCC."""
+"""Raw DiffuserCam experiment: raw-compatible Im2im and QUTCC."""
 
 from .im2im import Im2im
 from .qutcc import QUTCC

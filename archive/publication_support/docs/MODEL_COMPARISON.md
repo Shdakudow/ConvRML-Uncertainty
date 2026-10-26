@@ -1,7 +1,7 @@
 # Model comparison
 
-[Experiment 2](../../../experiments/experiment2/models/) has four model definitions.
-[Experiment 3](../../../experiments/experiment3/models/) has two. Shared layers are in
+[Parallel lensless](../../../experiments/parallel_lensless/models/) has four model definitions.
+[Raw DiffuserCam](../../../experiments/raw_diffusercam/models/) has two. Shared layers are in
 [convrml/](../../../convrml/); there are no copied backbone variants in the experiment folders.
 
 | Method | Training objective | Reconstruction | Native bounds | Added architecture |
@@ -19,21 +19,21 @@ shuffle seeds while each sees the complete training split.
 
 ## Experiment-specific differences
 
-| Setting | Experiment 2 | Experiment 3 |
+| Setting | Parallel lensless | Raw DiffuserCam |
 | --- | --- | --- |
 | Measurements | RML / normalized DiffuserCam | Clean / fixed-corruption raw DiffuserCam |
 | Image size | RGB 256×256 | RGB 270×480; internally pad to 288×480 and crop |
 | Loader | `NumpyPairs`: uint8 memory-mapped cache | `ImagePairs`: paired RGB image files |
 | Input conversion | Float32 / 255 | Float32 / 255 |
 | Train / val / test / calibration | 60,000 / 5,000 / 5,000 / 2,048 | 17,999 / 2,000 / 2,000 / 3,000 |
-| QUTCC implementation | Shared | Identical to Experiment 2 |
+| QUTCC implementation | Shared | Identical class |
 | Im2im wrapper | `base.*` checkpoint names | `net.*` checkpoint names; internal padding/cropping |
 | Main clean training | 50 epochs | 50 epochs |
 | Corruption adaptation | Not included | 30 clean epochs + 30 adaptation epochs |
 
 Clean QUTCC in both experiments and raw Im2im use float32 Adam, effective batch
 four, betas (0.9,0.99), no weight decay, 30% warmup from 1e-5 to 1e-4, then cosine
-decay to 1e-9 over 50 epochs. Experiment 2 Im2im/ensemble/MC use the preserved
+decay to 1e-9 over 50 epochs. Parallel lensless Im2im/ensemble/MC use the preserved
 BF16 AdamW baseline pipeline, batch two. Adaptation uses constant LR 1e-5.
 These historical runs are not an identical-optimizer ablation.
 

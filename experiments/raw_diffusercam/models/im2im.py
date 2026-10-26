@@ -2,8 +2,8 @@
 
 Pairs come from image-file manifests via ``convrml.data.ImagePairs`` (/ 255).
 The measurement is padded to 288 x 480; all output heads crop back to 270 x 480.
-The three heads and loss match Experiment 2. This wrapper preserves the raw
-checkpoints' ``net.*`` names instead of Experiment 2's ``base.*`` names.
+The three heads and loss match the parallel lensless models. This wrapper preserves
+the raw checkpoints' ``net.*`` names instead of the parallel models' ``base.*`` names.
 """
 
 import torch

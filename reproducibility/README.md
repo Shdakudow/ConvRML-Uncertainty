@@ -39,7 +39,7 @@ new splits, augmentation or resizing.
 - Clean QUTCC and raw Im2im: Adam, betas (0.9,0.99), no weight decay, effective
   batch 4; microbatch 2 for square inputs / 1 for raw. Fifty epochs, 30% warmup
   from 1e-5 to 1e-4, then cosine to 1e-9. QUTCC uses only uniform sampled-q pinball.
-- Exp2 Im2im / ensemble / MC: BF16 AdamW, betas (0.9,0.999), LR 1e-4, weight
+- parallel lensless Im2im / ensemble / MC: BF16 AdamW, betas (0.9,0.999), LR 1e-4, weight
   decay 1e-4, batch 2, gradient norm limit 1.0, constant LR, fifty epochs.
 - Corruption adaptation: each method's clean epoch-30 weights, fresh Adam moments,
   constant LR 1e-5, effective batch 4 / microbatch 1, thirty adaptation epochs.
@@ -60,7 +60,7 @@ Every model/camera/checkpoint is calibrated independently. The default `paper`
 evaluation uses RCPS-HB for all baselines and Algorithm 1 for QUTCC. `native`
 is an uncalibrated control. Earlier empirical-matching reports remain historical;
 their values are not renamed or relabelled as paper calibration results.
-Old raw Im2im used a finite-N scale grid; new evaluations use RCPS-HB, as in Exp2.
+Old raw Im2im used a finite-N scale grid; new evaluations use RCPS-HB, as in parallel lensless.
 A failed calibration is a recorded gap, not a zero metric.
 
 The portable trainer uses an explicit new checkpoint schema. Saved historical

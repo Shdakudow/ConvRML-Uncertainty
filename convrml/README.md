@@ -19,14 +19,14 @@ commands. Optional plotting, provenance tools and GitHub Actions live in
 | [download.py](download.py) / [checkpoint_index.json](checkpoint_index.json) | Verified downloads of published checkpoint files |
 
 Training losses, including the pinball formula, are defined directly in each
-[Im2im/QUTCC model file](../experiments/experiment2/models/). Experiment 3 reuses
+[Im2im/QUTCC model file](../experiments/parallel_lensless/models/). The raw DiffuserCam experiment reuses
 the QUTCC class and defines its raw-size Im2im loss in its own model file.
 
 Both loaders return float32 `(2, 3, H, W)`: measurement first, target second.
 RGB uint8 values are divided by 255. Neither loader clips predictions, applies
 augmentation, changes targets, or creates new train/test splits.
 
-## Experiment 2: NumPy cache
+## Parallel lensless datasets: NumPy cache
 
 ```python
 from convrml.data import NumpyPairs
@@ -42,7 +42,7 @@ retain the existing image IDs and order:
 {"train": [{"id": "scene_a"}], "val": [{"id": "scene_b"}], "test": [{"id": "scene_c"}]}
 ```
 
-## Experiment 3: image-file manifest
+## Raw DiffuserCam: image-file manifest
 
 ```python
 from convrml.data import ImagePairs

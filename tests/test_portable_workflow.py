@@ -13,7 +13,7 @@ import torch
 from torch import nn
 
 from convrml import checkpoints, download, evaluate, protocol, train
-from experiments.experiment2.models.qutcc import pinball
+from experiments.parallel_lensless.models.qutcc import pinball
 
 
 class TinyQ(nn.Module):
@@ -84,8 +84,6 @@ class PortableWorkflow(unittest.TestCase):
 
     def training_args(self, output, epoch, resume=False):
         values = [
-            "--experiment",
-            "2",
             "--dataset",
             "rml",
             "--method",
@@ -112,8 +110,6 @@ class PortableWorkflow(unittest.TestCase):
     def evaluation_args(self, output="evaluation", method="im2im"):
         return evaluate.arguments(
             [
-                "--experiment",
-                "2",
                 "--dataset",
                 "rml",
                 "--method",
@@ -144,6 +140,37 @@ class PortableWorkflow(unittest.TestCase):
         return TinyIntervals().to(device).eval(), dict(
             epoch=50, seeds={}, file="fixture.pt", sha256="0" * 64
         )
+
+    def test_dataset_routes_commands_and_legacy_experiment_flags_still_work(self):
+        for dataset, expected in (
+            ("rml", 2),
+            ("diffuser", 2),
+            ("raw_clean", 3),
+            ("raw_corrupted", 3),
+        ):
+            common = [
+                "--dataset",
+                dataset,
+                "--method",
+                "qutcc",
+                "--manifest",
+                "manifest.json",
+                "--output",
+                "unused",
+            ]
+            for module, extra in (
+                (train, []),
+                (evaluate, ["--checkpoints", "weights.pt"]),
+            ):
+                args = module.arguments(common + extra)
+                self.assertEqual(args.experiment, expected)
+                legacy = module.arguments(
+                    common + extra + ["--experiment", str(expected)]
+                )
+                self.assertEqual(vars(args), vars(legacy))
+                wrong = 3 if expected == 2 else 2
+                with self.assertRaisesRegex(ValueError, "Dataset does not belong"):
+                    protocol.profile(wrong, dataset, "qutcc")
 
     def test_resume_matches_uninterrupted_parameters_rng_and_loss(self):
         direct = train.run_training(

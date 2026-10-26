@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Rename numbered experiment folders to dataset names: `parallel_lensless` and
+  `raw_diffusercam`. Update imports and guides; CLI commands infer the group from
+  `--dataset`, while historical checkpoint IDs and parameter names are retained.
 - Put pinball formulas directly in the Im2im/QUTCC model files and remove
   `convrml/losses.py`; objectives, gradients and checkpoint parameters are unchanged.
 - Add evaluation LPIPS-AlexNet and per-image Pearson/Spearman uncertainty/error

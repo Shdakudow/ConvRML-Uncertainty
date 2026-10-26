@@ -3,13 +3,15 @@
 A ConvNeXt/FPN comparison of lensless reconstruction and uncertainty:
 **Im2im, deep ensemble, MC dropout and QUTCC**.
 
-| Experiment | Models | Measurements |
+| Dataset experiment | Models | Measurements |
 | --- | --- | --- |
-| [Experiment 2](experiments/experiment2/) | [Four models](experiments/experiment2/models/) | RML / normalized DiffuserCam, RGB 256×256 |
-| [Experiment 3](experiments/experiment3/) | [Two models](experiments/experiment3/models/) | Clean / corrupted raw DiffuserCam, RGB 270×480 |
+| [Parallel lensless](experiments/parallel_lensless/) | [Four models](experiments/parallel_lensless/models/) | RML / normalized DiffuserCam, RGB 256×256 |
+| [Raw DiffuserCam](experiments/raw_diffusercam/) | [Two models](experiments/raw_diffusercam/models/) | Clean / corrupted raw DiffuserCam, RGB 270×480 |
 
 ```text
-experiments/       Four / two annotated model definitions
+experiments/
+  parallel_lensless/models/  Four models: RML and normalized DiffuserCam
+  raw_diffusercam/models/    Two models: clean and corrupted raw DiffuserCam
 convrml/           Shared layers, data loaders, training, calibration and evaluation
 reproducibility/   Settings, ordered split IDs, checkpoint index and tested environment
 tests/             Local correctness checks
@@ -40,17 +42,21 @@ python -m convrml.download --dataset rml --method qutcc --epoch 50 --output weig
 With prepared data at `/path/to/rml`, train or evaluate using:
 
 ```bash
-python -m convrml.train --experiment 2 --dataset rml --method qutcc \
+python -m convrml.train --dataset rml --method qutcc \
   --manifest /path/to/rml/manifest.json --pairs /path/to/rml/pairs.npy \
   --output runs/rml/qutcc --epochs 50 --device cuda
 
-python -m convrml.evaluate --experiment 2 --dataset rml --method qutcc \
+python -m convrml.evaluate --dataset rml --method qutcc \
   --checkpoints weights/rml/qutcc/exp2__rml__qutcc__epoch_050.pt \
   --manifest /path/to/rml/manifest.json --pairs /path/to/rml/pairs.npy \
   --calibration-manifest /path/to/rml/calibration/manifest.json \
   --calibration-pairs /path/to/rml/calibration/pairs.npy \
   --calibration paper --output outputs/paper/rml/qutcc/epoch_050 --device cuda
 ```
+
+`--dataset` selects the dataset experiment automatically: `rml` / `diffuser` use
+`parallel_lensless`; `raw_clean` / `raw_corrupted` use `raw_diffusercam`.
+Historical checkpoint filenames and metadata retain their original IDs.
 
 The [checkpoint index](reproducibility/checkpoints.json) identifies every saved
 five-epoch milestone, including five-/ten-member ensemble references, with file

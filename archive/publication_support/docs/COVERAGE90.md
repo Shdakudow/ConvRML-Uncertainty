@@ -63,5 +63,5 @@ test pixels are loaded.
 
 Superseded empirical matching and the old raw Im2im finite-N scale grid are in
 [calibration_legacy/](../calibration_legacy/). The active evaluator now uses RCPS
-for raw Im2im as well as Exp2 baselines. Existing reports and demo assets retain
+for raw Im2im as well as parallel lensless baselines. Existing reports and demo assets retain
 their original procedures and numbers; they are not relabelled as new RCPS results.
