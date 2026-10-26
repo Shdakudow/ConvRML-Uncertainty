@@ -36,7 +36,7 @@ requires an authenticated GitHub CLI with access, or manually supplied indexed f
 ## Evaluate RML / normalized DiffuserCam
 
 ```bash
-python -m convrml.evaluate --dataset rml --method qutcc \
+python infer.py --dataset rml --method qutcc \
   --checkpoints weights/rml/qutcc/exp2__rml__qutcc__epoch_050.pt \
   --manifest "$CONVRML_DATA/rml/manifest.json" --pairs "$CONVRML_DATA/rml/pairs.npy" \
   --calibration-manifest "$CONVRML_DATA/rml/calibration/manifest.json" \
@@ -55,7 +55,7 @@ parallel-camera data, distinct from raw DLMD.
 ## Evaluate raw DiffuserCam
 
 ```bash
-python -m convrml.evaluate --dataset raw_clean --method qutcc \
+python infer.py --dataset raw_clean --method qutcc \
   --checkpoints weights/raw/qutcc/exp3__raw_clean__qutcc__epoch_050.pt \
   --manifest "$CONVRML_DATA/raw_clean/split.json" \
   --calibration-manifest "$CONVRML_DATA/raw_clean/split.json" \
@@ -70,10 +70,10 @@ Models pad 270×480 internally to 288×480 and crop every output back.
 ## Train and resume
 
 ```bash
-python -m convrml.train --dataset rml --method qutcc \
+python train.py --dataset rml --method qutcc \
   --manifest "$CONVRML_DATA/rml/manifest.json" --pairs "$CONVRML_DATA/rml/pairs.npy" \
   --output runs/rml/qutcc --epochs 5 --device cuda
-python -m convrml.train --dataset rml --method qutcc \
+python train.py --dataset rml --method qutcc \
   --manifest "$CONVRML_DATA/rml/manifest.json" --pairs "$CONVRML_DATA/rml/pairs.npy" \
   --output runs/rml/qutcc --epochs 10 --resume --device cuda
 ```
@@ -123,5 +123,5 @@ in `learning_curves.csv`. It reads completed five-epoch reports; missing or
 undefined values are gaps. Existing reports require evaluation to populate new
 metrics; the plotter does not fabricate them or rerun inference.
 
-[Settings and seeds](../../../convrml/experiment_settings.json) ·
+[Settings and seeds](../../../configs/experiment_settings.json) ·
 [Metrics](METHODS_AND_METRICS.md) · [Calibration](COVERAGE90.md)

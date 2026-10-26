@@ -2,9 +2,10 @@
 
 ## Unreleased
 
-- Rename numbered experiment folders to dataset names: `parallel_lensless` and
-  `raw_diffusercam`. Update imports and guides; CLI commands infer the group from
-  `--dataset`, while historical checkpoint IDs and parameter names are retained.
+- Define the four methods once in `models/`, with shared adaptive-size Im2im/QUTCC
+  and legacy checkpoint-name compatibility. Put data loading in `dataset.py`,
+  recorded settings in `configs/`, and add common `train.py`/`infer.py` entry points.
+  Label datasets as PLD (ConvRML 100k) and DLMD (DiffuserCam Lensless Mirflickr).
 - Put pinball formulas directly in the Im2im/QUTCC model files and remove
   `convrml/losses.py`; objectives, gradients and checkpoint parameters are unchanged.
 - Add evaluation LPIPS-AlexNet and per-image Pearson/Spearman uncertainty/error

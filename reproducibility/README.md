@@ -7,7 +7,7 @@ resume and calibrated evaluation.
 
 | Record | Contents |
 | --- | --- |
-| [experiment_settings.json](../convrml/experiment_settings.json) | Exact model/profile settings, seeds, split sizes and ordered-ID hashes |
+| [experiment_settings.json](../configs/experiment_settings.json) | Exact model/profile settings, seeds, split sizes and ordered-ID hashes |
 | [splits/](splits/) | Existing train/validation/test/calibration IDs in their saved order |
 | [checkpoints.json](checkpoints.json) | 292 frozen milestone artifacts with release URLs, size and SHA-256 |
 | [checkpoint_release_receipt.json](checkpoint_release_receipt.json) | Verified upload receipt for the 52 QUTCC/raw artifacts missing from previous releases |
@@ -16,6 +16,7 @@ resume and calibrated evaluation.
 | [cleanup_verification.json](cleanup_verification.json) | Post-v0.1.0 archive/unused-code cleanup checks; original release evidence is retained |
 | [paper_calibration_verification.json](paper_calibration_verification.json) | Paper-only calibration change checks and unchanged model/training settings |
 | [model-equivalence.json](model-equivalence.json) | Exact original-versus-published CPU model fingerprints |
+| [shared_models_equivalence.json](shared_models_equivalence.json) | Exact original-versus-consolidated model fingerprints, losses/gradients and unchanged settings |
 | [constraints-tested.txt](constraints-tested.txt) | Tested numerical dependency versions |
 | [DATA.md](DATA.md) | Original datasets, prepared input formats and access requirements |
 

@@ -1,4 +1,4 @@
-"""Parallel lensless experiment: Im2im, Gaussian deep ensemble, MC dropout, and QUTCC."""
+"""Four shared uncertainty methods; datasets select loaders and configurations."""
 
 from .im2im import Im2im
 from .ensemble import EnsembleMember, DeepEnsemble

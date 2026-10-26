@@ -5,7 +5,8 @@ plotting/provenance tools and inactive GitHub Actions configuration.
 
 [operations/](operations/) preserves cluster/job/demo deployment tooling. The portable release needs none of it.
 
-The publication model interface is in [parallel lensless](../experiments/parallel_lensless/models/), [raw DiffuserCam](../experiments/raw_diffusercam/models/) and [convrml/](../convrml/).
+The four shared model implementations are in [models/](../models/), with data
+loading in [dataset.py](../dataset.py) and shared runtime/layers in [convrml/](../convrml/).
 
 [reproduction/](reproduction/) preserves the historical numbered-experiment engines
 and their original import layout, apart from the concise model interface.

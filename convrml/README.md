@@ -11,25 +11,25 @@ commands. Optional plotting, provenance tools and GitHub Actions live in
 | [quantile_embedding.py](quantile_embedding.py) | Sinusoidal scalar-q embedding |
 | [intervals.py](intervals.py) | Native Gaussian-moment bounds before calibration |
 | [calibration.py](calibration.py) | Baseline RCPS-HB scales and QUTCC Algorithm 1 calibrated quantiles |
-| [data.py](data.py) | Portable NumPy-cache and RGB paired-file datasets |
+| [dataset.py](../dataset.py) | PLD NumPy-cache and DLMD RGB paired-file datasets |
 | [train.py](train.py) / [evaluate.py](evaluate.py) | Training/resume and held-out calibrated evaluation |
 | [metrics.py](metrics.py) | SSIM, PSNR, MAE, LPIPS, coverage, width, crossings and uncertainty/error correlations |
-| [protocol.py](protocol.py) / [experiment_settings.json](experiment_settings.json) | Model/data selection, recorded settings, identity and resume checks |
+| [protocol.py](protocol.py) / [experiment_settings.json](../configs/experiment_settings.json) | Model/data selection, recorded settings, identity and resume checks |
 | [checkpoints.py](checkpoints.py) | Strict loading and validation of saved weights |
 | [download.py](download.py) / [checkpoint_index.json](checkpoint_index.json) | Verified downloads of published checkpoint files |
 
 Training losses, including the pinball formula, are defined directly in each
-[Im2im/QUTCC model file](../experiments/parallel_lensless/models/). The raw DiffuserCam experiment reuses
-the QUTCC class and defines its raw-size Im2im loss in its own model file.
+[Im2im/QUTCC model file](../models/). PLD and DLMD use the same Im2im and QUTCC
+classes; there are no dataset-specific copies of these losses or architectures.
 
 Both loaders return float32 `(2, 3, H, W)`: measurement first, target second.
 RGB uint8 values are divided by 255. Neither loader clips predictions, applies
 augmentation, changes targets, or creates new train/test splits.
 
-## Parallel lensless datasets: NumPy cache
+## Parallel Lensless Dataset (PLD): NumPy cache
 
 ```python
-from convrml.data import NumpyPairs
+from dataset import NumpyPairs
 train = NumpyPairs("pairs.npy", "manifest.json", "train")
 calibration = NumpyPairs("calibration/pairs.npy", "calibration/manifest.json", "calibration")
 ```
@@ -42,10 +42,10 @@ retain the existing image IDs and order:
 {"train": [{"id": "scene_a"}], "val": [{"id": "scene_b"}], "test": [{"id": "scene_c"}]}
 ```
 
-## Raw DiffuserCam: image-file manifest
+## DiffuserCam Lensless Mirflickr Dataset (DLMD): image-file manifest
 
 ```python
-from convrml.data import ImagePairs
+from dataset import ImagePairs
 train = ImagePairs("split.json", "train")
 ```
 
@@ -67,4 +67,4 @@ have matching RGB dimensions, normally 270×480. The model pads and crops;
 the loader leaves dimensions intact. Prepared clean and fixed-corruption
 manifests share this schema, with the original target paths/IDs retained.
 
-[Portable commands](../archive/publication_support/docs/RUNNING_EXPERIMENTS.md) · [Recorded settings](experiment_settings.json)
+[Portable commands](../archive/publication_support/docs/RUNNING_EXPERIMENTS.md) · [Recorded settings](../configs/experiment_settings.json)

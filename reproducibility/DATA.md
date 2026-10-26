@@ -3,13 +3,15 @@
 Image data are external to this source release. Obtain the original datasets from
 their providers:
 
-- [ConvRML / Parallel Lensless Dataset](https://github.com/lakabuli/ConvRML):
-  original RML and parallel-camera DiffuserCam data and preprocessing instructions.
-- [DiffuserCam Lensless Mirflickr Dataset](https://waller-lab.github.io/LenslessLearning/dataset.html):
-  the separate aligned DiffuserCam/lensed-image dataset used by the raw branch.
+- [Parallel Lensless Dataset (PLD, ConvRML 100k)](https://lakabuli.github.io/ConvRML/):
+  RML and diffuser measurements with corresponding ground truth, provided through
+  [the ConvRML repository](https://github.com/lakabuli/ConvRML).
+- [DiffuserCam Lensless Mirflickr Dataset (DLMD, 25k)](https://waller-lab.github.io/LenslessLearning/dataset.html):
+  the separate aligned DiffuserCam/lensed-image collection used by `raw_clean`
+  and its fixed-corruption derivative, `raw_corrupted`.
 
-The normalized parallel-camera DiffuserCam data differ from the raw DLMD branch
-in the raw DiffuserCam experiment. Use the correct acquisition and prepared preprocessing for each
+The PLD diffuser and DLMD are different physical measurement collections. Use
+the correct acquisition and prepared preprocessing for each
 checkpoint. This release supplies the saved split IDs and loader schemas; it does
 not redistribute the image collections or silently replace preprocessing with a
 new resize/normalization recipe.
@@ -26,7 +28,8 @@ prepared-data/
   raw_corrupted/   split.json, fixed corrupted measurements and unchanged targets
 ```
 
-[Loader schemas](../convrml/README.md) document every field. NumPy caches are
+[Loader schemas](../convrml/README.md) document every field; implementations are
+in [dataset.py](../dataset.py). NumPy caches are
 uint8 `(N,2,3,256,256)` in train/validation/test order, with a separate calibration
 cache. Image manifests contain paired RGB paths and separate roles. Both loaders
 return float32 RGB divided by 255; raw input files here are **prepared RGB images**,

@@ -3,16 +3,21 @@
 A ConvNeXt/FPN comparison of lensless reconstruction and uncertainty:
 **Im2im, deep ensemble, MC dropout and QUTCC**.
 
-| Dataset experiment | Models | Measurements |
-| --- | --- | --- |
-| [Parallel lensless](experiments/parallel_lensless/) | [Four models](experiments/parallel_lensless/models/) | RML / normalized DiffuserCam, RGB 256×256 |
-| [Raw DiffuserCam](experiments/raw_diffusercam/) | [Two models](experiments/raw_diffusercam/models/) | Clean / corrupted raw DiffuserCam, RGB 270×480 |
+The four methods are implemented once in [models/](models/). Dataset selection
+changes the loader and recorded settings, not the model implementation.
+
+| Dataset | Command selector | Existing comparisons | Prepared measurements |
+| --- | --- | --- | --- |
+| [Parallel Lensless Dataset (PLD)](https://lakabuli.github.io/ConvRML/) | `rml`, `diffuser` | All four methods | RML / normalized diffuser, RGB 256×256 |
+| [DiffuserCam Lensless Mirflickr Dataset (DLMD)](https://waller-lab.github.io/LenslessLearning/dataset.html) | `raw_clean`, `raw_corrupted` | Im2im and QUTCC | Clean / fixed-corruption RGB 270×480 |
 
 ```text
-experiments/
-  parallel_lensless/models/  Four models: RML and normalized DiffuserCam
-  raw_diffusercam/models/    Two models: clean and corrupted raw DiffuserCam
-convrml/           Shared layers, data loaders, training, calibration and evaluation
+models/           im2im.py, qutcc.py, ensemble.py, mc_dropout.py — shared across datasets
+dataset.py        PLD NumPy-cache and DLMD paired-image loaders
+configs/          Recorded settings, seeds, split sizes and dataset descriptions
+train.py          Common training/resume entry point
+infer.py          Common calibration/evaluation entry point
+convrml/          Shared backbone, FiLM, runtime, calibration and metrics
 reproducibility/   Settings, ordered split IDs, checkpoint index and tested environment
 tests/             Local correctness checks
 archive/           Optional guides, plotting, CI configuration and historical code
@@ -25,8 +30,8 @@ your CPU or CUDA device, then:
 
 ```bash
 python -m pip install -e . -c reproducibility/constraints-tested.txt
-python -m convrml.train --help
-python -m convrml.evaluate --help
+python train.py --help
+python infer.py --help
 python -m convrml.download --help
 ```
 
@@ -42,11 +47,11 @@ python -m convrml.download --dataset rml --method qutcc --epoch 50 --output weig
 With prepared data at `/path/to/rml`, train or evaluate using:
 
 ```bash
-python -m convrml.train --dataset rml --method qutcc \
+python train.py --dataset rml --method qutcc \
   --manifest /path/to/rml/manifest.json --pairs /path/to/rml/pairs.npy \
   --output runs/rml/qutcc --epochs 50 --device cuda
 
-python -m convrml.evaluate --dataset rml --method qutcc \
+python infer.py --dataset rml --method qutcc \
   --checkpoints weights/rml/qutcc/exp2__rml__qutcc__epoch_050.pt \
   --manifest /path/to/rml/manifest.json --pairs /path/to/rml/pairs.npy \
   --calibration-manifest /path/to/rml/calibration/manifest.json \
@@ -54,9 +59,15 @@ python -m convrml.evaluate --dataset rml --method qutcc \
   --calibration paper --output outputs/paper/rml/qutcc/epoch_050 --device cuda
 ```
 
-`--dataset` selects the dataset experiment automatically: `rml` / `diffuser` use
-`parallel_lensless`; `raw_clean` / `raw_corrupted` use `raw_diffusercam`.
-Historical checkpoint filenames and metadata retain their original IDs.
+`--dataset` selects PLD or DLMD data handling and settings automatically. Each
+dataset has its own trained weights and calibration; shared code does not mean
+interchangeable weights. Historical checkpoint filenames/metadata retain their
+original IDs. The package commands `python -m convrml.train` and
+`python -m convrml.evaluate` remain equivalent to these entry points.
+
+The layout follows [upstream ConvRML](https://github.com/lakabuli/ConvRML):
+`models/`, `configs/`, `dataset.py`, `train.py` and `infer.py`. Our recorded
+prepared-data formats, preprocessing and independent splits remain unchanged.
 
 The [checkpoint index](reproducibility/checkpoints.json) identifies every saved
 five-epoch milestone, including five-/ten-member ensemble references, with file

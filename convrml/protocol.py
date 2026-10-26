@@ -8,9 +8,9 @@ from pathlib import Path
 
 import torch
 
-from .data import ImagePairs, NumpyPairs
+from dataset import ImagePairs, NumpyPairs
 
-SETTINGS_PATH = Path(__file__).with_name("experiment_settings.json")
+SETTINGS_PATH = Path(__file__).resolve().parents[1] / "configs/experiment_settings.json"
 
 
 def settings():
@@ -27,12 +27,12 @@ def sha256(path):
 
 def source_fingerprint():
     root = Path(__file__).resolve().parents[1]
-    models = [
-        path
-        for experiment in ("parallel_lensless", "raw_diffusercam")
-        for path in (root / "experiments" / experiment / "models").glob("*.py")
-    ]
-    files = sorted(list(Path(__file__).parent.glob("*.py")) + models + [SETTINGS_PATH])
+    files = sorted(
+        list((root / "convrml").glob("*.py"))
+        + list((root / "models").rglob("*.py"))
+        + [SETTINGS_PATH, root / "configs/__init__.py"]
+        + [root / name for name in ("dataset.py", "train.py", "infer.py")]
+    )
     digest = hashlib.sha256()
     for path in files:
         digest.update(str(path.relative_to(root)).encode())
@@ -106,19 +106,12 @@ def profile(experiment, dataset, method, member=None):
 def make_model(run):
     """Keep original parameter names and distinct ensemble initialization seeds."""
     torch.manual_seed(run["seeds"]["initialization"])
-    if run["experiment"] == 2:
-        from experiments.parallel_lensless.models import (
-            Im2im,
-            QUTCC,
-            MCDropout,
-            EnsembleMember,
-        )
-    else:
-        from experiments.raw_diffusercam.models import Im2im, QUTCC
+    from models import Im2im, QUTCC, MCDropout, EnsembleMember
+
     if run["method"] == "qutcc":
         return QUTCC()
     if run["method"] == "im2im":
-        return Im2im()
+        return Im2im(checkpoint_prefix="net" if run["experiment"] == 3 else "base")
     if run["method"] == "mc_dropout":
         return MCDropout(run["dropout"])
     return EnsembleMember()
@@ -127,14 +120,10 @@ def make_model(run):
 def dataset_for(dataset, manifest, pairs, split):
     if settings()["datasets"][dataset]["loader"] == "numpy":
         if pairs is None:
-            raise ValueError(
-                "Parallel lensless experiment requires --pairs for its NumPy cache"
-            )
+            raise ValueError("PLD experiment requires --pairs for its NumPy cache")
         return NumpyPairs(pairs, manifest, split)
     if pairs is not None:
-        raise ValueError(
-            "Raw DiffuserCam experiment reads paired image paths, not a NumPy cache"
-        )
+        raise ValueError("DLMD experiment reads paired image paths, not a NumPy cache")
     return ImagePairs(manifest, split)
 
 

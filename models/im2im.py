@@ -1,13 +1,15 @@
-"""End-to-end Im2im for RML / normalized DiffuserCam, RGB 256 x 256.
+"""One end-to-end Im2im model for prepared PLD and DLMD RGB measurements.
 
-Inputs: float32 (N, 3, 256, 256) measurements, loaded from uint8 NumPy pairs / 255.
-Outputs: (N, 3 heads, 3 RGB channels, 256, 256), ordered lower / center / upper.
+Inputs: float32 RGB measurements; outputs keep the original height and width.
+Outputs: (N, 3 heads, 3 RGB channels, H, W), ordered lower / center / upper.
 Difference from QUTCC: three fixed heads; no quantile input or FiLM modulation.
-Historical checkpoint names retain the ``base.*`` prefix.
+The checkpoint_prefix option preserves PLD ``base.*`` or DLMD ``net.*`` state
+names. It changes serialization names only, not the architecture or objective.
 """
 
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 from convrml.backbone import ConvNeXtFPN
 
@@ -20,12 +22,15 @@ def pinball(prediction, target, q):
 
 
 class Im2im(nn.Module):
-    def __init__(self):
+    def __init__(self, *, checkpoint_prefix="base"):
         super().__init__()
-        self.base = ConvNeXtFPN()
-        old = self.base.head
+        if checkpoint_prefix not in ("base", "net"):
+            raise ValueError("Checkpoint prefix must be base or net")
+        self.checkpoint_prefix = checkpoint_prefix
+        backbone = ConvNeXtFPN()
+        old = backbone.head
         self.channels = old.out_channels
-        self.base.head = nn.Conv2d(
+        backbone.head = nn.Conv2d(
             old.in_channels,
             3 * self.channels,
             old.kernel_size,
@@ -33,15 +38,25 @@ class Im2im(nn.Module):
             padding=old.padding,
             bias=old.bias is not None,
         )
-        self.base.requires_grad_(True)
+        backbone.requires_grad_(True)
+        self.add_module(checkpoint_prefix, backbone)
+
+    @property
+    def backbone(self):
+        return getattr(self, self.checkpoint_prefix)
 
     def forward(self, y):
         """Predict all three residual images in one pass and add the measurement."""
-        features = self.base.up2(self.base.features(y))
-        residuals = self.base.head(features).reshape(
-            len(y), 3, self.channels, *y.shape[-2:]
+        h, w = y.shape[-2:]
+        padded = F.pad(y, (0, (-w) % 32, 0, (-h) % 32), mode="replicate")
+        features = self.backbone.up2(self.backbone.features(padded))
+        residuals = self.backbone.head(features).reshape(
+            len(y), 3, self.channels, *padded.shape[-2:]
         )
-        return residuals + y[:, None]
+        return (residuals + padded[:, None])[..., :h, :w]
+
+    def center(self, y):
+        return self(y)[:, 1]
 
     def bounds(self, y):
         """Return (reconstruction, lower bound, upper bound); no calibration/clipping."""

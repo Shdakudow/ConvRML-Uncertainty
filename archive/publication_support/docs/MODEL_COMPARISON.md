@@ -1,8 +1,9 @@
 # Model comparison
 
-[Parallel lensless](../../../experiments/parallel_lensless/models/) has four model definitions.
-[Raw DiffuserCam](../../../experiments/raw_diffusercam/models/) has two. Shared layers are in
-[convrml/](../../../convrml/); there are no copied backbone variants in the experiment folders.
+The [four model implementations](../../../models/) are shared. PLD is the
+Parallel Lensless Dataset (ConvRML 100k); DLMD is the DiffuserCam Lensless Mirflickr
+Dataset. Dataset loading is in [dataset.py](../../../dataset.py) and settings are
+in [configs/](../../../configs/). Shared layers remain in [convrml/](../../../convrml/).
 
 | Method | Training objective | Reconstruction | Native bounds | Added architecture |
 | --- | --- | --- | --- | --- |
@@ -19,7 +20,7 @@ shuffle seeds while each sees the complete training split.
 
 ## Experiment-specific differences
 
-| Setting | Parallel lensless | Raw DiffuserCam |
+| Setting | PLD | DLMD |
 | --- | --- | --- |
 | Measurements | RML / normalized DiffuserCam | Clean / fixed-corruption raw DiffuserCam |
 | Image size | RGB 256×256 | RGB 270×480; internally pad to 288×480 and crop |
@@ -27,7 +28,7 @@ shuffle seeds while each sees the complete training split.
 | Input conversion | Float32 / 255 | Float32 / 255 |
 | Train / val / test / calibration | 60,000 / 5,000 / 5,000 / 2,048 | 17,999 / 2,000 / 2,000 / 3,000 |
 | QUTCC implementation | Shared | Identical class |
-| Im2im wrapper | `base.*` checkpoint names | `net.*` checkpoint names; internal padding/cropping |
+| Im2im checkpoint names | `base.*` | `net.*`; same class and adaptive-size forward |
 | Main clean training | 50 epochs | 50 epochs |
 | Corruption adaptation | Not included | 30 clean epochs + 30 adaptation epochs |
 
@@ -47,10 +48,11 @@ ensemble and MC dropout, and QUTCC Algorithm 1 to select quantile inputs.
 control. Earlier empirical-matching and raw Im2im scale-grid reports remain
 historical and must not be relabelled as RCPS results.
 
-QUTCC weights are structurally shared across the experiments, but the trained
-weights and dataset identities differ. Im2im has different wrapper prefixes;
-load the matching experiment checkpoint strictly. Repository organization does
-not make checkpoints interchangeable or call for retraining.
+Im2im and QUTCC each have one implementation for both datasets, but trained
+weights and dataset identities differ. Im2im's checkpoint-prefix option only
+preserves original state names; it does not change the architecture or objective.
+Load the matching dataset checkpoint strictly. Source consolidation does not
+make trained weights interchangeable or call for retraining.
 
 [Usage](RUNNING_EXPERIMENTS.md) · [Metrics](METHODS_AND_METRICS.md) ·
-[Settings and seeds](../../../convrml/experiment_settings.json)
+[Settings and seeds](../../../configs/experiment_settings.json)

@@ -1,7 +1,7 @@
 """QUTCC on the ConvNeXt/FPN backbone, shared by Experiments 2 and 3.
 
-Parallel lensless experiment: float RGB (N, 3, 256, 256), from uint8 NumPy pairs divided by 255.
-Raw DiffuserCam experiment: RGB (N, 3, 270, 480), from paired image files divided by 255.
+PLD experiment: float RGB (N, 3, 256, 256), from uint8 NumPy pairs divided by 255.
+DLMD experiment: RGB (N, 3, 270, 480), from paired image files divided by 255.
 Inputs are replicate-padded to multiples of 32; outputs are cropped to input size.
 One scalar q per image conditions 36 encoder and 12 decoder sites through FiLM.
 Only sampled-q pinball is optimized; there is no additional MSE or q selector.

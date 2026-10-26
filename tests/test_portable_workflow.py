@@ -13,7 +13,7 @@ import torch
 from torch import nn
 
 from convrml import checkpoints, download, evaluate, protocol, train
-from experiments.parallel_lensless.models.qutcc import pinball
+from models.qutcc import pinball
 
 
 class TinyQ(nn.Module):
@@ -244,6 +244,15 @@ class PortableWorkflow(unittest.TestCase):
             train.run_training(
                 self.training_args("guarded", 2, True), factory=self.factory
             )
+
+    def test_source_fingerprint_is_stable_through_a_symlinked_checkout(self):
+        expected = protocol.source_fingerprint()
+        link = self.root / "linked_checkout"
+        link.symlink_to(
+            Path(protocol.__file__).resolve().parents[1], target_is_directory=True
+        )
+        with patch.object(protocol, "__file__", str(link / "convrml/protocol.py")):
+            self.assertEqual(protocol.source_fingerprint(), expected)
 
     def test_evaluation_fits_only_calibration_then_exports_exact_test_ids(self):
         args = self.evaluation_args()

@@ -269,7 +269,7 @@ def _run_evaluation(args, *, model_loader=None):
                 raise ValueError(
                     "Ensemble members need distinct initialization and data-order seeds"
                 )
-        from experiments.parallel_lensless.models import DeepEnsemble
+        from models import DeepEnsemble
 
         model = (
             DeepEnsemble(loaded, base_interval_alpha=settings()["alpha"])
