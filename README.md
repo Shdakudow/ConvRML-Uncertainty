@@ -12,7 +12,8 @@ A ConvNeXt/FPN comparison of lensless reconstruction and uncertainty:
 experiments/       Four / two annotated model definitions
 convrml/           Shared layers, data loaders, training, calibration and evaluation
 reproducibility/   Settings, ordered split IDs, checkpoint index and tested environment
-tools/             Plotting and optional source-verification tools
+tests/             Local correctness checks
+archive/           Optional guides, plotting, CI configuration and historical code
 ```
 
 ## Install
@@ -27,13 +28,28 @@ python -m convrml.evaluate --help
 python -m convrml.download --help
 ```
 
-[Quick start](docs/RUNNING_EXPERIMENTS.md) · [Data formats](convrml/README.md) ·
-[Model differences](docs/MODEL_COMPARISON.md) · [Reproducibility](reproducibility/README.md)
+[Quick start](archive/publication_support/docs/RUNNING_EXPERIMENTS.md) · [Data formats](convrml/README.md) ·
+[Model differences](archive/publication_support/docs/MODEL_COMPARISON.md) · [Reproducibility](reproducibility/README.md)
 
 ## Weights and evaluation
 
 ```bash
 python -m convrml.download --dataset rml --method qutcc --epoch 50 --output weights/rml/qutcc
+```
+
+With prepared data at `/path/to/rml`, train or evaluate using:
+
+```bash
+python -m convrml.train --experiment 2 --dataset rml --method qutcc \
+  --manifest /path/to/rml/manifest.json --pairs /path/to/rml/pairs.npy \
+  --output runs/rml/qutcc --epochs 50 --device cuda
+
+python -m convrml.evaluate --experiment 2 --dataset rml --method qutcc \
+  --checkpoints weights/rml/qutcc/exp2__rml__qutcc__epoch_050.pt \
+  --manifest /path/to/rml/manifest.json --pairs /path/to/rml/pairs.npy \
+  --calibration-manifest /path/to/rml/calibration/manifest.json \
+  --calibration-pairs /path/to/rml/calibration/pairs.npy \
+  --calibration empirical --output outputs/rml/qutcc/epoch_050 --device cuda
 ```
 
 The [checkpoint index](reproducibility/checkpoints.json) identifies every saved
@@ -46,7 +62,7 @@ links the original datasets and specifies the exact input formats and split IDs.
 `python -m convrml.evaluate` loads frozen weights, fits on the separate calibration
 split and reports held-out SSIM, PSNR, MAE, coverage, width and crossings. It saves
 raw and clipped metrics, per-image CSV and optional reconstruction/bound arrays.
-[Calibration modes](docs/COVERAGE90.md) distinguish empirical matching, reference
+[Calibration modes](archive/publication_support/docs/COVERAGE90.md) distinguish empirical matching, reference
 RCPS/Algorithm 1 and native intervals. Calibration does not force test coverage.
 
 ## Verification and attribution
@@ -56,13 +72,17 @@ python -m pip install -e '.[dev]'
 python -m unittest discover -s tests -v
 ```
 
-The public workflow needs no archived trainers or cluster configuration.
-[Verification evidence](reproducibility/verification.json) records the checks;
+Training and evaluation need no archived code or cluster configuration.
+[Release verification](reproducibility/verification.json) records the v0.1.0 checks;
 [model equivalence](reproducibility/model-equivalence.json)
 records unchanged original model predictions and gradients.
+[Cleanup verification](reproducibility/cleanup_verification.json) records the
+post-release archive move and unused-code removal checks.
 
 [Citation](CITATION.cff) · [Upstream methods and credit](THIRD_PARTY.md) ·
 [License](LICENSE) · [Interactive results](https://shdakudow.github.io/ConvRML-Uncertainty-Demo/)
 
 Original run engines, cluster operations and historical source records remain
-in [archive/](archive/). Existing trained weights retain their parameter names.
+in [archive/](archive/). Extended guides, plotting/provenance tools and inactive
+GitHub Actions configuration are in [publication support](archive/publication_support/).
+Existing trained weights retain their parameter names.

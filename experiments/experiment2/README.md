@@ -33,7 +33,7 @@ These are the actual model definitions, with shared layers in [convrml/](../../c
 Models return native outputs; clipping and fitted interval calibration are separate.
 Ensemble members each train on the complete split with independent initialization
 and shuffle seeds. Historical training settings differ between QUTCC and baselines;
-see [the comparison](../../docs/MODEL_COMPARISON.md).
+see [the comparison](../../archive/publication_support/docs/MODEL_COMPARISON.md).
 
-[Usage and checkpoints](../../docs/RUNNING_EXPERIMENTS.md) ·
+[Usage and checkpoints](../../archive/publication_support/docs/RUNNING_EXPERIMENTS.md) ·
 [Reproducibility](../../reproducibility/README.md)

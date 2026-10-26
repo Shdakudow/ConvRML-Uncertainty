@@ -20,5 +20,5 @@ upstream references, without assigning a manuscript DOI or inventing paper autho
 QUTCC here uses ConvNeXt/FPN instead of its original U-Net. Im2im is end-to-end;
 ensemble members use Gaussian NLL; MC dropout uses MSE and full-network dropout.
 These adaptations and calibration distinctions are documented in
-[the model comparison](docs/MODEL_COMPARISON.md). Source captures and equivalence
+[the model comparison](archive/publication_support/docs/MODEL_COMPARISON.md). Source captures and equivalence
 records remain available in [archive/provenance](archive/provenance/).

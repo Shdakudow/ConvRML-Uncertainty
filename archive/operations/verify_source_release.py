@@ -1,1 +1,1 @@
-../../tools/verify_source_release.py
+../publication_support/tools/verify_source_release.py

@@ -5,7 +5,6 @@ residual branch (not the completed residual block). Sequential forwards only.
 """
 
 from contextlib import contextmanager
-import torch
 from torch import nn
 from .quantile_embedding import timestep_embedding
 
@@ -87,11 +86,3 @@ class FiLMBackbone(nn.Module):
     def forward(self, y, q=None):
         with self.condition(y, q):
             return self.base(y)
-
-    def features(self, y, q=None):
-        with self.condition(y, q):
-            return self.base.up2(self.base.features(y))
-
-    @property
-    def head(self):
-        return self.base.head

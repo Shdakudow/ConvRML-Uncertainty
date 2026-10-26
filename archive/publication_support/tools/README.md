@@ -8,4 +8,4 @@
 
 The portable workflow uses `python -m convrml.train`, `convrml.evaluate` and
 `convrml.download`; it does not import these provenance tools. Cluster dispatch,
-job recovery and demo exporters are preserved in [archive/operations](../archive/operations/).
+job recovery and demo exporters are preserved in [archive/operations](../../operations/).

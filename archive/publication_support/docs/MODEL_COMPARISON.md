@@ -1,8 +1,8 @@
 # Model comparison
 
-[Experiment 2](../experiments/experiment2/models/) has four model definitions.
-[Experiment 3](../experiments/experiment3/models/) has two. Shared layers are in
-[convrml/](../convrml/); there are no copied backbone variants in the experiment folders.
+[Experiment 2](../../../experiments/experiment2/models/) has four model definitions.
+[Experiment 3](../../../experiments/experiment3/models/) has two. Shared layers are in
+[convrml/](../../../convrml/); there are no copied backbone variants in the experiment folders.
 
 | Method | Training objective | Reconstruction | Native bounds | Added architecture |
 | --- | --- | --- | --- | --- |
@@ -41,7 +41,7 @@ These historical runs are not an identical-optimizer ablation.
 
 Model `.bounds()` returns native intervals without fitting calibration or clipping.
 Calibration fits separate held-out pairs, after training. The close-to-90%
-comparison uses the common [empirical implementation](../convrml/calibration.py).
+comparison uses the common [empirical implementation](../../../convrml/calibration.py).
 `convrml.evaluate --calibration reference` reproduces RCPS-HB for Exp2 baselines
 and the paper-adjusted quantile/scale searches for QUTCC/raw Im2im. Default
 empirical results remain a distinct matched-coverage protocol.
@@ -52,4 +52,4 @@ load the matching experiment checkpoint strictly. Repository organization does
 not make checkpoints interchangeable or call for retraining.
 
 [Usage](RUNNING_EXPERIMENTS.md) · [Metrics](METHODS_AND_METRICS.md) ·
-[Settings and seeds](../convrml/experiment_settings.json)
+[Settings and seeds](../../../convrml/experiment_settings.json)

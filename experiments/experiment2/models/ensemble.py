@@ -76,9 +76,6 @@ class DeepEnsemble(nn.Module):
         variance = (second / len(self.members) - mean.square()).clamp_min(0)
         return mean, variance
 
-    def predict_mean(self, x):
-        return self.moments(x)[0]
-
     def forward(self, x):
         mean, variance = self.moments(x)
         lo, hi = gaussian_interval_from_mean_variance(

@@ -6,7 +6,10 @@ from pathlib import Path
 import tempfile
 import unittest
 
-SOURCE = Path(__file__).resolve().parents[1] / "tools/plot_learning_curves.py"
+SOURCE = (
+    Path(__file__).resolve().parents[1]
+    / "archive/publication_support/tools/plot_learning_curves.py"
+)
 SPEC = importlib.util.spec_from_file_location("curves", SOURCE)
 curves = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(curves)

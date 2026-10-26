@@ -12,7 +12,7 @@ Set a path to your prepared data:
 export CONVRML_DATA=/path/to/prepared-data
 ```
 
-[Data availability and layout](../reproducibility/DATA.md) defines the two loaders.
+[Data availability and layout](../../../reproducibility/DATA.md) defines the two loaders.
 Use the saved split IDs/order; training never uses calibration or test targets.
 Formal runs validate the recorded counts and ordered-ID hashes. `--smoke` permits
 explicitly labelled small fixtures and is not a full-dataset experiment.
@@ -29,7 +29,7 @@ python -m convrml.download --dataset raw_clean --method qutcc --epoch 50 --outpu
 
 `--list` shows names/hashes without downloading. Ensemble downloads default to
 members 0–4; `--members 10` selects 0–9 and `--member N` selects one. Every file
-is checked against the [index](../reproducibility/checkpoints.json). Corrupted raw
+is checked against the [index](../../../reproducibility/checkpoints.json). Corrupted raw
 uses adaptation epochs 5–30; clean models use epochs 5–50. A private repository
 requires an authenticated GitHub CLI with access, or manually supplied indexed files.
 
@@ -108,9 +108,9 @@ Plot complete milestones with the optional plotting dependencies:
 
 ```bash
 python -m pip install -e '.[plot]'
-python tools/plot_learning_curves.py --series QUTCC=outputs/empirical/rml/qutcc \
+python archive/publication_support/tools/plot_learning_curves.py --series QUTCC=outputs/empirical/rml/qutcc \
   --metric-space clipped --output figures/rml
 ```
 
-[Settings and seeds](../convrml/experiment_settings.json) ·
+[Settings and seeds](../../../convrml/experiment_settings.json) ·
 [Metrics](METHODS_AND_METRICS.md) · [Calibration](COVERAGE90.md)

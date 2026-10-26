@@ -2,7 +2,7 @@
 
 The portable commands use the public model definitions and explicit data/checkpoint
 paths. No cluster account, scheduler, archived trainer or local home directory is
-required. [Commands](../docs/RUNNING_EXPERIMENTS.md) cover download, fresh training,
+required. [Commands](../archive/publication_support/docs/RUNNING_EXPERIMENTS.md) cover download, fresh training,
 resume and calibrated evaluation.
 
 | Record | Contents |
@@ -13,6 +13,7 @@ resume and calibrated evaluation.
 | [checkpoint_release_receipt.json](checkpoint_release_receipt.json) | Verified upload receipt for the 52 QUTCC/raw artifacts missing from previous releases |
 | [environment-tested.json](environment-tested.json) | Software used for release verification, with scope/device |
 | [verification.json](verification.json) | Automated checks and their practical scope |
+| [cleanup_verification.json](cleanup_verification.json) | Post-v0.1.0 archive/unused-code cleanup checks; original release evidence is retained |
 | [model-equivalence.json](model-equivalence.json) | Exact original-versus-published CPU model fingerprints |
 | [constraints-tested.txt](constraints-tested.txt) | Tested numerical dependency versions |
 | [DATA.md](DATA.md) | Original datasets, prepared input formats and access requirements |

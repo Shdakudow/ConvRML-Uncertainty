@@ -36,5 +36,5 @@ Clean models train from scratch for 50 epochs. Corruption adaptation starts from
 each clean epoch-30 checkpoint and adds 30 adaptation epochs at LR 1e-5. This is a
 training-protocol difference, not an additional model layer.
 
-[Data format](../../convrml/README.md) · [Model comparison](../../docs/MODEL_COMPARISON.md) ·
-[Portable training/evaluation](../../docs/RUNNING_EXPERIMENTS.md)
+[Data format](../../convrml/README.md) · [Model comparison](../../archive/publication_support/docs/MODEL_COMPARISON.md) ·
+[Portable training/evaluation](../../archive/publication_support/docs/RUNNING_EXPERIMENTS.md)

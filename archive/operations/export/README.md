@@ -6,7 +6,7 @@
 | [export_raw_demo.py](export_raw_demo.py) | Raw/corrupted saved-array packing and GPU refresh/export |
 
 These helpers retain historical `$HOME/ConvRML` data/checkpoint paths. Read
-[setup instructions](../../docs/RUNNING_EXPERIMENTS.md) before reuse. They do not
+[setup instructions](../../publication_support/docs/RUNNING_EXPERIMENTS.md) before reuse. They do not
 train models or deploy the website.
 
 The QUTCC exporter reuses frozen calibration, verifies original sample IDs and
@@ -19,4 +19,4 @@ clean epoch 50 / corrupted adaptation epoch 10; explicitly select later epochs.
 Export consistency checks remain active. A failed check must not be bypassed
 to publish different arrays. Authoritative metrics are the completed model's
 full-test report. Cluster wrappers, old audits and publishing infrastructure are
-preserved in the [archive](../../archive/).
+preserved in the [archive](../../).

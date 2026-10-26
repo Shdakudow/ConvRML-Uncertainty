@@ -3,7 +3,7 @@
 The repository is now organized into `experiments/experiment2/` and
 `experiments/experiment3/`. `layout_migration_20261021.json` maps former source
 locations to current folders, including moves to `archive/`. The archive below
-keeps its original member names and hash; `tools/verify_source_release.py`
+keeps its original member names and hash; `archive/publication_support/tools/verify_source_release.py`
 resolves the migration before comparing the published code. Common implementations
 now live once in `shared/`, reached through relative links. The verifier accepts
 only explicit import-context/output-path changes and the extraction of identical
@@ -18,7 +18,7 @@ captured source below; this refactor does not bypass source-identity checks.
 
 `unicorn_source_20261020.tar.gz` contains the source captured from `/home/jy2228/ConvRML` on October 20, 2026. It includes the current QUTCC/raw studies, analysis/inference exports, and baseline scripts with their imported project dependencies. It excludes datasets, credentials, weights, logs and prediction arrays.
 
-`unicorn_source_20261020.json` lists every captured file's original SHA-256 and the archive hash. Readable copies in `experiments/` are formatted with Black; their Python ASTs are checked against this archive by `tools/verify_source_release.py`. The older October-19 manifest describes its earlier unformatted snapshot, not the formatted files' current byte hashes.
+`unicorn_source_20261020.json` lists every captured file's original SHA-256 and the archive hash. Readable copies in `experiments/` are formatted with Black; their Python ASTs are checked against this archive by `archive/publication_support/tools/verify_source_release.py`. The older October-19 manifest describes its earlier unformatted snapshot, not the formatted files' current byte hashes.
 
 Historical training checkpoints store source/config/data identities. Formatting changes source byte hashes even when it preserves behavior. **Do not weaken those checks** to resume an old experiment. Restore exact historical source in a separate directory and use the correct full-state checkpoint and unchanged data paths. Compact `epoch_NNN.pt` snapshots contain weights/history but not the optimizer/RNG state required for exact continuation.
 

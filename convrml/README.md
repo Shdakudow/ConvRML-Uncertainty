@@ -1,4 +1,8 @@
-# Shared layers and paired data
+# Shared model and runtime code
+
+Every Python module here is used by the public models or the train/evaluate/download
+commands. Optional plotting, provenance tools and GitHub Actions live in
+[archive/publication_support/](../archive/publication_support/).
 
 | File | Purpose |
 | --- | --- |
@@ -10,6 +14,11 @@
 | [calibration.py](calibration.py) | Empirical endpoint scales and quantile search |
 | [reference_calibration.py](reference_calibration.py) | Reference RCPS-HB and Algorithm 1 formulas |
 | [data.py](data.py) | Portable NumPy-cache and RGB paired-file datasets |
+| [train.py](train.py) / [evaluate.py](evaluate.py) | Training/resume and held-out calibrated evaluation |
+| [metrics.py](metrics.py) | SSIM, PSNR, MAE, coverage, width and crossing metrics |
+| [protocol.py](protocol.py) / [experiment_settings.json](experiment_settings.json) | Model/data selection, recorded settings, identity and resume checks |
+| [checkpoints.py](checkpoints.py) | Strict loading and validation of saved weights |
+| [download.py](download.py) / [checkpoint_index.json](checkpoint_index.json) | Verified downloads of published checkpoint files |
 
 Both loaders return float32 `(2, 3, H, W)`: measurement first, target second.
 RGB uint8 values are divided by 255. Neither loader clips predictions, applies
@@ -56,4 +65,4 @@ have matching RGB dimensions, normally 270×480. The model pads and crops;
 the loader leaves dimensions intact. Prepared clean and fixed-corruption
 manifests share this schema, with the original target paths/IDs retained.
 
-[Portable commands](../docs/RUNNING_EXPERIMENTS.md) · [Recorded settings](experiment_settings.json)
+[Portable commands](../archive/publication_support/docs/RUNNING_EXPERIMENTS.md) · [Recorded settings](experiment_settings.json)

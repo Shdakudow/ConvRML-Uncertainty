@@ -1,5 +1,8 @@
 # Historical material
 
+[publication_support/](publication_support/) holds optional extended guides,
+plotting/provenance tools and inactive GitHub Actions configuration.
+
 [operations/](operations/) preserves cluster/job/demo deployment tooling. The portable release needs none of it.
 
 The publication model interface is in [Exp2](../experiments/experiment2/models/), [Exp3](../experiments/experiment3/models/) and [convrml/](../convrml/).
@@ -27,5 +30,5 @@ tar -xzf archive/history_20261022.tar.gz -C /tmp/convrml-history
 Entries retain their former repository paths. Symlinks were stored as their
 source bytes to make historical files readable independently; the index records
 their original shared targets. Historical scripts may require their original
-cluster paths and source snapshots. [Source verification](../tools/verify_source_release.py)
+cluster paths and source snapshots. [Source verification](publication_support/tools/verify_source_release.py)
 checks both this bundle and the original captured source.
