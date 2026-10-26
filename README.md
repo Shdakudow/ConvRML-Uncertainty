@@ -60,8 +60,12 @@ Prepared image data are external; [data availability](reproducibility/DATA.md)
 links the original datasets and specifies the exact input formats and split IDs.
 
 `python -m convrml.evaluate` loads frozen weights, fits on the separate calibration
-split and reports held-out SSIM, PSNR, MAE, coverage, width and crossings. It saves
-raw and clipped metrics, per-image CSV and optional reconstruction/bound arrays.
+split and reports held-out SSIM, PSNR, MAE, LPIPS-AlexNet, coverage, width,
+crossings and Pearson/Spearman correlations of width with absolute error. It saves
+per-image CSV, dataset means/valid counts and optional reconstruction/bound arrays.
+LPIPS uses clipped RGB; the other metrics retain separate raw/clipped results.
+Pretrained LPIPS weights use the standard Torch cache; `--no-lpips` explicitly
+omits that metric for tiny/offline fixtures. Prediction and metric time are separate.
 [Calibration](archive/publication_support/docs/COVERAGE90.md) defaults to the paper
 procedures: RCPS-HB for Im2im, ensemble and MC dropout; Algorithm 1 calibrated
 quantiles for QUTCC. `--calibration native` is an uncalibrated control. Calibration

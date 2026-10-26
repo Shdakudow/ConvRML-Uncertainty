@@ -8,6 +8,7 @@ import argparse
 import csv
 import fcntl
 import json
+import math
 from pathlib import Path
 import tempfile
 import time
@@ -18,7 +19,7 @@ from torch.utils.data import DataLoader
 
 from .calibration import CalibrationFailure, paper_quantiles, rcps_scales
 from .checkpoints import load_model
-from .metrics import interval_metrics
+from .metrics import PerceptualMetric, finite_mean, interval_metrics
 from .protocol import (
     audit_manifest,
     autocast,
@@ -66,6 +67,11 @@ def arguments(argv=None):
         "--device", default="cuda" if torch.cuda.is_available() else "cpu"
     )
     parser.add_argument("--workers", type=int, default=2)
+    parser.add_argument(
+        "--no-lpips",
+        action="store_true",
+        help="Explicitly omit pretrained LPIPS; recorded as unavailable, never zero",
+    )
     parser.add_argument(
         "--seed",
         type=int,
@@ -276,6 +282,9 @@ def _run_evaluation(args, *, model_loader=None):
     )
     torch.manual_seed(seed)
     load_seconds = time.monotonic() - started
+    started = time.monotonic()
+    perceptual = None if args.no_lpips else PerceptualMetric(device)
+    lpips_load_seconds = time.monotonic() - started
 
     def predict(y):
         with autocast(run, device):
@@ -302,6 +311,7 @@ def _run_evaluation(args, *, model_loader=None):
         device=str(device),
         smoke=args.smoke,
         test_used_for_calibration=False,
+        lpips=not args.no_lpips,
     )
     fitted, cal_identity = {}, None
     started = time.monotonic()
@@ -358,17 +368,43 @@ def _run_evaluation(args, *, model_loader=None):
         0,
     )
     started = time.monotonic()
+    prediction_seconds, metric_seconds = 0.0, 0.0
     for batch in DataLoader(
         test, batch_size=run["microbatch"], num_workers=args.workers
     ):
         y, x = batch[:, 0].to(device), batch[:, 1].to(device)
+        if device.type == "cuda":
+            torch.cuda.synchronize(device)
+        prediction_started = time.monotonic()
         prediction, lo, hi = apply_calibration(y, predict, model, args.method, fitted)
+        if device.type == "cuda":
+            torch.cuda.synchronize(device)
+        prediction_seconds += time.monotonic() - prediction_started
         if not all(torch.isfinite(value).all() for value in (prediction, lo, hi)):
             raise ValueError("Nonfinite calibrated predictions")
+        metric_started = time.monotonic()
         measured = {
             mode: interval_metrics(prediction, lo, hi, x, clipped=mode == "clipped")
             for mode in ("raw", "clipped")
         }
+        for values in measured.values():
+            for name, value in values.items():
+                if (
+                    name not in ("pearson", "spearman")
+                    and not torch.isfinite(value).all()
+                ):
+                    raise ValueError("Nonfinite " + name + " scores")
+        perceptual_values = (
+            perceptual(prediction, x) if perceptual is not None else None
+        )
+        if (
+            perceptual_values is not None
+            and not torch.isfinite(perceptual_values).all()
+        ):
+            raise ValueError("Nonfinite LPIPS scores")
+        if device.type == "cuda":
+            torch.cuda.synchronize(device)
+        metric_seconds += time.monotonic() - metric_started
         for index in range(len(batch)):
             rows.append(
                 dict(
@@ -376,11 +412,24 @@ def _run_evaluation(args, *, model_loader=None):
                     id=test_ids[offset + index],
                     **{
                         mode: {
-                            key: float(value[index]) for key, value in metrics.items()
+                            key: (
+                                float(value[index])
+                                if math.isfinite(float(value[index]))
+                                else None
+                            )
+                            for key, value in metrics.items()
                         }
                         for mode, metrics in measured.items()
                     },
                 )
+            )
+            rows[-1]["raw"][
+                "lpips"
+            ] = None  # Unbounded outputs are outside LPIPS's supported range.
+            rows[-1]["clipped"]["lpips"] = (
+                float(perceptual_values[index])
+                if perceptual_values is not None
+                else None
             )
             if offset + index < args.examples:
                 for key, value in zip(
@@ -389,12 +438,19 @@ def _run_evaluation(args, *, model_loader=None):
                 ):
                     examples[key].append(value[index].cpu().numpy())
         offset += len(batch)
-    metrics = {
+    aggregate = {
         mode: {
-            key: sum(row[mode][key] for row in rows) / len(rows)
-            for key in rows[0][mode]
+            key: finite_mean(row[mode][key] for row in rows) for key in rows[0][mode]
         }
         for mode in ("raw", "clipped")
+    }
+    metrics = {
+        mode: {key: value[0] for key, value in values.items()}
+        for mode, values in aggregate.items()
+    }
+    valid_counts = {
+        mode: {key: value[1] for key, value in values.items()}
+        for mode, values in aggregate.items()
     }
     report = dict(
         epoch=provenance[0]["epoch"],
@@ -403,6 +459,17 @@ def _run_evaluation(args, *, model_loader=None):
         request=request,
         test_count=len(rows),
         metrics=metrics,
+        metric_valid_counts=valid_counts,
+        metric_protocol=dict(
+            lpips=dict(
+                enabled=perceptual is not None,
+                backbone="alex",
+                inputs="clipped RGB [0,1]",
+                raw="unavailable: unbounded outputs outside supported intensity range",
+            ),
+            correlations="Per-image Pearson/Spearman: UB-LB versus absolute target-prediction error; flattened RGB; no smoothing/regions",
+            undefined="null; means exclude undefined images and record valid counts",
+        ),
         calibration=fitted,
         provenance=provenance,
         data=dict(main=main_identity, calibration=cal_identity),
@@ -411,8 +478,12 @@ def _run_evaluation(args, *, model_loader=None):
         hardware=hardware(device),
         timing=dict(
             load_seconds=load_seconds,
+            lpips_load_seconds=lpips_load_seconds,
             calibration_seconds=calibration_seconds,
             test_seconds=time.monotonic() - started,
+            prediction_seconds=prediction_seconds,
+            prediction_seconds_per_image=prediction_seconds / len(rows),
+            metric_seconds=metric_seconds,
         ),
         per_image=rows,
         example_count=args.examples,

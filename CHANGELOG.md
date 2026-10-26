@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add evaluation LPIPS-AlexNet and per-image Pearson/Spearman uncertainty/error
+  correlations, valid counts and five-epoch quality curves. Separate prediction
+  timing from metric computation; omit region correlations and preserve models/losses.
 - Default to paper calibration only: RCPS-HB for all baselines, including raw
   Im2im, and Algorithm 1 calibrated quantiles for QUTCC. Archive empirical matching
   and the old combined reference evaluator; retain native intervals as a control.

@@ -10,6 +10,7 @@ claim authorship of the original reconstruction or uncertainty methods.
 | Im2im uncertainty formulation | [Angelopoulos et al., Image-to-Image Regression](https://arxiv.org/abs/2202.05265) |
 | Deep ensemble baseline | [Lakshminarayanan, Pritzel and Blundell](https://proceedings.neurips.cc/paper/2017/hash/9ef2ed4b7fd2c810847ffa5fa85bce38-Abstract.html) |
 | MC dropout baseline | [Gal and Ghahramani](https://proceedings.mlr.press/v48/gal16.html) |
+| LPIPS perceptual metric | [Zhang et al., official implementation](https://github.com/richzhang/PerceptualSimilarity), [TorchMetrics implementation](https://lightning.ai/docs/torchmetrics/stable/image/learned_perceptual_image_patch_similarity.html) |
 
 The upstream BSD 3-Clause [LICENSE](LICENSE), including its copyright notice, is
 retained. The original ConvRML citation is preserved separately in

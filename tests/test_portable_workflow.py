@@ -136,6 +136,7 @@ class PortableWorkflow(unittest.TestCase):
                 "cpu",
                 "--examples",
                 "1",
+                "--no-lpips",
             ]
         )
 
@@ -237,9 +238,15 @@ class PortableWorkflow(unittest.TestCase):
         self.assertEqual(report["calibration"]["procedure"], "asymmetric RCPS-HB")
         for mode in ("raw", "clipped"):
             for key, average in report["metrics"][mode].items():
-                self.assertEqual(
-                    average, sum(row[mode][key] for row in report["per_image"]) / 2
-                )
+                values = [
+                    row[mode][key]
+                    for row in report["per_image"]
+                    if row[mode][key] is not None
+                ]
+                self.assertEqual(average, sum(values) / len(values) if values else None)
+                self.assertEqual(report["metric_valid_counts"][mode][key], len(values))
+        self.assertIsNone(report["metrics"]["clipped"]["lpips"])
+        self.assertIsNone(report["metrics"]["clipped"]["pearson"])
         arrays = np.load(args.output / "examples.npz")
         expected_target = np.load(self.root / "pairs.npy")[6, 1] / 255
         np.testing.assert_allclose(arrays["target"][0], expected_target, atol=3e-8)
@@ -335,6 +342,26 @@ class PortableWorkflow(unittest.TestCase):
         self.assertEqual(roles, ["test"])
         self.assertEqual(report["request"]["calibration"], "native")
         self.assertEqual(report["calibration"], {})
+
+    def test_lpips_export_is_per_image_clipped_only_and_counted(self):
+        class FixtureLPIPS:
+            def __init__(self, device):
+                pass
+
+            def __call__(self, prediction, target):
+                return torch.full((len(prediction),), 0.125)
+
+        args = self.evaluation_args("with_lpips")
+        args.no_lpips = False
+        with patch.object(evaluate, "PerceptualMetric", FixtureLPIPS):
+            report = evaluate.run_evaluation(args, model_loader=self.model_loader)
+        self.assertEqual(report["metrics"]["clipped"]["lpips"], 0.125)
+        self.assertEqual(report["metric_valid_counts"]["clipped"]["lpips"], 2)
+        self.assertIsNone(report["metrics"]["raw"]["lpips"])
+        self.assertEqual(report["metric_valid_counts"]["raw"]["lpips"], 0)
+        self.assertIn("clipped_lpips", (args.output / "per_image.csv").read_text())
+        self.assertIn("prediction_seconds_per_image", report["timing"])
+        self.assertIn("metric_seconds", report["timing"])
 
     def test_split_ids_dimensions_and_ensemble_seeds_are_checked(self):
         self.config["datasets"]["rml"]["id_hashes"] = {"train": "wrong"}

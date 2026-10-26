@@ -2,7 +2,7 @@
 
 | File | Purpose |
 | --- | --- |
-| [plot_learning_curves.py](plot_learning_curves.py) | Plot SSIM, PSNR, width and measured coverage from completed milestone reports |
+| [plot_learning_curves.py](plot_learning_curves.py) | Plot five-epoch SSIM/PSNR/width/coverage plus LPIPS/Pearson/Spearman/MAE when present |
 | [check_shared_equivalence.py](check_shared_equivalence.py) | Developer check of fixed-seed model state, forward/backward and RNG |
 | [verify_source_release.py](verify_source_release.py) | Optional verification of preserved original source archives |
 

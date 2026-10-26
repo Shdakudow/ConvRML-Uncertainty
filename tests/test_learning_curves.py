@@ -28,7 +28,16 @@ class LearningCurveReports(unittest.TestCase):
 
     def test_raw_and_clipped_are_distinct(self):
         raw = dict(ssim=0.7, psnr=25, coverage=0.9, width=0.2)
-        clipped = dict(ssim=0.71, psnr=26, coverage=0.92, width=0.18)
+        clipped = dict(
+            ssim=0.71,
+            psnr=26,
+            coverage=0.92,
+            width=0.18,
+            lpips=0.12,
+            pearson=None,
+            spearman=0.6,
+            mae=0.05,
+        )
         self.write(
             "epoch_005/report.json",
             dict(
@@ -42,6 +51,9 @@ class LearningCurveReports(unittest.TestCase):
         self.assertEqual(row["width"], 0.18)
         self.assertEqual(row["test_count"], 2000)
         self.assertEqual(row["lower_q"], 0.03)
+        self.assertEqual(row["lpips"], 0.12)
+        self.assertEqual(row["pearson"], "")
+        self.assertEqual(row["spearman"], 0.6)
         self.assertEqual(
             curves.read_series("QUTCC", self.root, "raw")[0]["coverage"], 0.9
         )

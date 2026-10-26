@@ -14,7 +14,7 @@ resume and calibrated evaluation.
 | [environment-tested.json](environment-tested.json) | Software used for release verification, with scope/device |
 | [verification.json](verification.json) | Automated checks and their practical scope |
 | [cleanup_verification.json](cleanup_verification.json) | Post-v0.1.0 archive/unused-code cleanup checks; original release evidence is retained |
-| [paper_calibration_verification.json](paper_calibration_verification.json) | Current paper-only calibration checks and unchanged model/training settings |
+| [paper_calibration_verification.json](paper_calibration_verification.json) | Paper-only calibration change checks and unchanged model/training settings |
 | [model-equivalence.json](model-equivalence.json) | Exact original-versus-published CPU model fingerprints |
 | [constraints-tested.txt](constraints-tested.txt) | Tested numerical dependency versions |
 | [DATA.md](DATA.md) | Original datasets, prepared input formats and access requirements |

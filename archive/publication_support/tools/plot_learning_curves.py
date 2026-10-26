@@ -11,6 +11,7 @@ import math
 from pathlib import Path
 
 METRICS = ("ssim", "psnr", "width", "coverage")
+QUALITY_METRICS = ("lpips", "pearson", "spearman", "mae")
 
 
 def read_series(label, directory, metric_space="clipped"):
@@ -46,6 +47,14 @@ def read_series(label, directory, metric_space="clipped"):
         for key in METRICS:
             if key not in metrics or not math.isfinite(float(metrics[key])):
                 raise ValueError(f"{path}: missing/nonfinite {key}")
+        optional = {}
+        for key in QUALITY_METRICS:
+            value = metrics.get(key)
+            if value is not None and not math.isfinite(float(value)):
+                raise ValueError(
+                    f"{path}: nonfinite {key}; undefined values must be null"
+                )
+            optional[key] = float(value) if value is not None else ""
         calibration = report.get("calibration") or {}
         factors = report.get("factors") or {}
         scales = calibration.get("scales") or factors.get("rcps_hb") or factors
@@ -66,6 +75,14 @@ def read_series(label, directory, metric_space="clipped"):
                     "calibration_count", calibration.get("n_images", "")
                 ),
                 **{key: float(metrics[key]) for key in METRICS},
+                **optional,
+                **{
+                    key
+                    + "_count": report.get("metric_valid_counts", {})
+                    .get(metric_space, {})
+                    .get(key, "")
+                    for key in QUALITY_METRICS
+                },
                 lower_q=calibration.get("lower_q", ""),
                 upper_q=calibration.get("upper_q", ""),
                 lower_scale=scales.get("lower", ""),
@@ -136,6 +153,35 @@ def main():
     )
     figure.savefig(args.output / "learning_curves.png", dpi=180)
     plt.close(figure)
+    if any(row[key] != "" for row in rows for key in QUALITY_METRICS):
+        figure, axes = plt.subplots(2, 2, figsize=(11, 7), constrained_layout=True)
+        for axis, key, title in zip(
+            axes.flat,
+            QUALITY_METRICS,
+            [
+                "LPIPS-AlexNet (lower is better)",
+                "Pearson: width vs absolute error",
+                "Spearman: width vs absolute error",
+                "MAE",
+            ],
+        ):
+            for label in labels:
+                by_epoch = {row["epoch"]: row for row in rows if row["series"] == label}
+                values = [by_epoch.get(epoch, {}).get(key, "") for epoch in epochs]
+                axis.plot(
+                    epochs,
+                    [value if value != "" else math.nan for value in values],
+                    marker="o",
+                    label=label,
+                )
+            axis.set(xlabel="Training / adaptation epoch", ylabel=title, xticks=epochs)
+            axis.grid(alpha=0.25)
+            axis.legend()
+        figure.suptitle(
+            f"{camera} · {args.metric_space} metrics · missing/undefined values are gaps"
+        )
+        figure.savefig(args.output / "quality_curves.png", dpi=180)
+        plt.close(figure)
     print(f"Saved {len(rows)} evaluated points to {args.output}")
 
 

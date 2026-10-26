@@ -101,7 +101,12 @@ historical full-state checkpoints are not silently treated as portable resumes.
 Evaluation writes `calibration.json` before opening test pixels, then `report.json`,
 `per_image.csv`, and optional `examples.npz` with measurement, target, prediction,
 lower and upper arrays; saved example predictions/bounds are clipped to [0,1]. Existing results are immutable: use a new output directory
-for another checkpoint/protocol. Infeasible quantiles produce `failure.json`, not
+for another checkpoint/protocol. Per-image metrics and means include LPIPS-AlexNet
+(clipped images), Pearson/Spearman width/error correlations, SSIM, PSNR, MAE,
+coverage, width and crossings. Undefined correlations and intentionally omitted
+LPIPS are null, with valid-image counts. `--no-lpips` is available for tiny/offline
+fixtures; formal evaluation defaults to pretrained LPIPS. Cache its weights before
+running on an offline worker. Infeasible quantiles produce `failure.json`, not
 zero-valued metrics. Alpha=0.10 targets 90% coverage; actual test coverage is measured.
 
 Plot complete milestones with the optional plotting dependencies:
@@ -111,6 +116,12 @@ python -m pip install -e '.[plot]'
 python archive/publication_support/tools/plot_learning_curves.py --series QUTCC=outputs/paper/rml/qutcc \
   --metric-space clipped --output figures/rml
 ```
+
+This exports SSIM/PSNR/width/coverage in `learning_curves.png`,
+LPIPS/Pearson/Spearman/MAE in `quality_curves.png` when available, and all values
+in `learning_curves.csv`. It reads completed five-epoch reports; missing or
+undefined values are gaps. Existing reports require evaluation to populate new
+metrics; the plotter does not fabricate them or rerun inference.
 
 [Settings and seeds](../../../convrml/experiment_settings.json) ·
 [Metrics](METHODS_AND_METRICS.md) · [Calibration](COVERAGE90.md)
