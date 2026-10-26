@@ -1,2 +1,2 @@
-# Formatting only; not required by training or inference.
-black==25.1.0
+# Install the release plus test/formatting dependencies.
+-e .[plot,dev]

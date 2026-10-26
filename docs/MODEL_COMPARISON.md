@@ -41,9 +41,10 @@ These historical runs are not an identical-optimizer ablation.
 
 Model `.bounds()` returns native intervals without fitting calibration or clipping.
 Calibration fits separate held-out pairs, after training. The close-to-90%
-comparison uses the common [empirical implementation](../shared/calibration/coverage90.py).
-Original reference runs used RCPS-HB for Exp2 baselines and empirical tail searches
-for QUTCC/raw Im2im; those reports are retained separately.
+comparison uses the common [empirical implementation](../convrml/calibration.py).
+`convrml.evaluate --calibration reference` reproduces RCPS-HB for Exp2 baselines
+and the paper-adjusted quantile/scale searches for QUTCC/raw Im2im. Default
+empirical results remain a distinct matched-coverage protocol.
 
 QUTCC weights are structurally shared across the experiments, but the trained
 weights and dataset identities differ. Im2im has different wrapper prefixes;
@@ -51,4 +52,4 @@ load the matching experiment checkpoint strictly. Repository organization does
 not make checkpoints interchangeable or call for retraining.
 
 [Usage](RUNNING_EXPERIMENTS.md) · [Metrics](METHODS_AND_METRICS.md) ·
-[Historical protocols](../archive/reproduction/docs/MODEL_COMPARISON.md)
+[Settings and seeds](../convrml/experiment_settings.json)

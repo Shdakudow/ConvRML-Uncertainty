@@ -1,5 +1,7 @@
 # Historical material
 
+[operations/](operations/) preserves cluster/job/demo deployment tooling. The portable release needs none of it.
+
 The publication model interface is in [Exp2](../experiments/experiment2/models/), [Exp3](../experiments/experiment3/models/) and [convrml/](../convrml/).
 
 [reproduction/](reproduction/) preserves the full Experiment 2/3 engines and their original import layout, apart from the concise model interface.

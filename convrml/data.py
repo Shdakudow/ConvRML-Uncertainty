@@ -46,6 +46,10 @@ class NumpyPairs(Dataset):
         return len(self.rows)
 
     def __getitem__(self, index):
+        if index < 0:
+            index += len(self)
+        if not 0 <= index < len(self):
+            raise IndexError("Pair index is outside the selected split")
         pair = np.array(self.array[self.start + index], copy=True)
         return torch.from_numpy(pair).float() / 255
 

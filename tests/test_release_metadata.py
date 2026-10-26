@@ -1,0 +1,78 @@
+"""Keep release settings, split indexes and artifact selection coherent."""
+
+import json
+from pathlib import Path
+import unittest
+
+import numpy as np
+
+from convrml import download, protocol
+from convrml.reference_calibration import (
+    paper_quantiles,
+    risk_threshold,
+    select_asymmetric_factors,
+)
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class ReleaseMetadata(unittest.TestCase):
+    def test_all_checkpoint_assets_are_verified_and_uniquely_identified(self):
+        artifacts = json.loads(download.INDEX_PATH.read_text())["artifacts"]
+        self.assertEqual(len(artifacts), 292)
+        keys = [(v["dataset"], v["method"], v["member"], v["epoch"]) for v in artifacts]
+        self.assertEqual(len(keys), len(set(keys)))
+        for row in artifacts:
+            self.assertTrue(row["github_verified"])
+            self.assertRegex(row["sha256"], r"^[a-f0-9]{64}$")
+            self.assertGreater(row["size"], 0)
+            self.assertEqual(Path(row["name"]).name, row["name"])
+        for dataset in ("rml", "diffuser"):
+            self.assertEqual(
+                [
+                    v["member"]
+                    for v in download.select_artifacts(dataset, "ensemble", 50)
+                ],
+                list(range(5)),
+            )
+            self.assertEqual(
+                len(download.select_artifacts(dataset, "ensemble", 50, members=10)), 10
+            )
+
+    def test_split_hashes_match_the_published_order_and_have_no_leakage(self):
+        for dataset, spec in protocol.settings()["datasets"].items():
+            data = json.loads(
+                (ROOT / "reproducibility/splits" / f"{dataset}.json").read_text()
+            )
+            seen = set()
+            for role, ids in data["ids"].items():
+                self.assertEqual(len(ids), spec["counts"][role])
+                self.assertEqual(len(ids), len(set(ids)))
+                self.assertFalse(seen.intersection(ids))
+                seen.update(ids)
+                self.assertEqual(protocol.id_digest(ids), spec["id_hashes"][role])
+
+    def test_hb_uses_whole_images_and_separate_tail_confidence_budgets(self):
+        rng = np.random.default_rng(9)
+        scores = rng.uniform(0, 2, (2048, 16)).astype(np.float32)
+        factors, audit, _ = select_asymmetric_factors(scores, scores * 2)
+        self.assertEqual(audit["n_images"], 2048)
+        self.assertEqual(audit["tail_delta"], 0.025)
+        for side in ("lower", "upper"):
+            self.assertGreaterEqual(
+                factors["rcps_hb"][side], factors["empirical"][side]
+            )
+            self.assertLess(audit["tail_hb_pvalues"][side], 0.025)
+        with self.assertRaisesRegex(ValueError, "Insufficient"):
+            risk_threshold(2, 0.05, 0.025)
+
+    def test_paper_quantiles_keep_the_reference_finite_image_correction(self):
+        result = paper_quantiles(lambda lo, hi: (lo, 1 - hi), 3000)
+        self.assertAlmostEqual(result["per_tail_target"], (0.1 - 0.9 / 3000) / 2)
+        self.assertLessEqual(result["lower_q"], result["per_tail_target"])
+        self.assertLessEqual(1 - result["upper_q"], result["per_tail_target"])
+        self.assertNotIn("scales", result)
+
+
+if __name__ == "__main__":
+    unittest.main()

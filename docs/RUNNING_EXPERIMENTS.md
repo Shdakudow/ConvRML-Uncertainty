@@ -1,104 +1,116 @@
-# Using the models
+# Train and evaluate
 
-Install from the repository root after installing a suitable PyTorch build:
+Commands run from a clone after `python -m pip install -e . -c reproducibility/constraints-tested.txt`. They do not submit
+cluster jobs. Full training requires suitable compute; CPU unit tests use small
+synthetic paired fixtures. The portable CLI supports Linux/macOS.
 
-```bash
-python -m pip install -e .
-```
+## Prepare data paths
 
-## Construct a model
-
-```python
-from experiments.experiment2.models import Im2im, QUTCC, MCDropout, EnsembleMember, DeepEnsemble
-from experiments.experiment3.models import Im2im as RawIm2im
-
-model = QUTCC()
-raw_model = RawIm2im()
-mc_model = MCDropout(p=0.05)
-```
-
-Construction initializes random weights; it does not download a trained model.
-Use [checkpoint Releases](https://github.com/Shdakudow/ConvRML-Uncertainty/releases)
-and the correct method/camera/epoch. Model dictionaries retain their historical
-parameter names, including `base.*` (Exp2 Im2im), `net.*` (raw Im2im/QUTCC), and
-`baseModel.*` (one ensemble member).
-
-```python
-import torch
-checkpoint = torch.load("epoch_050.pt", map_location="cpu", weights_only=False)
-model.load_state_dict(checkpoint["model"], strict=True)
-model.eval()
-```
-
-Dataset manifests and checkpoints are separate from code. Preserve their sample
-IDs, order and camera/method identities. [Data schemas](../convrml/README.md) show
-both loaders without machine-specific paths.
-
-## Forward, loss and intervals
-
-`y` is a normalized measurement batch `(B,3,H,W)` and `x` its ground truth.
-
-```python
-loss = model.loss(y, x)  # QUTCC samples one uniform scalar q per image.
-loss.backward()
-
-model.eval()
-with torch.inference_mode():
-    reconstruction, lower, upper = model.bounds(y)
-    uncertainty = upper - lower
-```
-
-Im2im `.forward(y)` returns `(B,3 heads,3 RGB,H,W)` in lower/center/upper order.
-QUTCC `.forward(y,q)` returns one RGB quantile image; `q` has shape `(B,)`.
-MC dropout `.forward(y)` is one RGB pass; `.bounds(y)` uses 30 masked passes.
-Each ensemble member `.forward(y)` returns `(RGB mean, RGB variance)` and
-`.loss(y,x)` computes Gaussian NLL. Train members independently; do not reset
-the same seed before each construction or share a dataloader shuffle generator.
-
-```python
-# Load each member's own checkpoint before aggregation.
-members = [EnsembleMember() for _ in range(5)]
-ensemble = DeepEnsemble(members).eval()
-with torch.inference_mode():
-    reconstruction, lower, upper = ensemble.bounds(y)
-```
-
-These are native bounds. Fit calibration only on a separate calibration split,
-then evaluate frozen parameters on test pairs. QUTCC accepts calibrated global
-levels via `model.bounds(y, lower_q=q_low, upper_q=q_high)`. Im2im/ensemble/MC use
-independent lower/upper distance scales. Clipping to [0,1] is a separate display
-or metric convention, not an automatic consequence of calibration.
-
-## Reproduce the recorded runs
-
-Model definitions are the publication interface. The exact historical optimizers,
-source guards, split audits, RNG restoration and corruption trainers remain in
-[archive/reproduction](../archive/reproduction/). Its experiment folders preserve
-the previous import context and shared source links.
-
-- [Exp2 trainer/evaluator commands](../archive/reproduction/docs/RUNNING_EXPERIMENTS.md#experiment-2)
-- [Raw and corruption adaptation](../archive/reproduction/docs/RUNNING_EXPERIMENTS.md#experiment-3)
-- [Matched-coverage evaluation](COVERAGE90.md)
-
-For example, inspect the preserved router without running training:
+Set a path to your prepared data:
 
 ```bash
-python archive/reproduction/experiments/experiment2/run_model.py train \
-  --method qutcc --camera rml --epoch 5 --dry-run
+export CONVRML_DATA=/path/to/prepared-data
 ```
 
-The original cluster data paths and complete recorded settings are in that
-reproduction guide. The model-only examples above do not replace its optimizer
-or checkpoint-resume protocols. No training or demo deployment is triggered by
-importing the publication models.
+[Data availability and layout](../reproducibility/DATA.md) defines the two loaders.
+Use the saved split IDs/order; training never uses calibration or test targets.
+Formal runs validate the recorded counts and ordered-ID hashes. `--smoke` permits
+explicitly labelled small fixtures and is not a full-dataset experiment.
 
-## Verification
+## Download saved weights
 
 ```bash
-python -m unittest discover -s tests -v
-python tools/verify_source_release.py
+python -m convrml.download --dataset rml --method qutcc --epoch 50 --output weights/rml/qutcc
+python -m convrml.download --dataset rml --method im2im --epoch 50 --output weights/rml/im2im
+python -m convrml.download --dataset rml --method mc_dropout --epoch 50 --output weights/rml/mc
+python -m convrml.download --dataset rml --method ensemble --epoch 50 --members 5 --output weights/rml/ensemble
+python -m convrml.download --dataset raw_clean --method qutcc --epoch 50 --output weights/raw/qutcc
 ```
 
-[Equivalence evidence](../archive/provenance/publication_model_equivalence_20261025.json)
-records exact CPU matches against the models before this publication cleanup:
-state keys/shapes, initialization, predictions, input/parameter gradients and RNG.
+`--list` shows names/hashes without downloading. Ensemble downloads default to
+members 0–4; `--members 10` selects 0–9 and `--member N` selects one. Every file
+is checked against the [index](../reproducibility/checkpoints.json). Corrupted raw
+uses adaptation epochs 5–30; clean models use epochs 5–50. A private repository
+requires an authenticated GitHub CLI with access, or manually supplied indexed files.
+
+## Evaluate Experiment 2
+
+```bash
+python -m convrml.evaluate --experiment 2 --dataset rml --method qutcc \
+  --checkpoints weights/rml/qutcc/exp2__rml__qutcc__epoch_050.pt \
+  --manifest "$CONVRML_DATA/rml/manifest.json" --pairs "$CONVRML_DATA/rml/pairs.npy" \
+  --calibration-manifest "$CONVRML_DATA/rml/calibration/manifest.json" \
+  --calibration-pairs "$CONVRML_DATA/rml/calibration/pairs.npy" \
+  --output outputs/empirical/rml/qutcc/epoch_050 --examples 10 --device cuda
+```
+
+Use the same arguments and dataset IDs with the other methods, changing the
+checkpoint(s) and output folder. For ensemble, pass members 0–4 or 0–9 **in order**
+to `--checkpoints`; mixed epochs or repeated initialization/data seeds are rejected.
+MC dropout uses p=0.05 with 30 stochastic passes. Its default inference seed
+matches the captured predictor's initialization seed; `--seed` can explicitly
+select another draw sequence. Seed, batch shape and hardware affect stochastic results. `diffuser` selects the normalized
+parallel-camera data, distinct from raw DLMD.
+
+## Evaluate Experiment 3
+
+```bash
+python -m convrml.evaluate --experiment 3 --dataset raw_clean --method qutcc \
+  --checkpoints weights/raw/qutcc/exp3__raw_clean__qutcc__epoch_050.pt \
+  --manifest "$CONVRML_DATA/raw_clean/split.json" \
+  --calibration-manifest "$CONVRML_DATA/raw_clean/split.json" \
+  --output outputs/empirical/raw_clean/qutcc/epoch_050 --examples 10 --device cuda
+```
+
+Raw manifests contain separate roles in one file; the calibration/test role IDs
+are disjoint. No `--pairs` argument is used. Replace method/checkpoint for raw
+Im2im. `raw_corrupted` selects its own fixed-corruption manifest and checkpoint.
+Models pad 270×480 internally to 288×480 and crop every output back.
+
+## Train and resume
+
+```bash
+python -m convrml.train --experiment 2 --dataset rml --method qutcc \
+  --manifest "$CONVRML_DATA/rml/manifest.json" --pairs "$CONVRML_DATA/rml/pairs.npy" \
+  --output runs/rml/qutcc --epochs 5 --device cuda
+python -m convrml.train --experiment 2 --dataset rml --method qutcc \
+  --manifest "$CONVRML_DATA/rml/manifest.json" --pairs "$CONVRML_DATA/rml/pairs.npy" \
+  --output runs/rml/qutcc --epochs 10 --resume --device cuda
+```
+
+`--epochs` is the absolute target. The learning-rate horizon remains the recorded
+50 epochs, so chunking does not restart warmup/cosine decay. Checkpoints are saved
+every five epochs, with full optimizer/RNG state in `latest.pt` after each complete
+epoch. Resume validates source, software, data identity, device and worker count.
+A preempted partial epoch restarts from the last completed epoch. The exact
+historical mid-epoch resume engines remain archived.
+
+Im2im/MC use their own recorded profiles. Ensemble training requires `--member N`
+and a distinct output directory per member; each member sees the entire training
+split with independent initialization and shuffle streams. Do not train concurrent
+writers into the same output directory.
+
+For raw clean training, use `--experiment 3 --dataset raw_clean`, the image-file
+manifest and no `--pairs`. Corruption adaptation uses `--dataset raw_corrupted`
+and `--initialize` with that method's clean epoch-30 checkpoint. It starts fresh
+Adam moments at LR 1e-5, then retains them through adaptation epoch 30. Existing
+historical full-state checkpoints are not silently treated as portable resumes.
+
+## Outputs
+
+Evaluation writes `calibration.json` before opening test pixels, then `report.json`,
+`per_image.csv`, and optional `examples.npz` with measurement, target, prediction,
+lower and upper arrays; saved example predictions/bounds are clipped to [0,1]. Existing results are immutable: use a new output directory
+for another checkpoint/protocol. Infeasible quantiles produce `failure.json`, not
+zero-valued metrics. Alpha=0.10 targets 90% coverage; actual test coverage is measured.
+
+Plot complete milestones with the optional plotting dependencies:
+
+```bash
+python -m pip install -e '.[plot]'
+python tools/plot_learning_curves.py --series QUTCC=outputs/empirical/rml/qutcc \
+  --metric-space clipped --output figures/rml
+```
+
+[Settings and seeds](../convrml/experiment_settings.json) ·
+[Metrics](METHODS_AND_METRICS.md) · [Calibration](COVERAGE90.md)

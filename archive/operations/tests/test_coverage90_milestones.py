@@ -9,8 +9,8 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tools"))
-RUNNER = ROOT / "tools/run_coverage90_milestone.py"
+sys.path.insert(0, str(ROOT))
+RUNNER = ROOT / "run_coverage90_milestone.py"
 
 
 class Milestones(unittest.TestCase):
@@ -86,7 +86,7 @@ class Milestones(unittest.TestCase):
 
     def test_every_ensemble_member_must_exist_in_archive_manifest(self):
         spec = importlib.util.spec_from_file_location(
-            "milestone_dispatch", ROOT / "tools/dispatch_coverage90_milestones.py"
+            "milestone_dispatch", ROOT / "dispatch_coverage90_milestones.py"
         )
         dispatch = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(dispatch)

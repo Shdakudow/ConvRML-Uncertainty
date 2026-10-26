@@ -1,27 +1,24 @@
-# Shared checks
-
-From the repository root:
+# Verification
 
 ```bash
+python -m pip install -e '.[dev]'
 python -m unittest discover -s tests -v
+```
+
+The public tests use small temporary paired fixtures. They check model/data APIs,
+calibration numerics, exact uninterrupted-versus-resumed optimizer/RNG progress,
+strict checkpoint identity, split leakage, immutable results, saved examples,
+checkpoint indexes and release metadata. They do not allocate a GPU or train the
+published models on the full benchmark.
+
+Historical source/cluster checks are optional and separate:
+
+```bash
+python -m unittest discover -s archive/operations/tests -v
+python -m unittest discover -s archive/reproduction/tests -v
 python tools/verify_source_release.py
 ```
 
-Full command-line checks require the ML dependencies in `requirements.txt`.
-Without them, the ML-only check is skipped.
-
-Experiment-specific model tests are grouped under
-[`archive/reproduction/experiments/experiment2/tests/`](../archive/reproduction/experiments/experiment2/tests/). Run from the preserved Exp2 folder:
-
-```bash
-cd archive/reproduction/experiments/experiment2
-python -m unittest discover -s tests -v
-python qutcc/test_protocol.py
-```
-
-`test_publication_models.py` checks the six public models, paired loaders and
-exact native-interval agreement with the saved-run predictor. The numerical
-equivalence report additionally covers initialization, forward/backward and RNG.
-
-Archived Exp3 retains its corruption and continuation tests next to those distinct
-implementations. See the [workflow guide](../docs/RUNNING_EXPERIMENTS.md).
+[Verification record](../reproducibility/verification.json) states the tested
+environment and scope. CUDA numerical equality across hardware is not established
+by CPU fixture checks.

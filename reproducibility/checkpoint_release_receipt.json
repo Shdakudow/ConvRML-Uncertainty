@@ -1,0 +1,371 @@
+{
+  "release": "checkpoints-exp2-qutcc-exp3-20261025",
+  "repository": "Shdakudow/ConvRML-Uncertainty",
+  "verified": [
+    {
+      "name": "exp2__rml__qutcc__epoch_005.pt",
+      "size": 469332730,
+      "sha256": "a9ab25e776b7545204b52c30cdb510117287bcb4f62aff6094af0ff2ae04d440",
+      "asset_id": 676357220,
+      "github_verified": true
+    },
+    {
+      "name": "exp2__rml__qutcc__epoch_010.pt",
+      "size": 469334138,
+      "sha256": "e773b4a0bdfa46208dcbcb6f69a26a9fe9dbb9cd73d5f9313c70603fe31aba6d",
+      "asset_id": 676357219,
+      "github_verified": true
+    },
+    {
+      "name": "exp2__rml__qutcc__epoch_015.pt",
+      "size": 469335354,
+      "sha256": "e305ae37a9f0e59c536252ba2c0211c8152516dabc97a88ae7965c259f2d335e",
+      "asset_id": 676357221,
+      "github_verified": true
+    },
+    {
+      "name": "exp2__rml__qutcc__epoch_020.pt",
+      "size": 469336570,
+      "sha256": "f5c6235bc6cf4dc2ae24211743fcf8b46bc676566a5b9be5a637f76d9f93fa0e",
+      "asset_id": 676357913,
+      "github_verified": true
+    },
+    {
+      "name": "exp2__rml__qutcc__epoch_025.pt",
+      "size": 469337594,
+      "sha256": "14ec424f119a2ea70e3e486217c73fb8c6815aba02a11b3703885dcbf75c2e8f",
+      "asset_id": 676358076,
+      "github_verified": true
+    },
+    {
+      "name": "exp2__rml__qutcc__epoch_030.pt",
+      "size": 469338618,
+      "sha256": "a47451b40e5b4a9e3a024f0c9bac7ddade3f3825979c5a7df64e74019b6a9bb2",
+      "asset_id": 676358166,
+      "github_verified": true
+    },
+    {
+      "name": "exp2__rml__qutcc__epoch_035.pt",
+      "size": 469339898,
+      "sha256": "7e628a390caba89ef3ed86eb95dbee9dffab691b8b604e4996a1782a76e0b849",
+      "asset_id": 676358683,
+      "github_verified": true
+    },
+    {
+      "name": "exp2__rml__qutcc__epoch_040.pt",
+      "size": 469340922,
+      "sha256": "74b1864ea97b9babfba6e8bfd00000f7aba2616cf5222eddd09e85cebe6a2b52",
+      "asset_id": 676359148,
+      "github_verified": true
+    },
+    {
+      "name": "exp2__rml__qutcc__epoch_045.pt",
+      "size": 469342202,
+      "sha256": "8b0079231e884a88e44bce7695dbab234c16904a8d8ba9cbc5b6d719e0ba59b1",
+      "asset_id": 676359337,
+      "github_verified": true
+    },
+    {
+      "name": "exp2__rml__qutcc__epoch_050.pt",
+      "size": 469343226,
+      "sha256": "5e25cb343b6610cd72b9c42eb3f3fe1cd732e7dd1d9034fd8b966bdd2564c98a",
+      "asset_id": 676359681,
+      "github_verified": true
+    },
+    {
+      "name": "exp2__diffuser__qutcc__epoch_005.pt",
+      "size": 469332602,
+      "sha256": "dfe34f13958bf51c11378664c2bd897c25f6d8d976e178abbab3d86fd561bcad",
+      "asset_id": 676360635,
+      "github_verified": true
+    },
+    {
+      "name": "exp2__diffuser__qutcc__epoch_010.pt",
+      "size": 469333818,
+      "sha256": "f3967767a5081cee3407b1f24a271cbd61a1a0266ccc785be6e60b23abb98380",
+      "asset_id": 676360702,
+      "github_verified": true
+    },
+    {
+      "name": "exp2__diffuser__qutcc__epoch_015.pt",
+      "size": 469335034,
+      "sha256": "f32b4d4939c9d43cd8f5995c1436cc67949ad5775772ca1ffb3e8a87472ebe30",
+      "asset_id": 676360916,
+      "github_verified": true
+    },
+    {
+      "name": "exp2__diffuser__qutcc__epoch_020.pt",
+      "size": 469336314,
+      "sha256": "e1cb388d4738ce8322a29b2a24a20ff16876dc5f95fd4c5405f746635034a5a7",
+      "asset_id": 676361731,
+      "github_verified": true
+    },
+    {
+      "name": "exp2__diffuser__qutcc__epoch_025.pt",
+      "size": 469337466,
+      "sha256": "6bd8db919c026091e36c21068e6db2e2a0dfa6f7bd65c3d704a9a68f8d790694",
+      "asset_id": 676361890,
+      "github_verified": true
+    },
+    {
+      "name": "exp2__diffuser__qutcc__epoch_030.pt",
+      "size": 469338554,
+      "sha256": "076a2b12e1c3a6056d0732a5eef69fd4dc66eb5e90e767dc902c62323d557cf4",
+      "asset_id": 676362055,
+      "github_verified": true
+    },
+    {
+      "name": "exp2__diffuser__qutcc__epoch_035.pt",
+      "size": 469339578,
+      "sha256": "14889516828776f9b2806e79ea5d220e46a6778714a10e3d67e73d2d74d0732b",
+      "asset_id": 676362264,
+      "github_verified": true
+    },
+    {
+      "name": "exp2__diffuser__qutcc__epoch_040.pt",
+      "size": 469340666,
+      "sha256": "3497a1efc9c7e9f572b708ec0585172b15e61b9107e5c75df17098e503e33285",
+      "asset_id": 676362465,
+      "github_verified": true
+    },
+    {
+      "name": "exp2__diffuser__qutcc__epoch_045.pt",
+      "size": 469341754,
+      "sha256": "6ba5012827d610077c0d39d7868ad4f3a4f9eb733638c517fe17b367ec448d9c",
+      "asset_id": 676363349,
+      "github_verified": true
+    },
+    {
+      "name": "exp2__diffuser__qutcc__epoch_050.pt",
+      "size": 469342778,
+      "sha256": "42e5f635e4b32dc1754ad9b8b836f6ee40823596935b5274f1fc34b0f9673516",
+      "asset_id": 676363372,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__qutcc__epoch_005.pt",
+      "size": 469332602,
+      "sha256": "79c0178cfd086e9d81d52520133b28b180c5519b0f57020f027d5bfac54d5087",
+      "asset_id": 676363835,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__qutcc__epoch_010.pt",
+      "size": 469333818,
+      "sha256": "11b1f067ebb6c3688b49447bc5bda03101d4e981b689a93058268a317aae01c6",
+      "asset_id": 676364125,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__qutcc__epoch_015.pt",
+      "size": 469335226,
+      "sha256": "f6d9f997f3cf260702561d806d6d6d9d4ff4c6d70ebf6e26119d3dd9690d1ee5",
+      "asset_id": 676364309,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__qutcc__epoch_020.pt",
+      "size": 469336314,
+      "sha256": "33ddf09094ef9ec202897b68f22b25eceebe4779b584a5662a5b0aa6c4613844",
+      "asset_id": 676364960,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__qutcc__epoch_025.pt",
+      "size": 469337530,
+      "sha256": "6b59306b7774d220a9d8fb9c6cb6e1c98183caf5e7a0755bb33164e5c6168283",
+      "asset_id": 676365206,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__qutcc__epoch_030.pt",
+      "size": 469338554,
+      "sha256": "18edc6bd3325096a8ec49d0fcda5e16204fdda66fd6db10482d00d3ae6281d39",
+      "asset_id": 676365451,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__qutcc__epoch_035.pt",
+      "size": 469339578,
+      "sha256": "9f3b05deab893ac10f1a1ae88e198126f698e095a29469a92adf0cf9022aa6ee",
+      "asset_id": 676365577,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__qutcc__epoch_040.pt",
+      "size": 469340602,
+      "sha256": "b6e72d7908076c37dca386fb950af0c8d5fbc9cd526e85337f3c77deb1a9ae73",
+      "asset_id": 676366048,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__qutcc__epoch_045.pt",
+      "size": 469341626,
+      "sha256": "c810f754e4a675b9144306a125ded5712edbb768e29a741238c77d8ed5544883",
+      "asset_id": 676366271,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__qutcc__epoch_050.pt",
+      "size": 469342714,
+      "sha256": "297750d72e1b3c754ff23b4cbe3e8edc41e9f41800d3fa21d13b7418653edb0a",
+      "asset_id": 676366298,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__im2im__epoch_005.pt",
+      "size": 381342138,
+      "sha256": "bf6246ca80ffe8f39bb6f62406eedd151b496b5ba4e10ac977184f4df52cf5ea",
+      "asset_id": 676367075,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__im2im__epoch_010.pt",
+      "size": 381343354,
+      "sha256": "66b2d5f4a66beed22b0cc099a6b7e9bb647a0a433a5599116741776339321b56",
+      "asset_id": 676367308,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__im2im__epoch_015.pt",
+      "size": 381344762,
+      "sha256": "213691cef816921af3c235e27f3809acc184739a7a88e0aae3fae49d7f4d9c9b",
+      "asset_id": 676367360,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__im2im__epoch_020.pt",
+      "size": 381345978,
+      "sha256": "5a2a9bc12bd20aeda57a9c27cecb826fe913cf8d415c58a00b74962b1c9a1025",
+      "asset_id": 676367810,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__im2im__epoch_025.pt",
+      "size": 381347002,
+      "sha256": "1a01df2908f9562f5623dbb8b5b19aa19c4b1366da93105a5479baf3a07cdb53",
+      "asset_id": 676368105,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__im2im__epoch_030.pt",
+      "size": 381348026,
+      "sha256": "2fbc22707cb4490aa1935e6a2e19a838e13da28b3d83f7c0999012e3fb2f312e",
+      "asset_id": 676368188,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__im2im__epoch_035.pt",
+      "size": 381349050,
+      "sha256": "923509f39aeb03e26330bc4d2dffe0387ce99236b715481f58776441b52dcef8",
+      "asset_id": 676368194,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__im2im__epoch_040.pt",
+      "size": 381350266,
+      "sha256": "11ee5ec6237367778b36b9a6e9e114b6f5950b7b76be65afce1a32b930ea2442",
+      "asset_id": 676368934,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__im2im__epoch_045.pt",
+      "size": 381351354,
+      "sha256": "04b23ad55c81b4c97c5e18d780d4cdec549482a2d6e2a814f2cb4fc3956a0919",
+      "asset_id": 676369090,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_clean__im2im__epoch_050.pt",
+      "size": 381352442,
+      "sha256": "360551a7db56ca66c6aae29a0be975cad9a5165ccaa8ff2f76b887e906d35406",
+      "asset_id": 676369133,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_corrupted__qutcc__epoch_005.pt",
+      "size": 469332922,
+      "sha256": "f66b6b16f0b677ee2b68a8823cdf5d335c73a74a1fef081807dbff0db406049e",
+      "asset_id": 676369873,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_corrupted__qutcc__epoch_010.pt",
+      "size": 469333946,
+      "sha256": "59f3bad8550b95ea22a2e3389c8ae4f8ca9f7ff732a5cf3b7ead5efe6ad7612c",
+      "asset_id": 676369913,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_corrupted__qutcc__epoch_015.pt",
+      "size": 469335034,
+      "sha256": "31d97ea8fe361c260102ff70f26df5df8afb46bfe68193019648b9731211d4be",
+      "asset_id": 676370145,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_corrupted__qutcc__epoch_020.pt",
+      "size": 469336122,
+      "sha256": "806f938d0ab910f6f1352e74991b1c33088ef6bca3fa38ae7e9db113bc74afb3",
+      "asset_id": 676370352,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_corrupted__qutcc__epoch_025.pt",
+      "size": 469337146,
+      "sha256": "537ac82f76932472fb31bae383904ccaca1d50dc51dafebe8344e4f5b406e2e2",
+      "asset_id": 676370705,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_corrupted__qutcc__epoch_030.pt",
+      "size": 469338362,
+      "sha256": "722f085688fb9ab0cc20d82cb6b3e564869c7dc01f0d9c75128454ef20f87ca0",
+      "asset_id": 676370971,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_corrupted__im2im__epoch_005.pt",
+      "size": 381342586,
+      "sha256": "696db9b62bec4339cf21e4ec2b3a1633318f09ab2467ab3426adf767741c79d7",
+      "asset_id": 676371366,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_corrupted__im2im__epoch_010.pt",
+      "size": 381343610,
+      "sha256": "3f020ed02700a261852c288e2b89de6cba0e5a63f2e7ec65a750d29a9072ea56",
+      "asset_id": 676371615,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_corrupted__im2im__epoch_015.pt",
+      "size": 381344698,
+      "sha256": "36c15d8f571bffd775b23c32354a14e6e4ec626c9398ff788b4e8a0bc0e89c3a",
+      "asset_id": 676371914,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_corrupted__im2im__epoch_020.pt",
+      "size": 381345786,
+      "sha256": "951f73008b54b41867b085c7131cd6c4874fce3218b94c91fb0b25fb406da023",
+      "asset_id": 676372077,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_corrupted__im2im__epoch_025.pt",
+      "size": 381346810,
+      "sha256": "5e5b06f94bacff227ea8a7d8dab68048571155ce559e970eba47a7706ba45e8c",
+      "asset_id": 676372210,
+      "github_verified": true
+    },
+    {
+      "name": "exp3__raw_corrupted__im2im__epoch_030.pt",
+      "size": 381347834,
+      "sha256": "4903123868d8598920b3b772e093461f26ebd8d57f5729436edb9716b3088cdb",
+      "asset_id": 676372498,
+      "github_verified": true
+    }
+  ],
+  "originals_deleted": false
+}

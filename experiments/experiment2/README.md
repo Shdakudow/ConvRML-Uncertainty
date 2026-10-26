@@ -36,4 +36,4 @@ and shuffle seeds. Historical training settings differ between QUTCC and baselin
 see [the comparison](../../docs/MODEL_COMPARISON.md).
 
 [Usage and checkpoints](../../docs/RUNNING_EXPERIMENTS.md) ·
-[Original reproduction scripts](../../archive/reproduction/experiments/experiment2/)
+[Reproducibility](../../reproducibility/README.md)

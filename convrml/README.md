@@ -7,6 +7,8 @@
 | [quantile_embedding.py](quantile_embedding.py) | Sinusoidal scalar-q embedding |
 | [losses.py](losses.py) | Pixelwise pinball loss |
 | [intervals.py](intervals.py) | Native Gaussian-moment bounds before calibration |
+| [calibration.py](calibration.py) | Empirical endpoint scales and quantile search |
+| [reference_calibration.py](reference_calibration.py) | Reference RCPS-HB and Algorithm 1 formulas |
 | [data.py](data.py) | Portable NumPy-cache and RGB paired-file datasets |
 
 Both loaders return float32 `(2, 3, H, W)`: measurement first, target second.
@@ -53,3 +55,5 @@ Paths are relative to the manifest or absolute. Measurements and targets must
 have matching RGB dimensions, normally 270×480. The model pads and crops;
 the loader leaves dimensions intact. Prepared clean and fixed-corruption
 manifests share this schema, with the original target paths/IDs retained.
+
+[Portable commands](../docs/RUNNING_EXPERIMENTS.md) · [Recorded settings](experiment_settings.json)

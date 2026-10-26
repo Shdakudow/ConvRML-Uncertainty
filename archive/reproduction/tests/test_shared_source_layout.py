@@ -9,7 +9,7 @@ import subprocess
 import sys
 import tempfile
 
-ROOT = Path(__file__).resolve().parents[1] / "archive/reproduction"
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class SharedSourceLayout(unittest.TestCase):

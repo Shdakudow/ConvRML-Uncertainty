@@ -1,52 +1,96 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite the associated paper below."
+message: Cite this software release for the comparison implementation, and the relevant
+  upstream methods listed in references.
 type: software
-title: "ConvRML: high-quality lensless imaging with random multi-focal lenslets"
-version: 1.0.0
-date-released: 2026-08-18 
-doi: 10.5281/zenodo.21987038
-repository-code: https://github.com/lakabuli/ConvRML
+title: 'ConvRML-Uncertainty: Lensless Reconstruction and Uncertainty Comparison'
+version: 0.1.0
+date-released: 2026-10-25
+repository-code: https://github.com/Shdakudow/ConvRML-Uncertainty
 authors:
-  - family-names: "Kabuli"
-    given-names: "Leyla"
-    orcid: https://orcid.org/0000-0001-6018-6773
-  - family-names: "Hung"
-    given-names: "Clara" 
-    orcid: https://orcid.org/0009-0002-0628-8335
-  - family-names: "Ponomarenko"
-    given-names: "Vasilisa" 
-    orcid: https://orcid.org/0009-0006-6265-3025
-  - family-names: "Markley"
-    given-names: "Eric" 
-    orcid: https://orcid.org/0000-0002-7311-6368
-  - family-names: "Waller"
-    given-names: "Laura" 
-    orcid: https://orcid.org/0000-0003-1243-2356
-
-preferred-citation:
-  type: article
-  title: "ConvRML: high-quality lensless imaging with random multi-focal lenslets"
+- name: ConvRML-Uncertainty contributors
+references:
+- type: article
+  title: 'ConvRML: high-quality lensless imaging with random multi-focal lenslets'
   authors:
-  - family-names: "Kabuli"
-    given-names: "Leyla"
+  - family-names: Kabuli
+    given-names: Leyla
     orcid: https://orcid.org/0000-0001-6018-6773
-  - family-names: "Hung"
-    given-names: "Clara" 
+  - family-names: Hung
+    given-names: Clara
     orcid: https://orcid.org/0009-0002-0628-8335
-  - family-names: "Ponomarenko"
-    given-names: "Vasilisa" 
+  - family-names: Ponomarenko
+    given-names: Vasilisa
     orcid: https://orcid.org/0009-0006-6265-3025
-  - family-names: "Markley"
-    given-names: "Eric" 
+  - family-names: Markley
+    given-names: Eric
     orcid: https://orcid.org/0000-0002-7311-6368
-  - family-names: "Waller"
-    given-names: "Laura" 
+  - family-names: Waller
+    given-names: Laura
     orcid: https://orcid.org/0000-0003-1243-2356
   year: 2026
-  journal: "Optics Express"
+  journal: Optics Express
   volume: 34
   issue: 18
   start: 33992
   end: 34005
-  doi: "10.1364/OE.608614"
+  doi: 10.1364/OE.608614
   url: https://doi.org/10.1364/OE.608614
+- type: article
+  title: 'QUTCC: Quantile Uncertainty Training and Conformal Calibration for Imaging
+    Inverse Problems'
+  authors:
+  - given-names: Cassandra Tong
+    family-names: Ye
+  - given-names: Shamus
+    family-names: Li
+  - given-names: Tyler
+    family-names: King
+  - given-names: Kristina
+    family-names: Monakhova
+  year: 2025
+  doi: 10.48550/arXiv.2507.14760
+  url: https://arxiv.org/abs/2507.14760v2
+- type: article
+  title: Image-to-Image Regression with Distribution-Free Uncertainty Quantification
+    and Applications in Imaging
+  authors:
+  - given-names: Anastasios N
+    family-names: Angelopoulos
+  - given-names: Amit P
+    family-names: Kohli
+  - given-names: Stephen
+    family-names: Bates
+  - given-names: Michael I
+    family-names: Jordan
+  - given-names: Jitendra
+    family-names: Malik
+  - given-names: Thayer
+    family-names: Alshaabi
+  - given-names: Srigokul
+    family-names: Upadhyayula
+  - given-names: Yaniv
+    family-names: Romano
+  year: 2022
+  doi: 10.48550/arXiv.2202.05265
+  url: https://arxiv.org/abs/2202.05265
+- type: conference-paper
+  title: Simple and Scalable Predictive Uncertainty Estimation using Deep Ensembles
+  authors:
+  - given-names: Balaji
+    family-names: Lakshminarayanan
+  - given-names: Alexander
+    family-names: Pritzel
+  - given-names: Charles
+    family-names: Blundell
+  year: 2017
+  url: https://proceedings.neurips.cc/paper/2017/hash/9ef2ed4b7fd2c810847ffa5fa85bce38-Abstract.html
+- type: conference-paper
+  title: 'Dropout as a Bayesian Approximation: Representing Model Uncertainty in Deep
+    Learning'
+  authors:
+  - given-names: Yarin
+    family-names: Gal
+  - given-names: Zoubin
+    family-names: Ghahramani
+  year: 2016
+  url: https://proceedings.mlr.press/v48/gal16.html

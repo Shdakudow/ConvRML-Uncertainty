@@ -1,0 +1,16 @@
+# Reference environment used by ConvRML (Python 3.11 recommended for training).
+# Install torch and torchvision from the platform-appropriate PyTorch index first.
+numpy==2.0.2
+Pillow>=10
+scipy>=1.13
+matplotlib==3.9.2
+scikit-image==0.24.0
+kornia==0.8.2
+tqdm==4.67.1
+timm==1.0.22
+# The upstream 2025.3.13 pin is unavailable from the package index used here.
+tifffile==2024.8.30
+torchmetrics==1.8.2
+natsort==8.4.0
+omegaconf==2.3.0
+# Optional experiment tracking: pip install wandb

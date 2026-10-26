@@ -37,4 +37,4 @@ each clean epoch-30 checkpoint and adds 30 adaptation epochs at LR 1e-5. This is
 training-protocol difference, not an additional model layer.
 
 [Data format](../../convrml/README.md) · [Model comparison](../../docs/MODEL_COMPARISON.md) ·
-[Original clean/adaptation trainers](../../archive/reproduction/experiments/experiment3/)
+[Portable training/evaluation](../../docs/RUNNING_EXPERIMENTS.md)

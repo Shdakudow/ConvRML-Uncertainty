@@ -9,7 +9,7 @@ import unittest
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from shared.calibration.coverage90 import fit_tail_scale, search_quantiles
+from convrml.calibration import fit_tail_scale, search_quantiles
 
 
 class TightCoverage(unittest.TestCase):

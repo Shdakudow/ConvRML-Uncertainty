@@ -1,0 +1,166 @@
+{
+  "status": "pass",
+  "comparison": "exact CPU fingerprints before/after publication model interfaces",
+  "seed": 20261021,
+  "device": "cpu",
+  "checks": [
+    "state dictionary keys/shapes",
+    "initialized weights",
+    "predictions",
+    "input gradients",
+    "parameter gradients",
+    "RNG consumption"
+  ],
+  "limitations": "Synthetic inputs on the same CPU/software environment; does not promise bitwise equality across GPU hardware or certify a full training run.",
+  "cases": {
+    "im2im": {
+      "state_schema_sha256": "6d6e28e6829125ef30978580a4f4c5291af461190a18ba10b49fc33336bf0956",
+      "initial_state_sha256": "fa3fe603fb7f1e32f3cfc57598d7bd0fa9f572d7b38f13fa906cb55dd221b8cd",
+      "tensor_count": 434,
+      "predictions": [
+        {
+          "shape": [
+            32,
+            32
+          ],
+          "output_sha256": [
+            "a9d932643645dccaf9f84b2ef7fadefb85a4efb881029816fbdc7a8920977e42",
+            "69c2092073641d60cb121b61d7205b874a228c20ac89f92f53fc7d15b643b7e1",
+            "2bf6b852d887c9c6eccc2fde2ae0cced931cbe2ea1686d2a0ba7fc0e25b85917"
+          ],
+          "loss": 1.1514556407928467,
+          "input_gradient_sha256": "2c3e85d9ce2b3ff35061c09aff45986e9a889ac29558c0646a3d5b496251c3d9",
+          "parameter_gradients_sha256": "6b5160bc067159bebcf3f945c5de3bd501c66f35c08c8908f8b93b1282f57f7f",
+          "gradient_count": 434,
+          "rng_sha256": "59ebe058c32a67c58f69450aeaba106adbbc93fa27a6ffd13f4fb3f476b740e2"
+        }
+      ],
+      "torch": "2.8.0"
+    },
+    "ensemble": {
+      "state_schema_sha256": "4174c2343f0846a86962dd57ddde4a26a2b4159e3da501e6f12d3b43c444e3f1",
+      "initial_state_sha256": "f9154c1cf7be2eeed25855d90ef38a2d7eb5a334c02d7eafc6ffc7af4b9077a7",
+      "tensor_count": 436,
+      "predictions": [
+        {
+          "shape": [
+            32,
+            32
+          ],
+          "output_sha256": [
+            "669fd44aaae8c6f84749f74c7fba36208c947cc4cb29c42f9b0a6d5fbe041a52",
+            "eeeab29856ee451821a73a65863b27c20cfc6f7d9c178a5779b2739a6ae97f33"
+          ],
+          "loss": 0.6331806182861328,
+          "input_gradient_sha256": "07ef4447b1d51d15254a38e244d213a5d3a93eb195d5175d5cf5143cd3650253",
+          "parameter_gradients_sha256": "2137e9c73c190ca9bd190e03a29e35d8ba6103318e3e0871a1f1580f56a0a776",
+          "gradient_count": 436,
+          "rng_sha256": "0d7ef2f8d5c78992c3980db575814bc0c0ea5c5a873c8e5bcf377fb56e450fb7"
+        }
+      ],
+      "torch": "2.8.0"
+    },
+    "mc_dropout": {
+      "state_schema_sha256": "1078a177e43b83b70a20e41240725e5df4e85c69c02d18900aa7db325b816b5f",
+      "initial_state_sha256": "e2b0562cc6f5f4ff4c19a7efda73bbf0377b576377fe9ed8f6b7c78aed6010ed",
+      "tensor_count": 434,
+      "predictions": [
+        {
+          "shape": [
+            32,
+            32
+          ],
+          "output_sha256": [
+            "ca6adcb14c8209ed8f6cc843733f12cf7ff399bb0866539b18115cfd2272b83f"
+          ],
+          "loss": 0.3842112123966217,
+          "input_gradient_sha256": "d56432411a10d0833cfdd60a3980e58ac55baec71f33910be62f8b20df728878",
+          "parameter_gradients_sha256": "72a63e0444cbf112b9589219c886758f90afd4221fe875f06006c9600bb00236",
+          "gradient_count": 434,
+          "rng_sha256": "8f3c79dc0e97e13bf88151cf3d5a6679f617fee4366d58b97627f0d128f62421"
+        }
+      ],
+      "torch": "2.8.0"
+    },
+    "qutcc": {
+      "state_schema_sha256": "463bb86addd17ba4ec276efbf07cc35bc2014536292fab383ac05631895214f3",
+      "initial_state_sha256": "529564dd41c1cf8eb35ec5e0ca4f3191a394747021db421cf6f698e10f33f028",
+      "tensor_count": 534,
+      "predictions": [
+        {
+          "shape": [
+            32,
+            32
+          ],
+          "output_sha256": [
+            "f2b6d5d8c0eb4f782a56513a666b940733bb192362425ff06ead01934a82fe75",
+            "77030fada7b6de8fea6e5d27677f4423746be4ea61906f01389bd028989cdd8f",
+            "f1dd1502f25f39cc9e79473a78e8e0b9d745e386850ce626f8cd104fc781cfcf"
+          ],
+          "loss": 1.058958888053894,
+          "input_gradient_sha256": "67f9b6b2fd381e8cabf0d127438ac604107d5d84b94f35e112af87c0395b5093",
+          "parameter_gradients_sha256": "2e6721b87646d724e63d4c130d5317602a7f82953affe5b6643d548d03c3aa34",
+          "gradient_count": 534,
+          "rng_sha256": "c308e8be2704710a62deda160177c54c44b8e02f5e4b29f1c74dd873b4174017"
+        },
+        {
+          "shape": [
+            33,
+            47
+          ],
+          "output_sha256": [
+            "6173569050912a7c85364c02be53bb156e60a0feb08a452f0ebcfca7a902a1a0",
+            "c7d6f07dc47c35db7e04ab6371445214f2e70d3f5f6c1f30b569fa6fe076c8b4",
+            "7a24f43ab2f40b1d14156fee79793bff99c18cf3a3290b5838f456d863aa66ab"
+          ],
+          "loss": 1.1940149068832397,
+          "input_gradient_sha256": "da6f8c24b74e041d0fe4bc2e9f8911dac3a5f2107fe5babc930809d91c050423",
+          "parameter_gradients_sha256": "d666757fb3d07bd856fb74278163a59f26fb8a5b5a7777555aa371e5cb25fdf6",
+          "gradient_count": 534,
+          "rng_sha256": "2aceae3b92e77177d4b62902c5d17876a7f8d41106ea692b9785d9c77bf7b4dc"
+        }
+      ],
+      "torch": "2.8.0"
+    },
+    "raw_im2im": {
+      "state_schema_sha256": "22f25e5e50a8beece13059ef5505007176c845795a3d83bc0196d4c8d26fedc3",
+      "initial_state_sha256": "b59a75f61e22932a799536469e4e486584681d28755cefd6de599fa5c639709c",
+      "tensor_count": 434,
+      "predictions": [
+        {
+          "shape": [
+            32,
+            32
+          ],
+          "output_sha256": [
+            "69c2092073641d60cb121b61d7205b874a228c20ac89f92f53fc7d15b643b7e1",
+            "a9d932643645dccaf9f84b2ef7fadefb85a4efb881029816fbdc7a8920977e42",
+            "2bf6b852d887c9c6eccc2fde2ae0cced931cbe2ea1686d2a0ba7fc0e25b85917"
+          ],
+          "loss": 1.1514556407928467,
+          "input_gradient_sha256": "2c3e85d9ce2b3ff35061c09aff45986e9a889ac29558c0646a3d5b496251c3d9",
+          "parameter_gradients_sha256": "72a691d990394f6c6a4097782b7ecc09baa30200b8decf37ef611c91d87fa2b6",
+          "gradient_count": 434,
+          "rng_sha256": "59ebe058c32a67c58f69450aeaba106adbbc93fa27a6ffd13f4fb3f476b740e2"
+        },
+        {
+          "shape": [
+            33,
+            47
+          ],
+          "output_sha256": [
+            "b2e39beb96936b6280ef87088b65f53e63d58c8949c872e0dcea7d69e2351c24",
+            "9775c2f57fe2a33eb3fa02556a91c5c7b47e82412c4495b7b51ad9dc5ac68d4b",
+            "426f0082937b4401315edb4663b59c32ec0ebe3897109159cb859a7d5c6b9eea"
+          ],
+          "loss": 1.0298818349838257,
+          "input_gradient_sha256": "e2e8235ab2429cb31a9653c200d1469f765c3ed29ff682ed8d90236d64594159",
+          "parameter_gradients_sha256": "636c1d9c8e40869be1c807abf07bb0a2af837d17feb1ce4780ce22255069ecf3",
+          "gradient_count": 434,
+          "rng_sha256": "4da045876a2c83f7514727f5372f04c92ef1e4a3a8cba189fcbd70e5a7a66f6b"
+        }
+      ],
+      "torch": "2.8.0"
+    }
+  }
+}

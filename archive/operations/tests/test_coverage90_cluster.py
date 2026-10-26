@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import coverage90_cluster as cluster
 
 
@@ -162,10 +162,14 @@ class ClusterOperations(unittest.TestCase):
         with (
             patch.object(cluster, "jobs", return_value=[]),
             patch.object(cluster, "finished", return_value=False),
-            patch.object(cluster.subprocess, "check_output", return_value="1234\n") as submit,
+            patch.object(
+                cluster.subprocess, "check_output", return_value="1234\n"
+            ) as submit,
         ):
             tasks = [dict(self.task, index=i) for i in range(6)]
-            result = cluster.submit(dict(epoch=5, kind="baseline", tasks=tasks, parallelism=6))
+            result = cluster.submit(
+                dict(epoch=5, kind="baseline", tasks=tasks, parallelism=6)
+            )
             command = submit.call_args.args[0]
             self.assertIn("--array=0,1,2,3,4,5%6", command)
             self.assertIn("--partition=gpu", command)
@@ -174,12 +178,19 @@ class ClusterOperations(unittest.TestCase):
             cluster.submit(dict(epoch=5, kind="baseline", tasks=tasks, parallelism=7))
 
     def test_reserved_partition_keeps_four_gpus_for_other_group_work(self):
-        request = dict(epoch=5, kind="baseline", tasks=[self.task],
-                       parallelism=4, partitions="monakhova,gpu")
+        request = dict(
+            epoch=5,
+            kind="baseline",
+            tasks=[self.task],
+            parallelism=4,
+            partitions="monakhova,gpu",
+        )
         with (
             patch.object(cluster, "jobs", return_value=[]),
             patch.object(cluster, "finished", return_value=False),
-            patch.object(cluster.subprocess, "check_output", return_value="1234\n") as submit,
+            patch.object(
+                cluster.subprocess, "check_output", return_value="1234\n"
+            ) as submit,
         ):
             cluster.submit(request)
             command = submit.call_args.args[0]
@@ -194,7 +205,8 @@ class ClusterOperations(unittest.TestCase):
     def test_direct_download_resumes_and_publishes_only_verified_checkpoint(self):
         payload = b"checkpoint"
         entry = dict(
-            path="rml/im2im/checkpoints/epoch_005.pt", size=len(payload),
+            path="rml/im2im/checkpoints/epoch_005.pt",
+            size=len(payload),
             sha256=hashlib.sha256(payload).hexdigest(),
             download_url="https://release-assets.githubusercontent.com/temporary",
         )
@@ -204,7 +216,9 @@ class ClusterOperations(unittest.TestCase):
         partial.write_bytes(payload[:4])
         response = io.BytesIO(payload[4:])
         response.status = 206
-        with patch.object(cluster.urllib.request, "urlopen", return_value=response) as fetch:
+        with patch.object(
+            cluster.urllib.request, "urlopen", return_value=response
+        ) as fetch:
             self.assertEqual(cluster.download_checkpoint(self.root, entry), 6)
             self.assertEqual(fetch.call_args.args[0].get_header("Range"), "bytes=4-")
         self.assertEqual(target.read_bytes(), payload)
@@ -215,9 +229,12 @@ class ClusterOperations(unittest.TestCase):
 
     def test_server_ignoring_range_replaces_partial_file(self):
         payload = b"checkpoint"
-        entry = dict(path="checkpoint.pt", size=len(payload),
-                     sha256=hashlib.sha256(payload).hexdigest(),
-                     download_url="https://release-assets.githubusercontent.com/temporary")
+        entry = dict(
+            path="checkpoint.pt",
+            size=len(payload),
+            sha256=hashlib.sha256(payload).hexdigest(),
+            download_url="https://release-assets.githubusercontent.com/temporary",
+        )
         (self.root / "checkpoint.pt.partial").write_bytes(b"old")
         response = io.BytesIO(payload)
         response.status = 200
@@ -226,14 +243,21 @@ class ClusterOperations(unittest.TestCase):
         self.assertEqual((self.root / "checkpoint.pt").read_bytes(), payload)
 
     def test_bad_hash_never_becomes_a_checkpoint_or_exposes_signed_url(self):
-        entry = dict(path="checkpoint.pt", size=3,
-                     sha256=hashlib.sha256(b"yes").hexdigest(),
-                     download_url="https://release-assets.githubusercontent.com/secret")
+        entry = dict(
+            path="checkpoint.pt",
+            size=3,
+            sha256=hashlib.sha256(b"yes").hexdigest(),
+            download_url="https://release-assets.githubusercontent.com/secret",
+        )
+
         def response(*args, **kwargs):
             result = io.BytesIO(b"bad")
             result.status = 200
             return result
-        with patch.object(cluster.urllib.request, "urlopen", side_effect=response) as fetch:
+
+        with patch.object(
+            cluster.urllib.request, "urlopen", side_effect=response
+        ) as fetch:
             with self.assertRaisesRegex(RuntimeError, "checkpoint.pt") as error:
                 cluster.download_checkpoint(self.root, entry)
             self.assertEqual(fetch.call_count, 3)

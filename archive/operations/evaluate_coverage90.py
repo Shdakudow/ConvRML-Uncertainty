@@ -16,9 +16,9 @@ import time
 
 import numpy as np
 
-REPOSITORY = Path(__file__).resolve().parents[1]
+REPOSITORY = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPOSITORY))
-from shared.calibration.coverage90 import (
+from convrml.calibration import (
     CalibrationError,
     fit_tail_scale,
     search_quantiles,
@@ -29,7 +29,7 @@ from coverage90_cluster import validate_report
 # long job runs must not attribute its old computation to a newer file version.
 EVALUATOR_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 CALIBRATION_SHA256 = hashlib.sha256(
-    (REPOSITORY / "shared/calibration/coverage90.py").read_bytes()
+    (REPOSITORY / "convrml/calibration.py").read_bytes()
 ).hexdigest()
 
 

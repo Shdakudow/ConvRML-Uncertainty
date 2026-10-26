@@ -1,0 +1,1 @@
+../../tools/verify_source_release.py

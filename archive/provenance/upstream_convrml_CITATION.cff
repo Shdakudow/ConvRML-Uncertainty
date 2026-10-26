@@ -1,0 +1,52 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the associated paper below."
+type: software
+title: "ConvRML: high-quality lensless imaging with random multi-focal lenslets"
+version: 1.0.0
+date-released: 2026-08-18
+doi: 10.5281/zenodo.21987038
+repository-code: https://github.com/lakabuli/ConvRML
+authors:
+  - family-names: "Kabuli"
+    given-names: "Leyla"
+    orcid: https://orcid.org/0000-0001-6018-6773
+  - family-names: "Hung"
+    given-names: "Clara"
+    orcid: https://orcid.org/0009-0002-0628-8335
+  - family-names: "Ponomarenko"
+    given-names: "Vasilisa"
+    orcid: https://orcid.org/0009-0006-6265-3025
+  - family-names: "Markley"
+    given-names: "Eric"
+    orcid: https://orcid.org/0000-0002-7311-6368
+  - family-names: "Waller"
+    given-names: "Laura"
+    orcid: https://orcid.org/0000-0003-1243-2356
+
+preferred-citation:
+  type: article
+  title: "ConvRML: high-quality lensless imaging with random multi-focal lenslets"
+  authors:
+  - family-names: "Kabuli"
+    given-names: "Leyla"
+    orcid: https://orcid.org/0000-0001-6018-6773
+  - family-names: "Hung"
+    given-names: "Clara"
+    orcid: https://orcid.org/0009-0002-0628-8335
+  - family-names: "Ponomarenko"
+    given-names: "Vasilisa"
+    orcid: https://orcid.org/0009-0006-6265-3025
+  - family-names: "Markley"
+    given-names: "Eric"
+    orcid: https://orcid.org/0000-0002-7311-6368
+  - family-names: "Waller"
+    given-names: "Laura"
+    orcid: https://orcid.org/0000-0003-1243-2356
+  year: 2026
+  journal: "Optics Express"
+  volume: 34
+  issue: 18
+  start: 33992
+  end: 34005
+  doi: "10.1364/OE.608614"
+  url: https://doi.org/10.1364/OE.608614
