@@ -13,6 +13,21 @@ profiles automatically. Prepared data paths are command arguments; no cluster
 path is built into these settings. The original numeric IDs remain in metadata
 for compatibility with saved checkpoints.
 
+## Reading the settings
+
+| Key | Meaning |
+| --- | --- |
+| `batch_size` | Images contributing to one optimizer update |
+| `microbatch` | Images processed in one forward/backward call; gradients accumulate to the batch size |
+| `epochs` | Complete passes over training data; also the fixed learning-rate schedule horizon |
+| `alpha` | Target miss fraction: 0.10 corresponds to 90% coverage |
+| `calibration.delta` | RCPS confidence-failure budget; separate from alpha |
+| `seed_policy` | Recorded seeds used for model initialization, training randomness, image shuffling and q sampling |
+
+`protocol.profile(...)` combines these fields into the `run` dictionary used
+throughout the code. The profile names `baseline`, `paper` and `adaptation`
+identify saved optimizer settings; they are not separate network architectures.
+
 The model definitions are shared in [models/](../models/). PLD uses
 `dataset.NumpyPairs` at RGB 256×256; DLMD uses `dataset.ImagePairs` at RGB 270×480.
 Both return float32 measurement/target pairs after uint8 / 255 conversion.

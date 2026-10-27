@@ -24,6 +24,27 @@ classes; there are no dataset-specific copies of these losses or architectures.
 The small `convrml/train.py` and `convrml/evaluate.py` modules forward the older
 package commands to the root scripts; the workflows are implemented once.
 
+## Following the backbone
+
+For a 256×256 measurement, [backbone.py](backbone.py) follows this path:
+
+```text
+RGB measurement: 3×256×256
+  encoder input normalization
+  ConvNeXt stages: 128×64×64, 256×32×32, 512×16×16, 1024×8×8
+  1×1 projections + coarse-to-fine FPN merging: 256×64×64
+  up1: 256×128×128       ← features() returns here
+  up2: 256×256×256
+  RGB head + original measurement: 3×256×256
+```
+
+Im2im replaces the RGB head with three RGB heads. Ensemble members add a variance
+head. QUTCC modulates normalized features with q; MC dropout inserts stochastic
+masks. Those additions are in [models/](../models/). Encoder normalization and
+decoder upsampling remain shared.
+
+## Reading the data
+
 Both loaders return float32 `(2, 3, H, W)`: measurement first, target second.
 RGB uint8 values are divided by 255. Neither loader clips predictions, applies
 augmentation, changes targets, or creates new train/test splits.

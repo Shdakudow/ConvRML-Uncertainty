@@ -53,6 +53,9 @@ Recorded experiment settings stay in [configs/](configs/).
 See [tensor shapes and intensity conventions](models/README.md#tensor-and-intensity-conventions)
 and the [paper-to-code review](archive/publication_support/docs/MODEL_COMPARISON.md#paper-to-code-review)
 for the model interfaces and documented adaptations.
+The [backbone walkthrough](convrml/README.md#following-the-backbone) traces feature
+sizes; the [output-file guide](archive/publication_support/docs/RUNNING_EXPERIMENTS.md#outputs)
+explains which saved files to open.
 
 ## Weights and evaluation
 

@@ -14,6 +14,7 @@ SETTINGS_PATH = Path(__file__).resolve().parents[1] / "configs/experiment_settin
 
 
 def settings():
+    """Read recorded settings as a fresh dictionary, without changing the JSON file."""
     return json.loads(SETTINGS_PATH.read_text())
 
 
@@ -26,6 +27,7 @@ def sha256(path):
 
 
 def source_fingerprint():
+    """Hash active source/settings, including comments, to identify exact resume code."""
     root = Path(__file__).resolve().parents[1]
     files = sorted(
         list((root / "convrml").glob("*.py"))
@@ -55,6 +57,12 @@ def write_json(path, value):
 
 
 def profile(experiment, dataset, method, member=None):
+    """Build the run dictionary consumed by training, checkpoint loading and inference.
+
+    Dataset/method select a recorded optimizer profile and shuffle policy.
+    Separate seeds control initialization, training randomness, data order and q
+    draws. ``member`` is required only for an individual ensemble member (0-9).
+    """
     config = settings()
     data = config["datasets"][dataset]
     if data["experiment"] != experiment:
@@ -121,6 +129,7 @@ def make_model(run):
 
 
 def dataset_for(dataset, manifest, pairs, split):
+    """Choose the loader; split is train/val/test/calibration, never a new partition."""
     if settings()["datasets"][dataset]["loader"] == "numpy":
         if pairs is None:
             raise ValueError("PLD experiment requires --pairs for its NumPy cache")
@@ -187,6 +196,12 @@ def learning_rate(step, total_steps, run):
 
 
 def center(model, method, y):
+    """One-pass validation prediction, shape (N,3,H,W).
+
+    With model.eval(), MC dropout is deterministic here; final inference instead
+    averages stochastic passes. An ensemble training run validates its member,
+    not an aggregate. Im2im returns its center head; QUTCC queries q=0.5.
+    """
     if method == "ensemble":
         return model(y)[0]
     if method == "mc_dropout":

@@ -53,16 +53,31 @@ def arguments(argv=None):
     parser.add_argument(
         "--manifest", type=Path, required=True, help="Manifest containing test IDs"
     )
-    parser.add_argument("--pairs", type=Path)
-    parser.add_argument("--calibration-manifest", type=Path)
-    parser.add_argument("--calibration-pairs", type=Path)
+    parser.add_argument(
+        "--pairs", type=Path, help="PLD cache containing test pairs; omit for DLMD"
+    )
+    parser.add_argument(
+        "--calibration-manifest",
+        type=Path,
+        help="JSON containing disjoint calibration IDs; required for paper mode",
+    )
+    parser.add_argument(
+        "--calibration-pairs",
+        type=Path,
+        help="Separate PLD calibration cache; omit for DLMD",
+    )
     parser.add_argument(
         "--calibration",
         choices=["paper", "native"],
         default="paper",
         help="Paper: baseline RCPS or QUTCC Algorithm 1; native: uncalibrated control",
     )
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--output",
+        type=Path,
+        required=True,
+        help="New result folder; existing calibration/report files are protected",
+    )
     parser.add_argument(
         "--device", default="cuda" if torch.cuda.is_available() else "cpu"
     )
@@ -126,7 +141,11 @@ def make_predictor(model, run, device):
 def calibrate_checkpoint(
     args, run, model, predict, device, output, request, provenance
 ):
-    """Fit on calibration pairs and freeze the result before loading any test pixels."""
+    """Fit and save calibration before loading test pixels.
+
+    Returns (fitted parameters, calibration data identity, elapsed seconds).
+    Native mode saves an empty fit; infeasible paper calibration writes failure.json.
+    """
     started = time.monotonic()
     fitted, identity = {}, None
     if args.calibration != "native":
@@ -193,7 +212,13 @@ def evaluate_test_set(
     example_count=0,
     perceptual=None,
 ):
-    """Predict test images, measure metrics, and retain the first requested examples."""
+    """Predict test images, measure metrics, and retain the first requested examples.
+
+    ``ids`` follows dataset order; ``predict`` returns calibrated center/lower/upper.
+    The result contains per-image rows, metric means/valid counts, timings and
+    example arrays. Predictions/bounds in examples are clipped for display;
+    reported metrics retain both raw and clipped views.
+    """
     rows, offset = [], 0
     examples = {
         name: [] for name in ("measurement", "target", "prediction", "lower", "upper")
@@ -292,7 +317,11 @@ def save_results(output, report, examples):
 
 
 def run_evaluation(args, *, model_loader=None):
-    """Lock one output directory and evaluate frozen checkpoints with held-out data."""
+    """Evaluate args from arguments(), write result files, and return the report dict.
+
+    A directory lock prevents concurrent writers. ``model_loader`` is an optional
+    test hook; normal runs strictly load the checkpoint's recorded model identity.
+    """
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     with (output / ".evaluation.lock").open("a") as lock:

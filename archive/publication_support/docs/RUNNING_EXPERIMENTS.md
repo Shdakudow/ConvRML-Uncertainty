@@ -84,6 +84,9 @@ every five epochs, with full optimizer/RNG state in `latest.pt` after each compl
 epoch. Resume validates source, software, data identity, device and worker count.
 A preempted partial epoch restarts from the last completed epoch. The exact
 historical mid-epoch resume engines remain archived.
+Source fingerprints include comments and docstrings, so exact resume retains
+the original checkout even after documentation edits. Frozen weight loading
+does not require an identical source fingerprint.
 
 Im2im/MC use their own recorded profiles. Ensemble training requires `--member N`
 and a distinct output directory per member; each member sees the entire training
@@ -98,16 +101,48 @@ historical full-state checkpoints are not silently treated as portable resumes.
 
 ## Outputs
 
-Evaluation writes `calibration.json` before opening test pixels, then `report.json`,
-`per_image.csv`, and optional `examples.npz` with measurement, target, prediction,
-lower and upper arrays; saved example predictions/bounds are clipped to [0,1]. Existing results are immutable: use a new output directory
-for another checkpoint/protocol. Per-image metrics and means include LPIPS-AlexNet
+Training writes under `--output`:
+
+| File | What to read it for |
+| --- | --- |
+| `config.json` | Effective settings, split identity, software and hardware |
+| `history.json` | Epoch loss, learning rate, timing and validation reconstruction scores |
+| `latest.pt` | Last completed epoch, including optimizer and RNG states for resume |
+| `checkpoints/epoch_005.pt`, etc. | Five-epoch model snapshots for inference; optimizer/RNG state is omitted |
+
+Validation scores in `history.json` are single-pass reconstruction checks.
+For MC dropout they use dropout disabled; final test scores use stochastic averaging.
+Ensemble training histories describe individual members, not the aggregate.
+
+Inference writes to its own `--output` folder:
+
+| File | What to read it for |
+| --- | --- |
+| `calibration.json` | Frozen endpoint scales or q values, calibration coverage and data identity |
+| `report.json` | Aggregate test metrics, per-image rows, provenance and timing |
+| `per_image.csv` | One test image per row, with `raw_` and `clipped_` metric columns |
+| `examples.npz` | Optional first N measurement/target/prediction/lower/upper arrays, each `(N,3,H,W)` |
+| `failure.json` | Infeasible paper calibration; there is no completed test report |
+
+`calibration.json` is saved before test pixels are opened. Example predictions
+and bounds are clipped to [0,1]. Existing results are immutable: use a new output
+directory for another checkpoint/protocol. Per-image metrics and means include LPIPS-AlexNet
 (clipped images), Pearson/Spearman width/error correlations, SSIM, PSNR, MAE,
 coverage, width and crossings. Undefined correlations and intentionally omitted
 LPIPS are null, with valid-image counts. `--no-lpips` is available for tiny/offline
 fixtures; formal evaluation defaults to pretrained LPIPS. Cache its weights before
 running on an offline worker. Infeasible quantiles produce `failure.json`, not
 zero-valued metrics. Alpha=0.10 targets 90% coverage; actual test coverage is measured.
+
+For example, read the clipped dataset-average SSIM with:
+
+```python
+import json
+from pathlib import Path
+
+report = json.loads(Path("outputs/paper/rml/qutcc/epoch_050/report.json").read_text())
+print(report["metrics"]["clipped"]["ssim"])
+```
 
 Plot complete milestones with the optional plotting dependencies:
 

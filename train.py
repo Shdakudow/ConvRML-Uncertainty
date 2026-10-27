@@ -48,10 +48,28 @@ def arguments(argv=None):
     parser.add_argument(
         "--method", choices=["im2im", "ensemble", "mc_dropout", "qutcc"], required=True
     )
-    parser.add_argument("--member", type=int)
-    parser.add_argument("--manifest", type=Path, required=True)
-    parser.add_argument("--pairs", type=Path)
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--member",
+        type=int,
+        help="Ensemble member index 0-9; one output folder per member",
+    )
+    parser.add_argument(
+        "--manifest",
+        type=Path,
+        required=True,
+        help="JSON with train/val IDs; DLMD rows also contain image paths",
+    )
+    parser.add_argument(
+        "--pairs",
+        type=Path,
+        help="PLD uint8 NumPy pair cache; omit for DLMD image-file data",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        required=True,
+        help="Run folder for config, history, latest state and five-epoch weights",
+    )
     parser.add_argument(
         "--epochs", type=int, help="Absolute target epoch; schedule horizon stays fixed"
     )
@@ -80,6 +98,11 @@ def arguments(argv=None):
 
 @torch.inference_mode()
 def validate(model, method, dataset, run, device, workers, smoke):
+    """Return count and mean clipped PSNR/SSIM/MAE using one prediction per image.
+
+    This validation step measures reconstruction quality only. Interval calibration
+    and held-out test evaluation happen separately in infer.py.
+    """
     model.eval()
     totals, count = {}, 0
     for index, batch in enumerate(
@@ -178,6 +201,11 @@ def train_one_epoch(
 
 
 def run_training(args, *, factory=None):
+    """Train to args.epochs (absolute), save each completed epoch, and return latest.pt.
+
+    ``args`` comes from arguments(); ``factory`` optionally supplies a small model
+    for workflow tests. Production runs use the shared make_model constructor.
+    """
     run = profile(args.experiment, args.dataset, args.method, args.member)
     target = args.epochs if args.epochs is not None else run["epochs"]
     if args.smoke:

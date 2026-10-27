@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Explain the backbone feature sizes, internal normalization, q-embedding names,
+  validation versus test prediction, settings terminology and saved output files.
+  Expand CLI help and function documentation without changing numerical code.
 - Name lower/upper calibration states explicitly; document tensor shapes,
   intensity units and scientific choices at model/data/loss/metric boundaries.
   Record paper-to-code adaptations, including asymmetric RCPS and MC-dropout's

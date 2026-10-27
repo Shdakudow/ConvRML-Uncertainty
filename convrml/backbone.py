@@ -1,4 +1,10 @@
-"""Shared ConvNeXtV2-Base encoder and FPN residual decoder."""
+"""Shared ConvNeXtV2-Base encoder and feature-pyramid (FPN) residual decoder.
+
+Measurements enter as RGB (N,3,H,W) in [0,1], with H/W divisible by 32.
+Im2im and QUTCC handle padding/cropping in their wrappers. The encoder extracts
+four resolutions; the decoder combines them and predicts an RGB correction.
+The correction is added to the original measurement, producing unbounded output.
+"""
 
 import torch
 from torch import nn
@@ -7,6 +13,8 @@ import timm
 
 
 class Refine(nn.Module):
+    """Two conv/normalization/activation stages preserving (N,256,H,W)."""
+
     def __init__(self):
         super().__init__()
         self.layers = nn.Sequential(
@@ -23,11 +31,15 @@ class Refine(nn.Module):
 
 
 class ConvNeXtFPN(nn.Module):
+    """Common encoder/decoder; method-specific heads and losses live in models/."""
+
     def __init__(self):
         super().__init__()
         self.encoder = timm.create_model(
             "convnextv2_base.fcmae_ft_in22k_in1k", pretrained=False, features_only=True
         )
+        # Despite the architecture preset's name, pretrained=False starts from
+        # random weights. Each 1x1 lateral projection maps its stage to 256 channels.
         self.lateral = nn.ModuleList(
             [nn.Conv2d(c, 256, 1) for c in [128, 256, 512, 1024]]
         )
@@ -39,6 +51,8 @@ class ConvNeXtFPN(nn.Module):
             nn.Upsample(scale_factor=2, mode="bilinear", align_corners=False), Refine()
         )
         self.head = nn.Conv2d(256, 3, 3, padding=1)
+        # Normalize only the encoder input. The residual addition still uses the
+        # original [0,1] measurement; these constants are not output normalization.
         self.register_buffer(
             "mean",
             torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1),
@@ -51,8 +65,14 @@ class ConvNeXtFPN(nn.Module):
         )
 
     def features(self, x):
+        """Return decoder features (N,256,H/2,W/2) from RGB (N,3,H,W).
+
+        Encoder stages have 128/256/512/1024 channels at 1/4,1/8,1/16,1/32 size.
+        FPN merges coarse features with finer ones, then up1 doubles resolution.
+        """
         features = self.encoder((x - self.mean) / self.std)
         d = self.refine[3](self.lateral[3](features[3]))
+        # d is the running decoder feature map; i indexes progressively finer stages.
         for i in [2, 1, 0]:
             d = self.refine[i](
                 F.interpolate(
@@ -63,7 +83,9 @@ class ConvNeXtFPN(nn.Module):
         return self.up1(d)
 
     def reconstruct(self, x, features):
+        """Upsample half-size features, predict an RGB residual, and add x."""
         return x + self.head(self.up2(features))
 
     def forward(self, x):
+        """Map a divisible-by-32 RGB measurement to an unbounded image of equal shape."""
         return self.reconstruct(x, self.features(x))
