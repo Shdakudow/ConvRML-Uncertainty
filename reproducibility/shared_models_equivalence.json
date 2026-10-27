@@ -194,5 +194,15 @@
     },
     "full_schedule_values_compared": 4002,
     "limitations": "Full-model checks use synthetic CPU inputs. Workflow checks use tiny paired fixtures and lightweight test models. These checks do not certify bitwise equality across GPUs or an entire 50-epoch run."
+  },
+  "calibration_readability_followup": {
+    "date": "2026-10-26",
+    "compared_to_commit": "62ad351",
+    "active_tests_passed": 37,
+    "full_model_fingerprints_unchanged": true,
+    "four_method_fixture_workflows_match_exactly": true,
+    "workflow_baseline_sha256": "00d3a31095e2f0b64a165ef37f9f2611660eb0d5a4fa543276d2fdfa344a868a",
+    "additional_check": "DLMD paired PNGs: both Im2im/QUTCC losses, training, strict checkpoint reload, independent calibration and test export using tiny surrogate networks.",
+    "scope": "CPU fixtures and synthetic full-model numerical checks; no full benchmark retraining or GPU performance claims."
   }
 }

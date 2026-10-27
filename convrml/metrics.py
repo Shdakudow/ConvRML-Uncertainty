@@ -88,6 +88,11 @@ def finite_mean(values):
 
 
 def reconstruction_metrics(prediction, target):
+    """Return (N,) PSNR/SSIM/MAE from matching (N,3,H,W) images.
+
+    Targets are in [0,1], so PSNR/SSIM use intensity range 1 even for unbounded
+    predictions. Clipping, when desired, is done by the caller.
+    """
     prediction, target = prediction.float(), target.float()
     mse = (prediction - target).square().mean((1, 2, 3))
     return dict(
@@ -100,6 +105,13 @@ def reconstruction_metrics(prediction, target):
 
 
 def interval_metrics(prediction, lower, upper, target, *, clipped):
+    """Return per-image (N,) scores from matching (N,3,H,W) tensors.
+
+    Coverage is the fraction of RGB values inside inclusive bounds; width is
+    mean UB-LB in normalized-intensity units. ``clipped`` clamps predictions and
+    both endpoints to [0,1] for this metric view, without changing calibration.
+    Crossed bounds are reported and remain unsorted.
+    """
     if clipped:
         prediction, lower, upper = [v.clamp(0, 1) for v in (prediction, lower, upper)]
     result = reconstruction_metrics(prediction, target)

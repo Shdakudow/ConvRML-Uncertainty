@@ -25,6 +25,7 @@ class NormFiLM(nn.Module):
         nn.init.zeros_(self.projection[-1].bias)
 
     def forward(self, x, emb):
+        """Modulate features (N,C,H,W) or (N,H,W,C) using embeddings (N,512)."""
         scale, shift = self.projection(emb).chunk(2, 1)
         shape = (len(x), 1, 1, -1) if self.channels_last else (len(x), -1, 1, 1)
         return x * (1 + scale.reshape(shape)) + shift.reshape(shape)

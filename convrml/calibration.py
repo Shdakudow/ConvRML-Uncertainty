@@ -13,9 +13,10 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-from .protocol import settings
 from scipy.special import xlogy
 from scipy.stats import binom
+
+from .protocol import settings
 
 
 class CalibrationFailure(ValueError):
@@ -23,6 +24,7 @@ class CalibrationFailure(ValueError):
 
 
 def hb_pvalue(risk, n, alpha):
+    """HB p-value for mean image-level miss fraction, using n independent images."""
     if not 0 <= risk <= 1 or n < 1 or not 0 < alpha < 1:
         raise ValueError("Invalid risk, sample count or target")
     if risk >= alpha:
@@ -34,27 +36,29 @@ def hb_pvalue(risk, n, alpha):
 
 
 def risk_threshold(n, alpha=0.1, delta=0.05):
+    """Largest empirical tail risk accepted by the image-level HB test."""
     if not 0 < delta < 1:
         raise ValueError("Invalid confidence failure probability")
     if hb_pvalue(0.0, n, alpha) >= delta:
         raise CalibrationFailure(
             "Insufficient calibration images for a finite HB certificate"
         )
-    lo, hi = 0.0, alpha
+    accepted, rejected = 0.0, alpha
     for _ in range(80):
-        mid = (lo + hi) / 2
-        if hb_pvalue(mid, n, alpha) < delta:
-            lo = mid
+        candidate = (accepted + rejected) / 2
+        if hb_pvalue(candidate, n, alpha) < delta:
+            accepted = candidate
         else:
-            hi = mid
-    return max(0.0, lo - 1e-10)
+            rejected = candidate
+    return max(0.0, accepted - 1e-10)
 
 
 def rcps_scales(lower_scores, upper_scores, alpha=0.1, delta=0.05):
     """Fit separate lower/upper scales with image-level RCPS-HB certificates.
 
-    Each row is one image's pixel scores. The statistical sample count is the
+    Scores are dimensionless arrays (N, ...), one row per image. The sample count is the
     number of images, not pixels. Alpha and delta are split equally between tails.
+    Scales multiply native distances from the center; they do not rescale images.
     """
     if lower_scores.shape != upper_scores.shape or lower_scores.ndim < 2:
         raise ValueError("Expected matching image-by-pixel lower/upper scores")
@@ -75,8 +79,8 @@ def rcps_scales(lower_scores, upper_scores, alpha=0.1, delta=0.05):
     total_risk = float(
         np.mean(
             [
-                np.mean((lo > scales["lower"]) | (hi > scales["upper"]))
-                for lo, hi in zip(lower_scores, upper_scores)
+                np.mean((lower > scales["lower"]) | (upper > scales["upper"]))
+                for lower, upper in zip(lower_scores, upper_scores)
             ]
         )
     )
@@ -104,6 +108,11 @@ def rcps_scales(lower_scores, upper_scores, alpha=0.1, delta=0.05):
 
 
 def tail_budget(alpha, n):
+    """Per-tail miss budget from QUTCC v2 Algorithm 1, lines 1-2.
+
+    Use (alpha - (1-alpha)/n)/2 as written in the pseudocode. The adjacent
+    paper prose gives a different correction; this implementation follows Algorithm 1.
+    """
     if n < 1 or not 0 < alpha < 1:
         raise ValueError("Invalid calibration size or alpha")
     budget = (alpha - (1 - alpha) / n) / 2
@@ -115,7 +124,8 @@ def tail_budget(alpha, n):
 def paper_quantiles(risk, n, alpha=0.1, tol=1e-3, max_iterations=20):
     """QUTCC Algorithm 1: binary-search global q endpoints with finite-N correction.
 
-    ``risk(lo, hi)`` returns lower/upper miss fractions over calibration pixels.
+    ``risk(lower_q, upper_q)`` returns lower/upper miss fractions in [0,1].
+    These q values are shared by all images; the predicted images vary spatially.
     The search assumes monotone quantile responses, as in the original algorithm.
     """
     if tol <= 0 or max_iterations < 1:
@@ -123,43 +133,54 @@ def paper_quantiles(risk, n, alpha=0.1, tol=1e-3, max_iterations=20):
     target = tail_budget(alpha, n)
     trace = []
 
-    def check(lo, hi):
-        low, high = risk(lo, hi)
-        if not 0 <= low <= 1 or not 0 <= high <= 1:
+    def check(lower_q, upper_q):
+        lower_risk, upper_risk = risk(lower_q, upper_q)
+        if not 0 <= lower_risk <= 1 or not 0 <= upper_risk <= 1:
             raise ValueError("Invalid calibration risk")
-        trace.append(dict(lower_q=lo, upper_q=hi, lower_risk=low, upper_risk=high))
-        return low, high
+        trace.append(
+            dict(
+                lower_q=lower_q,
+                upper_q=upper_q,
+                lower_risk=lower_risk,
+                upper_risk=upper_risk,
+            )
+        )
+        return lower_risk, upper_risk
 
-    low, high = check(0.0, 1.0)
-    if low > target or high > target:
+    lower_risk, upper_risk = check(0.0, 1.0)
+    if lower_risk > target or upper_risk > target:
         raise CalibrationFailure(
             "No feasible extreme quantile bounds; inspect model fit/crossing"
         )
-    lmin, lmax, umin, umax = 0.0, 1.0, 0.0, 1.0
-    validlo, validhi = 0.0, 1.0
+    lower_q_min, lower_q_max = 0.0, 1.0
+    upper_q_min, upper_q_max = 0.0, 1.0
+    valid_lower_q, valid_upper_q = 0.0, 1.0
     for _ in range(max_iterations):
-        lo, hi = (lmin + lmax) / 2, (umin + umax) / 2
-        rl, ru = check(lo, hi)
-        if rl > target:
-            lmax = lo
+        lower_q = (lower_q_min + lower_q_max) / 2
+        upper_q = (upper_q_min + upper_q_max) / 2
+        lower_risk, upper_risk = check(lower_q, upper_q)
+        # Increasing lower_q tightens the lower endpoint; decreasing upper_q
+        # tightens the upper endpoint. Retain the last feasible value on each side.
+        if lower_risk > target:
+            lower_q_max = lower_q
         else:
-            lmin = lo
-            validlo = lo
-        if ru > target:
-            umin = hi
+            lower_q_min = lower_q
+            valid_lower_q = lower_q
+        if upper_risk > target:
+            upper_q_min = upper_q
         else:
-            umax = hi
-            validhi = hi
-        if lmax - lmin < tol and umax - umin < tol:
+            upper_q_max = upper_q
+            valid_upper_q = upper_q
+        if lower_q_max - lower_q_min < tol and upper_q_max - upper_q_min < tol:
             break
-    if validlo > validhi:
+    if valid_lower_q > valid_upper_q:
         raise CalibrationFailure("Calibrated quantile levels reversed")
-    rl, ru = check(validlo, validhi)
-    if rl > target or ru > target:
+    lower_risk, upper_risk = check(valid_lower_q, valid_upper_q)
+    if lower_risk > target or upper_risk > target:
         raise CalibrationFailure("Final bounds failed calibration recheck")
     return dict(
-        lower_q=validlo,
-        upper_q=validhi,
+        lower_q=valid_lower_q,
+        upper_q=valid_upper_q,
         alpha=alpha,
         per_tail_target=target,
         n_images=n,
@@ -184,79 +205,101 @@ def restore_rng(state):
 
 
 def fit_calibration(calibration, predict, q_model, run, device, workers, output):
+    """Fit frozen models using only calibration pairs, then audit their coverage.
+
+    The loader batches float (B,2,3,H,W): measurement then target in [0,1].
+    ``predict`` returns unbounded center/lower/upper tensors (B,3,H,W).
+    QUTCC instead queries ``q_model`` at candidate q levels. Returned metadata
+    stores q values or dimensionless endpoint scales; predictions are never clipped.
+    """
     loader = DataLoader(calibration, batch_size=run["microbatch"], num_workers=workers)
-    target = settings()["alpha"]
+    target_risk = settings()["alpha"]
     rng_before, rng_after = capture_rng(device), None
     if run["method"] == "qutcc":
-        cache = [{}, {}]
+        cache = {"lower": {}, "upper": {}}
 
-        def risk(qlo, qhi):
-            qs = qlo, qhi
-            missing = [side for side in (0, 1) if qs[side] not in cache[side]]
-            counts, pixels = [0, 0], 0
+        def risk(lower_q, upper_q):
+            quantiles = {"lower": lower_q, "upper": upper_q}
+            missing = [side for side in quantiles if quantiles[side] not in cache[side]]
+            misses, pixels = {"lower": 0, "upper": 0}, 0
             if missing:
                 for batch in loader:
-                    y, x = batch[:, 0].to(device), batch[:, 1].to(device)
+                    measurement, target = batch[:, 0].to(device), batch[:, 1].to(device)
                     for side in missing:
-                        endpoint = q_model(y, y.new_full((len(y),), qs[side]))
+                        q = measurement.new_full((len(measurement),), quantiles[side])
+                        endpoint = q_model(measurement, q)
                         if not torch.isfinite(endpoint).all():
                             raise ValueError("Nonfinite quantile prediction")
-                        counts[side] += int(
-                            ((x < endpoint) if side == 0 else (x > endpoint)).sum()
-                        )
-                    pixels += x.numel()
+                        if side == "lower":
+                            misses[side] += int((target < endpoint).sum())
+                        else:
+                            misses[side] += int((target > endpoint).sum())
+                    pixels += target.numel()
                 for side in missing:
-                    cache[side][qs[side]] = counts[side] / pixels
-            return tuple(cache[side][qs[side]] for side in (0, 1))
+                    cache[side][quantiles[side]] = misses[side] / pixels
+            return cache["lower"][lower_q], cache["upper"][upper_q]
 
-        fitted = paper_quantiles(risk, len(calibration), alpha=target)
+        fitted = paper_quantiles(risk, len(calibration), alpha=target_risk)
     else:
         shape = (len(calibration), *calibration[0][0].shape)
+        # Disk-backed scores keep full-resolution calibration off the GPU and
+        # avoid retaining every calibration prediction in RAM.
         with tempfile.TemporaryDirectory(
             prefix="calibration-", dir=output
         ) as temporary:
-            scores = [
-                np.lib.format.open_memmap(
-                    Path(temporary) / f"tail_{side}.npy",
+            scores = {
+                side: np.lib.format.open_memmap(
+                    Path(temporary) / f"tail_{index}.npy",
                     mode="w+",
                     dtype=np.float32,
                     shape=shape,
                 )
-                for side in (0, 1)
-            ]
+                for index, side in enumerate(("lower", "upper"))
+            }
             offset = 0
             try:
                 for batch in loader:
-                    y, x = batch[:, 0].to(device), batch[:, 1].to(device)
-                    center, lo, hi = predict(y)
-                    lower = (center - x) / (center - lo).clamp_min(1e-6)
-                    upper = (x - center) / (hi - center).clamp_min(1e-6)
-                    for dest, value in zip(scores, (lower, upper)):
-                        dest[offset : offset + len(batch)] = value.cpu().numpy()
+                    measurement, target = batch[:, 0].to(device), batch[:, 1].to(device)
+                    center, lower, upper = predict(measurement)
+                    # A target misses a calibrated endpoint exactly when this
+                    # normalized residual exceeds that endpoint's scale factor.
+                    lower_score = (center - target) / (center - lower).clamp_min(1e-6)
+                    upper_score = (target - center) / (upper - center).clamp_min(1e-6)
+                    scores["lower"][
+                        offset : offset + len(batch)
+                    ] = lower_score.cpu().numpy()
+                    scores["upper"][
+                        offset : offset + len(batch)
+                    ] = upper_score.cpu().numpy()
                     offset += len(batch)
                 fitted = rcps_scales(
-                    *scores, alpha=target, delta=settings()["calibration"]["delta"]
+                    scores["lower"],
+                    scores["upper"],
+                    alpha=target_risk,
+                    delta=settings()["calibration"]["delta"],
                 )
             finally:
-                for array in scores:
+                for array in scores.values():
                     array._mmap.close()
         rng_after = capture_rng(device)
         # Replay the identical MC masks to audit the fitted calibration intervals.
         restore_rng(rng_before)
     covered, total, crossing = 0, 0, 0
     for batch in loader:
-        y, x = batch[:, 0].to(device), batch[:, 1].to(device)
-        _, lo, hi = apply_calibration(y, predict, q_model, run["method"], fitted)
-        covered += int(((x >= lo) & (x <= hi)).sum())
-        crossing += int((lo > hi).sum())
-        total += x.numel()
+        measurement, target = batch[:, 0].to(device), batch[:, 1].to(device)
+        _, lower, upper = apply_calibration(
+            measurement, predict, q_model, run["method"], fitted
+        )
+        covered += int(((target >= lower) & (target <= upper)).sum())
+        crossing += int((lower > upper).sum())
+        total += target.numel()
     if rng_after is not None:
         restore_rng(rng_after)
     coverage = covered / total
     fitted.update(
         calibration_coverage=coverage,
         calibration_crossing=crossing / total,
-        target_coverage=1 - target,
+        target_coverage=1 - target_risk,
         n_images=len(calibration),
         calibrated_on="calibration split only",
         endpoint_clipping=None,
@@ -267,10 +310,15 @@ def fit_calibration(calibration, predict, q_model, run, device, workers, output)
 
 
 def apply_calibration(y, predict, q_model, method, fitted):
+    """Return calibrated (center, lower, upper), each (N,3,H,W), without clipping.
+
+    ``y`` is a measurement batch in [0,1]. Frozen q inputs change QUTCC endpoints;
+    baseline scales multiply distances from the unchanged center image.
+    """
     if method == "qutcc" and "lower_q" in fitted:
         return q_model.bounds(y, fitted["lower_q"], fitted["upper_q"])
-    center, lo, hi = predict(y)
+    center, lower, upper = predict(y)
     if "scales" in fitted:
-        lo = center - fitted["scales"]["lower"] * (center - lo).clamp_min(1e-6)
-        hi = center + fitted["scales"]["upper"] * (hi - center).clamp_min(1e-6)
-    return center, lo, hi
+        lower = center - fitted["scales"]["lower"] * (center - lower).clamp_min(1e-6)
+        upper = center + fitted["scales"]["upper"] * (upper - center).clamp_min(1e-6)
+    return center, lower, upper

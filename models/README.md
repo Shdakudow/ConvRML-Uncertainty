@@ -17,6 +17,32 @@ Each model file contains its loss. All methods use the shared ConvNeXtV2-Base/FP
 backbone in [convrml/](../convrml/). Existing PLD runs cover all four methods;
 existing DLMD runs cover Im2im and QUTCC.
 
+## Tensor and intensity conventions
+
+`N` is batch size; `H,W` are image dimensions. Loaders supply float32 measurement
+and target images in `[0,1]`, shaped `(N,3,H,W)` after batching. Outputs retain
+normalized-intensity units but are unbounded; there is no sigmoid or automatic
+clipping. Calibration does not change the target range or normalize predictions.
+
+| Call | Output |
+| --- | --- |
+| `Im2im.forward(y)` | `(N,3,3,H,W)`: lower / center / upper heads, then RGB |
+| `QUTCC.forward(y, q)` | `(N,3,H,W)`: one quantile image; `q` has shape `(N,)` |
+| `EnsembleMember.forward(y)` | Tuple of mean and positive variance, each `(N,3,H,W)` |
+| `DeepEnsemble.forward(y)` | `(N,9,H,W)`: concatenated lower / mean / upper RGB |
+| `MCDropout.forward(y)` | `(N,3,H,W)`: one prediction, stochastic when dropout is active |
+| Any method's `bounds(y)` | Tuple `(center, lower, upper)`, each `(N,3,H,W)` |
+| Any trainable method's `loss(y, target)` | Scalar averaged over images, channels and pixels |
+
+Variance has squared-intensity units. Interval width `upper-lower` and absolute
+reconstruction error have intensity units. Crossing is reported rather than
+silently sorting endpoints. Evaluation reports both raw and clipped metrics;
+clipping is a separate metric/display choice. QUTCC's center is a median estimate,
+whereas the other methods use mean estimates.
+
+The [paper-to-code review](../archive/publication_support/docs/MODEL_COMPARISON.md#paper-to-code-review)
+records which choices follow the references and which are lensless adaptations.
+
 ```python
 from models import Im2im, QUTCC
 

@@ -130,7 +130,11 @@ def train_one_epoch(
     schedule_steps,
     smoke=False,
 ):
-    """Forward, loss, backward and optimizer step, with microbatch accumulation."""
+    """Forward, loss, backward and optimizer step, with microbatch accumulation.
+
+    Loader batches are (B,2,3,H,W) in [0,1]. Each model returns a scalar loss;
+    weighting by microbatch size preserves the effective batch's mean objective.
+    """
     model.train()
     total_loss, count, started = 0.0, 0, time.monotonic()
     for index, batch in enumerate(loader):

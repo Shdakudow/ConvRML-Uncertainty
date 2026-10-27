@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Name lower/upper calibration states explicitly; document tensor shapes,
+  intensity units and scientific choices at model/data/loss/metric boundaries.
+  Record paper-to-code adaptations, including asymmetric RCPS and MC-dropout's
+  model-spread-only variance, without changing trained model behavior.
 - Make `train.py` and `infer.py` the readable workflow implementations, with named
   epoch, calibration, evaluation and export steps. Group checkpoint save/resume
   logic in `convrml/checkpoints.py` and calibration fitting in `calibration.py`.

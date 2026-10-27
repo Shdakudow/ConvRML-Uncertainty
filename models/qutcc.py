@@ -1,10 +1,12 @@
-"""QUTCC on the ConvNeXt/FPN backbone, shared by Experiments 2 and 3.
+"""QUTCC on the ConvNeXt/FPN backbone, shared by PLD and DLMD.
 
 PLD experiment: float RGB (N, 3, 256, 256), from uint8 NumPy pairs divided by 255.
 DLMD experiment: RGB (N, 3, 270, 480), from paired image files divided by 255.
 Inputs are replicate-padded to multiples of 32; outputs are cropped to input size.
 One scalar q per image conditions 36 encoder and 12 decoder sites through FiLM.
 Only sampled-q pinball is optimized; there is no additional MSE or q selector.
+Measurements/targets are floating tensors in [0,1]. Predictions are unbounded
+normalized intensities; increasing q is not guaranteed to increase every pixel.
 """
 
 import torch
@@ -16,7 +18,10 @@ from convrml.film import FiLMBackbone
 
 
 def pinball(prediction, target, q):
-    """Pixelwise quantile loss, averaged over the batch, RGB channels and pixels."""
+    """Return a scalar from (N,3,H,W) predictions/targets and q of shape (N,).
+
+    The same q conditions the network and weights its asymmetric prediction error.
+    """
     error = target - prediction
     q = q.reshape(-1, 1, 1, 1)
     return torch.maximum(q * error, (q - 1) * error).mean()
@@ -28,7 +33,10 @@ class QUTCC(nn.Module):
         self.net = FiLMBackbone(ConvNeXtFPN())
 
     def forward(self, y, q=None):
-        """Return the RGB quantile image Q(q | y); default q=0.5 is reconstruction."""
+        """Map y (N,3,H,W), q (N,) in [0,1] to an unbounded RGB quantile image.
+
+        Output shape matches y. Default q=0.5 estimates the conditional median.
+        """
         h, w = y.shape[-2:]
         padded = F.pad(y, (0, (-w) % 32, 0, (-h) % 32), mode="replicate")
         if q is None:
@@ -39,7 +47,10 @@ class QUTCC(nn.Module):
         return self(y)
 
     def bounds(self, y, lower_q=0.05, upper_q=0.95):
-        """Query native bounds; use separately calibrated q values when available."""
+        """Return (median, lower, upper), each (N,3,H,W), without clipping.
+
+        Scalar endpoints are shared across images; calibration selects new q inputs.
+        """
         if not 0 <= lower_q <= upper_q <= 1:
             raise ValueError("Expected ordered q values in [0, 1]")
         return (

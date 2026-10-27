@@ -4,7 +4,12 @@ import torch
 
 
 def gaussian_interval_from_mean_variance(mean, variance, alpha=0.1):
-    """Use the same 90% Gaussian multiplier as the saved milestone evaluations."""
+    """Return two tensors shaped like mean/variance, normally (N,3,H,W).
+
+    Mean has normalized-intensity units; nonnegative variance has squared units.
+    Alpha=0.1 uses the saved 90% multiplier. This is a Gaussian approximation,
+    not calibration, and neither bounds nor means are clipped to [0,1].
+    """
     if not 0 < alpha < 1:
         raise ValueError("alpha must lie in (0, 1)")
     if alpha == 0.1:

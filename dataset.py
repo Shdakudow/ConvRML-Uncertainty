@@ -46,6 +46,7 @@ class NumpyPairs(Dataset):
         return len(self.rows)
 
     def __getitem__(self, index):
+        """Return float32 (2,3,H,W) in [0,1], measurement followed by target."""
         if index < 0:
             index += len(self)
         if not 0 <= index < len(self):
@@ -59,6 +60,7 @@ class ImagePairs(Dataset):
 
     Clean and fixed-corruption manifests use the same schema. Paths can be absolute
     or relative to the manifest. Models handle padding; this loader does not resize.
+    These are prepared 8-bit RGB exports, not untouched 12-/16-bit sensor arrays.
     """
 
     def __init__(self, manifest_path, split):
@@ -70,6 +72,7 @@ class ImagePairs(Dataset):
         return len(self.rows)
 
     def __getitem__(self, index):
+        """Return float32 (2,3,H,W) in [0,1], preserving the paired RGB dimensions."""
         pair = []
         for field in ("measurement", "target"):
             path = Path(self.rows[index][field]["path"])

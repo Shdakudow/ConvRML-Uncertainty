@@ -1,7 +1,8 @@
 """One end-to-end Im2im model for prepared PLD and DLMD RGB measurements.
 
-Inputs: float32 RGB measurements; outputs keep the original height and width.
+Inputs: floating RGB measurements (N,3,H,W) in [0,1]; target has the same shape.
 Outputs: (N, 3 heads, 3 RGB channels, H, W), ordered lower / center / upper.
+Predictions are unbounded normalized intensities; endpoint ordering is not enforced.
 Difference from QUTCC: three fixed heads; no quantile input or FiLM modulation.
 The checkpoint_prefix option preserves PLD ``base.*`` or DLMD ``net.*`` state
 names. It changes serialization names only, not the architecture or objective.
@@ -15,7 +16,11 @@ from convrml.backbone import ConvNeXtFPN
 
 
 def pinball(prediction, target, q):
-    """Pixelwise quantile loss used by the fixed lower and upper heads."""
+    """Scalar mean loss for matching (N,3,H,W) tensors and q of shape (N,).
+
+    Positive target-minus-prediction error is weighted by q; negative error by
+    1-q. Thus the two endpoint heads estimate different conditional quantiles.
+    """
     error = target - prediction
     q = q.reshape(-1, 1, 1, 1)
     return torch.maximum(q * error, (q - 1) * error).mean()
@@ -59,12 +64,14 @@ class Im2im(nn.Module):
         return self(y)[:, 1]
 
     def bounds(self, y):
-        """Return (reconstruction, lower bound, upper bound); no calibration/clipping."""
+        """Return (center, lower, upper), each unbounded (N,3,H,W)."""
         outputs = self(y)
         return outputs[:, 1], outputs[:, 0], outputs[:, 2]
 
     def loss(self, y, target):
         """Train all parameters jointly: center MSE plus endpoint pinball losses."""
+        # The center estimates a conditional mean; endpoints estimate the native
+        # 90% interval. Equal coefficients are the recorded experiment setting.
         center, lower, upper = self.bounds(y)
         return (
             (center.float() - target).square().mean()

@@ -10,6 +10,10 @@ calibration numerics, exact uninterrupted-versus-resumed optimizer/RNG progress,
 strict checkpoint identity, split leakage, immutable results, saved examples,
 checkpoint indexes and release metadata. They do not allocate a GPU or train the
 published models on the full benchmark.
+The paired-file DLMD check also trains both method fixtures, strictly reloads
+their checkpoints, calibrates on separate IDs and exports test metrics/examples.
+It uses the real Im2im/QUTCC loss methods with tiny surrogate networks, not the
+full ConvNeXt backbone or benchmark data.
 
 Historical source/cluster checks are optional and separate:
 

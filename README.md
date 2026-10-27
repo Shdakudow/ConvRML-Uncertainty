@@ -50,6 +50,9 @@ the workflow is `calibrate_checkpoint` → `evaluate_test_set` → `save_results
 [calibration.py](convrml/calibration.py) contains the calibration algorithms and
 [checkpoints.py](convrml/checkpoints.py) handles saving, strict loading and resume.
 Recorded experiment settings stay in [configs/](configs/).
+See [tensor shapes and intensity conventions](models/README.md#tensor-and-intensity-conventions)
+and the [paper-to-code review](archive/publication_support/docs/MODEL_COMPARISON.md#paper-to-code-review)
+for the model interfaces and documented adaptations.
 
 ## Weights and evaluation
 

@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch
 
 import numpy as np
+from PIL import Image
 import torch
 from torch import nn
 
@@ -16,6 +17,7 @@ import train
 import infer as evaluate
 from convrml import checkpoints, download, protocol
 from models.qutcc import pinball
+from models import Im2im, QUTCC
 
 
 class TinyQ(nn.Module):
@@ -192,6 +194,96 @@ class PortableWorkflow(unittest.TestCase):
             [r["loss"] for r in a["history"]], [r["loss"] for r in b["history"]]
         )
         self.assertEqual(a["global_step"], b["global_step"])
+
+    def test_dlmd_image_files_train_load_calibrate_and_export_both_methods(self):
+        """Exercise the paired-file workflow with tiny models and real loss methods."""
+
+        class QuantileFixture(nn.Module):
+            loss = QUTCC.loss
+            bounds = QUTCC.bounds
+            center = QUTCC.center
+
+            def __init__(self):
+                super().__init__()
+                self.bias = nn.Parameter(torch.zeros(()))
+
+            def forward(self, y, q=None):
+                q = y.new_full((len(y),), 0.5) if q is None else q
+                return y * 0 + q[:, None, None, None] + self.bias
+
+        class Im2imFixture(nn.Module):
+            loss = Im2im.loss
+            bounds = Im2im.bounds
+            center = Im2im.center
+
+            def __init__(self):
+                super().__init__()
+                self.heads = nn.Parameter(torch.tensor([0.05, 0.5, 0.95]))
+
+            def forward(self, y):
+                return y[:, None] * 0 + self.heads[None, :, None, None, None]
+
+        roles = {}
+        rng = np.random.default_rng(942)
+        for role, count in (
+            ("train", 4),
+            ("val", 2),
+            ("test", 2),
+            ("calibration", 128),
+        ):
+            roles[role] = []
+            for index in range(count):
+                row = dict(id=f"{role}{index}")
+                for field in ("measurement", "target"):
+                    filename = f"{role}_{index}_{field}.png"
+                    pixels = rng.integers(0, 256, (16, 16, 3), dtype=np.uint8)
+                    Image.fromarray(pixels).save(self.root / filename)
+                    row[field] = dict(path=filename)
+                roles[role].append(row)
+        manifest = self.root / "raw.json"
+        manifest.write_text(json.dumps(dict(roles=roles)))
+        self.config["datasets"]["raw_clean"].update(
+            counts={role: len(rows) for role, rows in roles.items()},
+            shape=[3, 16, 16],
+            id_hashes={},
+        )
+
+        def factory(run):
+            return QuantileFixture() if run["method"] == "qutcc" else Im2imFixture()
+
+        def load_model(path, run, device, **kwargs):
+            return checkpoints.load_model(path, run, device, factory=factory, **kwargs)
+
+        for method in ("im2im", "qutcc"):
+            with self.subTest(method=method):
+                args = self.training_args(f"raw_{method}", 2)
+                args.dataset, args.experiment, args.method = "raw_clean", 3, method
+                args.manifest, args.pairs = manifest, None
+                checkpoint = train.run_training(args, factory=factory)
+                args = self.evaluation_args(f"raw_{method}_test", method)
+                args.dataset, args.experiment = "raw_clean", 3
+                args.manifest = args.calibration_manifest = manifest
+                args.pairs = args.calibration_pairs = None
+                args.checkpoints = [checkpoint]
+                report = evaluate.run_evaluation(args, model_loader=load_model)
+                self.assertEqual(report["test_count"], 2)
+                self.assertEqual(report["epoch"], 2)
+                self.assertEqual(report["calibration"]["n_images"], 128)
+                self.assertFalse(report["request"]["test_used_for_calibration"])
+                self.assertEqual(
+                    report["calibration"]["has_hb_certificate"], method == "im2im"
+                )
+                self.assertTrue((args.output / "calibration.json").is_file())
+                self.assertTrue((args.output / "per_image.csv").is_file())
+                with np.load(args.output / "examples.npz") as examples:
+                    for name in (
+                        "measurement",
+                        "target",
+                        "prediction",
+                        "lower",
+                        "upper",
+                    ):
+                        self.assertEqual(examples[name].shape, (1, 3, 16, 16))
 
     def test_five_epoch_snapshot_recovers_without_retraining(self):
         latest = train.run_training(

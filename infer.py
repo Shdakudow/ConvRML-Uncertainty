@@ -100,7 +100,11 @@ def split_ids(path, split):
 
 
 def make_predictor(model, run, device):
-    """Return native center/lower/upper images using the recorded inference settings."""
+    """Build a measurement (N,3,H,W) -> (center, lower, upper) callable.
+
+    Inputs are in [0,1]; each output keeps the input shape but is unbounded.
+    All methods share this interface despite their different forward() outputs.
+    """
 
     def predict(measurement):
         with autocast(run, device):

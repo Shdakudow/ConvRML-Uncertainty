@@ -5,6 +5,8 @@ Each member has the shared ConvNeXt/FPN, RGB mean and RGB variance heads.
 All members see the entire training split with independent initialization and
 shuffle seeds. Default comparison uses five members; ten is a separate reference.
 Checkpoint keys retain ``baseModel.*`` for each independently trained member.
+Inputs/targets are floating (N,3,256,256) in [0,1]. Means/bounds are unbounded
+normalized intensities; variances have squared-intensity units.
 """
 
 import torch
@@ -38,6 +40,7 @@ class EnsembleMember(nn.Module):
             raise ValueError("min_variance must be positive")
 
     def forward(self, x):
+        """Return (mean, variance), each (N,3,H,W); variance is strictly positive."""
         raw = self.baseModel(x)
         if raw.shape[1] != 2 * self.channels:
             raise ValueError("Member must output C means and C raw variances")
@@ -47,6 +50,7 @@ class EnsembleMember(nn.Module):
         )
 
     def loss(self, x, target):
+        """Mean Gaussian NLL, omitting the constant 0.5*log(2*pi)."""
         mean, variance = self(x)
         mean, variance = mean.float(), variance.float()
         return 0.5 * (variance.log() + (target - mean).square() / variance).mean()
@@ -61,7 +65,10 @@ class DeepEnsemble(nn.Module):
             raise ValueError("Ensemble cannot be empty")
 
     def moments(self, x):
-        # Preserve the accumulated second-moment calculation used in evaluation.
+        """Return mixture mean and total variance, each (N,3,H,W)."""
+        # E[variance + mean^2] - E[mean]^2 includes both within-member noise
+        # estimates and between-member disagreement. Keep this operation order
+        # to preserve the saved evaluations' floating-point behavior.
         mean_sum = second = None
         for member in self.members:
             mean, variance = member(x)
@@ -77,6 +84,7 @@ class DeepEnsemble(nn.Module):
         return mean, variance
 
     def forward(self, x):
+        """Return concatenated lower/mean/upper RGB images, shape (N,9,H,W)."""
         mean, variance = self.moments(x)
         lo, hi = gaussian_interval_from_mean_variance(
             mean, variance, self.base_interval_alpha
@@ -84,7 +92,10 @@ class DeepEnsemble(nn.Module):
         return torch.cat([lo, mean, hi], dim=1)
 
     def bounds(self, y):
-        """Return (reconstruction, native lower, native upper), before calibration."""
+        """Return (mean, lower, upper), each (N,3,H,W), before calibration.
+
+        Bounds use a moment-matched Gaussian, not exact Gaussian-mixture quantiles.
+        """
         mean, variance = self.moments(y)
         lower, upper = gaussian_interval_from_mean_variance(
             mean, variance, self.base_interval_alpha

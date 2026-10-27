@@ -1,6 +1,7 @@
 """Full-network MC dropout for RGB 256 x 256 RML / normalized DiffuserCam.
 
-Input pairs: uint8 NumPy cache divided by 255, shape (N, 3, 256, 256).
+Measurements/targets: floating (N,3,256,256) in [0,1], from uint8 divided by 255.
+Each stochastic prediction has that shape, in unbounded normalized intensity.
 Difference from Im2im: one MSE-trained RGB output; uncertainty comes from repeated
 stochastic forwards, not endpoint heads. Dropout follows the MLP in all 36 encoder
 blocks and GELU in all 12 decoder stages. Default p=0.05, inference uses 30 passes.
@@ -74,13 +75,16 @@ class MCDropout(ConvNeXtFPN):
         return hook
 
     def loss(self, y, target):
+        """Scalar MSE over all RGB values; model.train() enables training dropout."""
         return (self(y).float() - target).square().mean()
 
     @torch.no_grad()
     def bounds(self, y, samples=30, alpha=0.1):
-        """Return mean/lower/upper; dropout is enabled only inside this context.
+        """Return (mean, lower, upper), each unbounded (N,3,H,W).
 
-        These are native Gaussian-moment bounds. Calibration is separate.
+        Dropout stays active during sampling. The variance measures model spread;
+        no observation-noise precision term is added. Native bounds approximate
+        this spread as Gaussian; RCPS calibration is a separate step.
         """
         if samples < 2:
             raise ValueError("At least two stochastic predictions are required")
