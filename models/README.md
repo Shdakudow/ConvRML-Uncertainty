@@ -50,8 +50,17 @@ im2im = Im2im()
 qutcc = QUTCC()
 ```
 
-Im2im and QUTCC accept both prepared image sizes. They pad to multiples of 32
-and crop every output back to the original dimensions before computing losses.
+All four default model implementations accept RGB `(N,3,H,W)` measurements.
+They replicate-pad right/bottom to multiples of 32 and crop all outputs to the
+original dimensions before computing losses or intervals. For example, 270×480
+is padded to 288×480 internally. Spatial dimensions are not learned parameters.
+
+The loader decodes and normalizes paired images; it does not resize them for the
+network. Images in a normal stacked batch must share dimensions, and targets must
+match the measurement dimensions. The recorded experiment profiles still enforce
+their saved shapes, splits and available methods. Variable-size model support
+does not create new trained comparisons or make weights transferable across
+acquisition systems. Existing ensemble/MC-dropout benchmark runs remain PLD-only.
 
 For original checkpoint compatibility, Im2im accepts `checkpoint_prefix="base"`
 (PLD) or `"net"` (DLMD). This preserves historical state-dictionary names only;

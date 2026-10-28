@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Document image dimensions as dataset settings, and add automatic padding/cropping
+  for MC dropout and Gaussian ensemble members. All four default models now accept
+  rectangular/non-stride-aligned RGB images. Existing 256x256 behavior, state keys
+  and recorded benchmark profiles remain compatible.
 - Explain the backbone feature sizes, internal normalization, q-embedding names,
   validation versus test prediction, settings terminology and saved output files.
   Expand CLI help and function documentation without changing numerical code.

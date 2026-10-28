@@ -113,6 +113,59 @@ class PairedData(unittest.TestCase):
         torch.testing.assert_close(pld(y), dlmd(y), rtol=0, atol=0)
         self.assertEqual(pld(y).shape, (2, 3, 3, 33, 47))
 
+    def test_backbone_pads_rectangles_and_crops_without_breaking_gradients(self):
+        from convrml.backbone import ConvNeXtFPN
+
+        class SpatialBackbone(ConvNeXtFPN):
+            def __init__(self):
+                torch.nn.Module.__init__(self)
+                self.head = torch.nn.Conv2d(3, 3, 3, padding=1)
+                self.up2 = torch.nn.Identity()
+
+            def features(self, image):
+                self.padded_shape = image.shape[-2:]
+                self.assert_aligned = all(size % 32 == 0 for size in self.padded_shape)
+                return image
+
+        model = SpatialBackbone()
+        for height, width in ((32, 64), (33, 47), (270, 480)):
+            image = torch.rand(1, 3, height, width, requires_grad=True)
+            output = model(image)
+            self.assertTrue(model.assert_aligned)
+            self.assertEqual(
+                model.padded_shape, ((height + 31) // 32 * 32, (width + 31) // 32 * 32)
+            )
+            self.assertEqual(output.shape, image.shape)
+            output.square().mean().backward()
+            self.assertTrue(torch.isfinite(image.grad).all())
+
+    def test_gaussian_member_crops_mean_variance_and_all_ensemble_bounds(self):
+        from models.ensemble import _GaussianBackbone, EnsembleMember, DeepEnsemble
+
+        class SpatialGaussian(_GaussianBackbone):
+            def __init__(self):
+                torch.nn.Module.__init__(self)
+                self.head = torch.nn.Conv2d(3, 3, 3, padding=1)
+                self.variance_head = torch.nn.Conv2d(3, 3, 3, padding=1)
+                self.up2 = torch.nn.Identity()
+
+            def features(self, image):
+                if any(size % 32 for size in image.shape[-2:]):
+                    raise ValueError("Encoder requires stride-aligned input")
+                return image
+
+        member = EnsembleMember(base_model=SpatialGaussian())
+        ensemble = DeepEnsemble([member])
+        for height, width in ((32, 64), (33, 47), (270, 480)):
+            image = torch.rand(1, 3, height, width)
+            mean, variance = member(image)
+            self.assertEqual(mean.shape, image.shape)
+            self.assertEqual(variance.shape, image.shape)
+            self.assertTrue((variance > 0).all())
+            for endpoint in ensemble.bounds(image):
+                self.assertEqual(endpoint.shape, image.shape)
+            self.assertEqual(ensemble(image).shape, (1, 9, height, width))
+
 
 if __name__ == "__main__":
     unittest.main()

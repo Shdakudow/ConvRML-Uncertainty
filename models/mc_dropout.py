@@ -1,7 +1,10 @@
-"""Full-network MC dropout for RGB 256 x 256 RML / normalized DiffuserCam.
+"""Full-network MC dropout for RGB measurements of variable size.
 
-Measurements/targets: floating (N,3,256,256) in [0,1], from uint8 divided by 255.
-Each stochastic prediction has that shape, in unbounded normalized intensity.
+Measurements/targets: floating (N,3,H,W) in [0,1]. File format and intensity
+conversion belong to the loader. The inherited backbone forward replicate-pads
+to multiples of 32 and crops each stochastic prediction back to H/W.
+Existing PLD runs use 256x256 images; that is an experiment setting.
+Predictions are unbounded normalized intensities.
 Difference from Im2im: one MSE-trained RGB output; uncertainty comes from repeated
 stochastic forwards, not endpoint heads. Dropout follows the MLP in all 36 encoder
 blocks and GELU in all 12 decoder stages. Default p=0.05, inference uses 30 passes.

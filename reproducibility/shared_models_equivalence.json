@@ -204,5 +204,30 @@
     "workflow_baseline_sha256": "00d3a31095e2f0b64a165ef37f9f2611660eb0d5a4fa543276d2fdfa344a868a",
     "additional_check": "DLMD paired PNGs: both Im2im/QUTCC losses, training, strict checkpoint reload, independent calibration and test export using tiny surrogate networks.",
     "scope": "CPU fixtures and synthetic full-model numerical checks; no full benchmark retraining or GPU performance claims."
+  },
+  "variable_size_support": {
+    "date": "2026-10-28",
+    "active_tests_passed": 39,
+    "existing_aligned_model_fingerprints_unchanged": true,
+    "real_models_checked": [
+      "im2im",
+      "qutcc",
+      "ensemble",
+      "mc_dropout"
+    ],
+    "input_sizes_checked": [
+      [
+        32,
+        64
+      ],
+      [
+        270,
+        480
+      ]
+    ],
+    "all_center_lower_upper_outputs_match_input_dimensions_and_are_finite": true,
+    "mc_stochastic_samples_in_shape_check": 2,
+    "ensemble_members_in_shape_check": 1,
+    "scope": "Synthetic CPU checks of real model geometry; not trained raw MC-dropout/ensemble benchmarks. No changes to deployed training snapshots."
   }
 }

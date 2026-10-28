@@ -42,6 +42,9 @@ Im2im replaces the RGB head with three RGB heads. Ensemble members add a varianc
 head. QUTCC modulates normalized features with q; MC dropout inserts stochastic
 masks. Those additions are in [models/](../models/). Encoder normalization and
 decoder upsampling remain shared.
+The sizes above illustrate the existing PLD data. All four default models accept
+other RGB dimensions, pad internally to a multiple of 32 and crop their outputs
+back; the data loader retains the original paired dimensions.
 
 ## Reading the data
 

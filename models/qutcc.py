@@ -1,7 +1,7 @@
 """QUTCC on the ConvNeXt/FPN backbone, shared by PLD and DLMD.
 
-PLD experiment: float RGB (N, 3, 256, 256), from uint8 NumPy pairs divided by 255.
-DLMD experiment: RGB (N, 3, 270, 480), from paired image files divided by 255.
+The model accepts RGB (N,3,H,W); image loading and normalization are separate.
+Existing PLD runs use 256x256 and DLMD runs use 270x480, both divided by 255.
 Inputs are replicate-padded to multiples of 32; outputs are cropped to input size.
 One scalar q per image conditions 36 encoder and 12 decoder sites through FiLM.
 Only sampled-q pinball is optimized; there is no additional MSE or q selector.

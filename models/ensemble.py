@@ -1,12 +1,14 @@
-"""Independent Gaussian-NLL ensemble for RGB 256 x 256 measurements.
+"""Independent Gaussian-NLL ensemble for RGB measurements of variable size.
 
-Data: uint8 (N, 2, 3, 256, 256) NumPy pairs divided by 255.
+The model accepts floating (N,3,H,W) measurements in [0,1], with a matching target.
+The loader handles file format and intensity conversion. Default members pad to
+multiples of 32 internally and crop both mean and variance back to H/W.
 Each member has the shared ConvNeXt/FPN, RGB mean and RGB variance heads.
 All members see the entire training split with independent initialization and
 shuffle seeds. Default comparison uses five members; ten is a separate reference.
 Checkpoint keys retain ``baseModel.*`` for each independently trained member.
-Inputs/targets are floating (N,3,256,256) in [0,1]. Means/bounds are unbounded
-normalized intensities; variances have squared-intensity units.
+Existing PLD runs use 256x256 images; that is an experiment setting.
+Means/bounds are unbounded normalized intensities; variances have squared units.
 """
 
 import torch
@@ -25,9 +27,12 @@ class _GaussianBackbone(ConvNeXtFPN):
         nn.init.constant_(self.variance_head.bias, -4.6)
 
     def forward(self, y):
+        height, width = y.shape[-2:]
+        if height % 32 or width % 32:
+            y = F.pad(y, (0, (-width) % 32, 0, (-height) % 32), mode="replicate")
         features = self.up2(self.features(y))
         mean = y + self.head(features)
-        return torch.cat((mean, self.variance_head(features)), 1)
+        return torch.cat((mean, self.variance_head(features)), 1)[..., :height, :width]
 
 
 class EnsembleMember(nn.Module):

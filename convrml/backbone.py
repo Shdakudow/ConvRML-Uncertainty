@@ -1,7 +1,7 @@
 """Shared ConvNeXtV2-Base encoder and feature-pyramid (FPN) residual decoder.
 
-Measurements enter as RGB (N,3,H,W) in [0,1], with H/W divisible by 32.
-Im2im and QUTCC handle padding/cropping in their wrappers. The encoder extracts
+Measurements enter as RGB (N,3,H,W) in [0,1]. Model forwards replicate-pad
+right/bottom to multiples of 32, then crop outputs to H/W. The encoder extracts
 four resolutions; the decoder combines them and predicts an RGB correction.
 The correction is added to the original measurement, producing unbounded output.
 """
@@ -67,6 +67,7 @@ class ConvNeXtFPN(nn.Module):
     def features(self, x):
         """Return decoder features (N,256,H/2,W/2) from RGB (N,3,H,W).
 
+        This internal method expects stride-aligned input from a model forward.
         Encoder stages have 128/256/512/1024 channels at 1/4,1/8,1/16,1/32 size.
         FPN merges coarse features with finer ones, then up1 doubles resolution.
         """
@@ -87,5 +88,8 @@ class ConvNeXtFPN(nn.Module):
         return x + self.head(self.up2(features))
 
     def forward(self, x):
-        """Map a divisible-by-32 RGB measurement to an unbounded image of equal shape."""
-        return self.reconstruct(x, self.features(x))
+        """Accept RGB (N,3,H,W) and return an unbounded image of equal shape."""
+        height, width = x.shape[-2:]
+        if height % 32 or width % 32:
+            x = F.pad(x, (0, (-width) % 32, 0, (-height) % 32), mode="replicate")
+        return self.reconstruct(x, self.features(x))[..., :height, :width]
