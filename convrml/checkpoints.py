@@ -1,6 +1,7 @@
 """Save, resume and load checkpoints with strict experiment identity checks."""
 
 import hashlib
+from collections import OrderedDict
 from pathlib import Path
 
 import torch
@@ -87,9 +88,42 @@ def load_model(path, run, device, *, smoke=False, factory=None):
     checkpoint, digest = read_checkpoint(path)
     info = validate_identity(checkpoint, run, smoke=smoke)
     model = (factory or make_model)(run)
-    model.load_state_dict(checkpoint["model"], strict=True)
+    load_model_weights(model, checkpoint["model"])
     model.to(device).eval()
     return model, dict(info, file=Path(path).name, sha256=digest)
+
+
+def load_model_weights(model, state):
+    """Strictly load weights, translating legacy Im2im names for any dataset.
+
+    Im2im now always saves backbone.*. Older base.* and net.* dictionaries are
+    renamed in memory; the original checkpoint and its provenance are untouched.
+    Other model formats pass directly to PyTorch's strict loader.
+    """
+    from models import Im2im
+
+    if isinstance(model, Im2im):
+        roots = {key.split(".", 1)[0] for key in state}
+        legacy = roots.intersection(("base", "net"))
+        if legacy:
+            if len(roots) != 1:
+                raise ValueError("Ambiguous Im2im checkpoint: mixed parameter prefixes")
+            prefix = next(iter(legacy))
+            renamed = OrderedDict(
+                ("backbone." + key[len(prefix) + 1 :], value)
+                for key, value in state.items()
+            )
+            if hasattr(state, "_metadata"):
+                renamed._metadata = {
+                    (
+                        "backbone" + key[len(prefix) :]
+                        if key == prefix or key.startswith(prefix + ".")
+                        else key
+                    ): value
+                    for key, value in state._metadata.items()
+                }
+            state = renamed
+    return model.load_state_dict(state, strict=True)
 
 
 def save_checkpoint(path, value):
@@ -118,7 +152,7 @@ def resume_training(
     if checkpoint["environment"] != expected["environment"]:
         raise ValueError("Portable resume requires the same recorded software versions")
 
-    model.load_state_dict(checkpoint["model"], strict=True)
+    load_model_weights(model, checkpoint["model"])
     optimizer.load_state_dict(checkpoint["optimizer"])
     torch.set_rng_state(checkpoint["rng"])
     if device.type == "cuda":
@@ -134,7 +168,7 @@ def initialize_from_clean(model, path, method, *, smoke=False):
     info = validate_identity(checkpoint, profile(3, "raw_clean", method), smoke=smoke)
     if (info["method"], info["dataset"], info["epoch"]) != (method, "raw_clean", 30):
         raise ValueError("Adaptation parent must be this method's clean raw epoch 30")
-    model.load_state_dict(checkpoint["model"], strict=True)
+    load_model_weights(model, checkpoint["model"])
     return dict(sha256=digest, **info)
 
 

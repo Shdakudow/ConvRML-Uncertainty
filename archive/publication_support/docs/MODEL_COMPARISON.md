@@ -28,7 +28,7 @@ shuffle seeds while each sees the complete training split.
 | Input conversion | Float32 / 255 | Float32 / 255 |
 | Train / val / test / calibration | 60,000 / 5,000 / 5,000 / 2,048 | 17,999 / 2,000 / 2,000 / 3,000 |
 | QUTCC implementation | Shared | Identical class |
-| Im2im checkpoint names | `base.*` | `net.*`; same class and adaptive-size forward |
+| Im2im checkpoint names | New: `backbone.*`; legacy: `base.*` | New: `backbone.*`; legacy: `net.*` |
 | Main clean training | 50 epochs | 50 epochs |
 | Corruption adaptation | Not included | 30 clean epochs + 30 adaptation epochs |
 
@@ -49,10 +49,14 @@ control. Earlier empirical-matching and raw Im2im scale-grid reports remain
 historical and must not be relabelled as RCPS results.
 
 Im2im and QUTCC each have one implementation for both datasets, but trained
-weights and dataset identities differ. Im2im's checkpoint-prefix option only
-preserves original state names; it does not change the architecture or objective.
+weights and dataset identities differ. Im2im now has one `backbone.*` namespace;
+the checkpoint loader translates old `base.*`/`net.*` keys before strict loading.
 Load the matching dataset checkpoint strictly. Source consolidation does not
 make trained weights interchangeable or call for retraining.
+Direct three-head construction preserves loaded predictions, but removes the old
+discarded RGB head's random draws. Fresh Im2im head initialization therefore
+differs from earlier constructors even with the same seed; use the historical
+source snapshot to reproduce an old initialization exactly.
 
 ## Paper-to-code review
 

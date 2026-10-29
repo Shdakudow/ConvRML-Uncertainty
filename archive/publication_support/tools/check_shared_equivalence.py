@@ -2,6 +2,9 @@
 
 Capture before editing, then compare afterward. Random synthetic inputs only;
 no dataset, GPU allocation, checkpoint write, or training job is required.
+Fingerprints describe a particular source version. Direct Im2im head construction
+and canonical names intentionally differ from older fresh-initialization records;
+legacy weight migration is checked separately with load_model_weights.
 """
 
 import argparse
@@ -41,7 +44,7 @@ def case(name):
     elif name == "raw_im2im":
         from models.im2im import Im2im
 
-        model = Im2im(checkpoint_prefix="net")
+        model = Im2im()
     elif name == "im2im":
         from models.im2im import Im2im
 

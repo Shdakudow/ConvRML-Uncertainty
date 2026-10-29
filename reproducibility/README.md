@@ -65,6 +65,9 @@ Old raw Im2im used a finite-N scale grid; new evaluations use RCPS-HB, as in par
 A failed calibration is a recorded gap, not a zero metric.
 
 The portable trainer uses an explicit new checkpoint schema. Saved historical
-model dictionaries load strictly into the unchanged publication models; full
+model dictionaries load strictly after legacy Im2im names are translated; full
 historical optimizer/RNG resumes retain their original archived engine and source
 identity. The release does not rewrite existing trained checkpoints or reports.
+Current Im2im checkpoints use `backbone.*` for every dataset. Direct head
+construction changes fresh Im2im head initialization; loaded predictions are
+preserved. Earlier equivalence records describe their dated source snapshots.

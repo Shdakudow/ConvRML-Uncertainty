@@ -229,5 +229,32 @@
     "mc_stochastic_samples_in_shape_check": 2,
     "ensemble_members_in_shape_check": 1,
     "scope": "Synthetic CPU checks of real model geometry; not trained raw MC-dropout/ensemble benchmarks. No changes to deployed training snapshots."
+  },
+  "im2im_namespace_standardization": {
+    "date": "2026-10-29",
+    "active_tests_passed": 39,
+    "canonical_namespace": "backbone.*",
+    "legacy_names_translated_in_memory": [
+      "base.*",
+      "net.*"
+    ],
+    "full_legacy_weight_checks": [
+      "weights",
+      "predictions",
+      "actual loss",
+      "input gradients",
+      "parameter gradients",
+      "270x480 output"
+    ],
+    "encoder_decoder_initial_weights_unchanged": true,
+    "fresh_im2im_head_initialization": "Intentionally changes after removing discarded RGB-head initialization; old checkpoints retain their values and predictions.",
+    "other_methods_initialization_predictions_gradients_rng_unchanged": [
+      "qutcc",
+      "ensemble",
+      "mc_dropout"
+    ],
+    "original_checkpoint_files_modified": false,
+    "deployed_training_source_modified": false,
+    "limitations": "Exact loaded-weight comparison on synthetic CPU images in the same software environment; not a cross-GPU equality guarantee. Earlier record cases describe historical source snapshots."
   }
 }

@@ -127,4 +127,6 @@ post-release archive move and unused-code removal checks.
 Original run engines, cluster operations and historical source records remain
 in [archive/](archive/). Extended guides, plotting/provenance tools and inactive
 GitHub Actions configuration are in [publication support](archive/publication_support/).
-Existing trained weights retain their parameter names.
+Existing checkpoint files remain unchanged. The loader translates legacy Im2im
+names to the common `backbone.*` namespace; new models need no dataset-specific
+naming option. See [checkpoint compatibility](models/README.md#im2im-checkpoint-names).

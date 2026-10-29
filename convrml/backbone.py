@@ -31,10 +31,17 @@ class Refine(nn.Module):
 
 
 class ConvNeXtFPN(nn.Module):
-    """Common encoder/decoder; method-specific heads and losses live in models/."""
+    """Common encoder/decoder with one or more RGB residual output heads.
 
-    def __init__(self):
+    Output shape is (N,3*output_heads,H,W). Im2im requests three RGB heads;
+    the other methods use one. Losses and uncertainty logic live in models/.
+    """
+
+    def __init__(self, *, output_heads=1):
         super().__init__()
+        if not isinstance(output_heads, int) or output_heads < 1:
+            raise ValueError("output_heads must be a positive integer")
+        self.output_heads = output_heads
         self.encoder = timm.create_model(
             "convnextv2_base.fcmae_ft_in22k_in1k", pretrained=False, features_only=True
         )
@@ -50,7 +57,7 @@ class ConvNeXtFPN(nn.Module):
         self.up2 = nn.Sequential(
             nn.Upsample(scale_factor=2, mode="bilinear", align_corners=False), Refine()
         )
-        self.head = nn.Conv2d(256, 3, 3, padding=1)
+        self.head = nn.Conv2d(256, 3 * output_heads, 3, padding=1)
         # Normalize only the encoder input. The residual addition still uses the
         # original [0,1] measurement; these constants are not output normalization.
         self.register_buffer(
@@ -84,11 +91,15 @@ class ConvNeXtFPN(nn.Module):
         return self.up1(d)
 
     def reconstruct(self, x, features):
-        """Upsample half-size features, predict an RGB residual, and add x."""
-        return x + self.head(self.up2(features))
+        """Add each predicted RGB correction to x; pack heads along channels."""
+        residuals = self.head(self.up2(features))
+        if self.output_heads == 1:
+            return x + residuals
+        residuals = residuals.reshape(len(x), self.output_heads, 3, *x.shape[-2:])
+        return (residuals + x[:, None]).flatten(1, 2)
 
     def forward(self, x):
-        """Accept RGB (N,3,H,W) and return an unbounded image of equal shape."""
+        """Map RGB (N,3,H,W) to unbounded (N,3*output_heads,H,W), with size retained."""
         height, width = x.shape[-2:]
         if height % 32 or width % 32:
             x = F.pad(x, (0, (-width) % 32, 0, (-height) % 32), mode="replicate")

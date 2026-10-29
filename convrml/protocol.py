@@ -113,14 +113,14 @@ def profile(experiment, dataset, method, member=None):
 
 
 def make_model(run):
-    """Keep original parameter names and distinct ensemble initialization seeds."""
+    """Construct dataset-independent model classes with recorded initialization seeds."""
     torch.manual_seed(run["seeds"]["initialization"])
     from models import Im2im, QUTCC, MCDropout, EnsembleMember
 
     if run["method"] == "qutcc":
         return QUTCC()
     if run["method"] == "im2im":
-        return Im2im(checkpoint_prefix="net" if run["experiment"] == 3 else "base")
+        return Im2im()
     if run["method"] == "mc_dropout":
         return MCDropout(run["dropout"])
     if run["method"] == "ensemble":

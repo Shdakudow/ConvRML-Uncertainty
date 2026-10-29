@@ -4,13 +4,12 @@ Inputs: floating RGB measurements (N,3,H,W) in [0,1]; target has the same shape.
 Outputs: (N, 3 heads, 3 RGB channels, H, W), ordered lower / center / upper.
 Predictions are unbounded normalized intensities; endpoint ordering is not enforced.
 Difference from QUTCC: three fixed heads; no quantile input or FiLM modulation.
-The checkpoint_prefix option preserves PLD ``base.*`` or DLMD ``net.*`` state
-names. It changes serialization names only, not the architecture or objective.
+All datasets use the same ``backbone.*`` parameter names. The checkpoint loader
+translates historical ``base.*`` and ``net.*`` names before strict weight loading.
 """
 
 import torch
 from torch import nn
-from torch.nn import functional as F
 
 from convrml.backbone import ConvNeXtFPN
 
@@ -27,38 +26,13 @@ def pinball(prediction, target, q):
 
 
 class Im2im(nn.Module):
-    def __init__(self, *, checkpoint_prefix="base"):
+    def __init__(self):
         super().__init__()
-        if checkpoint_prefix not in ("base", "net"):
-            raise ValueError("Checkpoint prefix must be base or net")
-        self.checkpoint_prefix = checkpoint_prefix
-        backbone = ConvNeXtFPN()
-        old = backbone.head
-        self.channels = old.out_channels
-        backbone.head = nn.Conv2d(
-            old.in_channels,
-            3 * self.channels,
-            old.kernel_size,
-            stride=old.stride,
-            padding=old.padding,
-            bias=old.bias is not None,
-        )
-        backbone.requires_grad_(True)
-        self.add_module(checkpoint_prefix, backbone)
-
-    @property
-    def backbone(self):
-        return getattr(self, self.checkpoint_prefix)
+        self.backbone = ConvNeXtFPN(output_heads=3)
 
     def forward(self, y):
-        """Predict all three residual images in one pass and add the measurement."""
-        h, w = y.shape[-2:]
-        padded = F.pad(y, (0, (-w) % 32, 0, (-h) % 32), mode="replicate")
-        features = self.backbone.up2(self.backbone.features(padded))
-        residuals = self.backbone.head(features).reshape(
-            len(y), 3, self.channels, *padded.shape[-2:]
-        )
-        return (residuals + padded[:, None])[..., :h, :w]
+        """Return lower/center/upper RGB heads as (N,3,3,H,W) in one pass."""
+        return self.backbone(y).reshape(len(y), 3, 3, *y.shape[-2:])
 
     def center(self, y):
         return self(y)[:, 1]

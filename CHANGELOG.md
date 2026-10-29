@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Standardize Im2im names to `backbone.*` and translate legacy `base.*`/`net.*`
+  weights in the checkpoint loader, independently of dataset selection. Construct
+  three RGB heads directly rather than creating and replacing a default head.
+  Loaded predictions are preserved; fresh Im2im head initialization changes because
+  discarded random draws are removed. Historical training snapshots are untouched.
 - Document image dimensions as dataset settings, and add automatic padding/cropping
   for MC dropout and Gaussian ensemble members. All four default models now accept
   rectangular/non-stride-aligned RGB images. Existing 256x256 behavior, state keys

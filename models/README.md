@@ -62,8 +62,31 @@ their saved shapes, splits and available methods. Variable-size model support
 does not create new trained comparisons or make weights transferable across
 acquisition systems. Existing ensemble/MC-dropout benchmark runs remain PLD-only.
 
-For original checkpoint compatibility, Im2im accepts `checkpoint_prefix="base"`
-(PLD) or `"net"` (DLMD). This preserves historical state-dictionary names only;
-both options use the same class, layers, forward pass and loss. The common
-checkpoint loader chooses it automatically. No dataset-specific model file is
-needed. Trained weights still belong to their own acquisition/dataset.
+## Im2im checkpoint names
+
+`Im2im()` always uses `backbone.*` weight names, for every dataset. It requests
+three RGB output heads directly with `ConvNeXtFPN(output_heads=3)`; no temporary
+three-channel head is created and replaced.
+
+The common checkpoint loader automatically translates old `base.*` and `net.*`
+names to `backbone.*` in memory before strict loading. It does not overwrite the
+checkpoint file or alter weight values. For direct weight loading:
+
+```python
+from models import Im2im
+from convrml.checkpoints import read_checkpoint, load_model_weights
+
+model = Im2im()
+checkpoint, _ = read_checkpoint("weights.pt")
+load_model_weights(model, checkpoint["model"])
+```
+
+Translation depends on the saved key format, not the dataset or image dimensions.
+Formal evaluation still checks checkpoint/data identity. Using an older model as
+initialization for a new dataset is a separate transfer experiment; renaming
+does not make its old calibration valid for that dataset.
+
+Loaded checkpoints retain their predictions. Fresh Im2im initializations remain
+seeded, but their head values differ from the old constructor: removing the
+discarded layer removes its random draws. Encoder/decoder initialization and the
+other methods are unchanged. Historical runs retain their original source snapshots.
