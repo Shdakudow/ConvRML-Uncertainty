@@ -9,8 +9,8 @@ resume and calibrated evaluation.
 | --- | --- |
 | [experiment_settings.json](../configs/experiment_settings.json) | Exact model/profile settings, seeds, split sizes and ordered-ID hashes |
 | [splits/](splits/) | Existing train/validation/test/calibration IDs in their saved order |
-| [checkpoints.json](checkpoints.json) | 292 frozen milestone artifacts with release URLs, size and SHA-256 |
-| [checkpoint_release_receipt.json](checkpoint_release_receipt.json) | Verified upload receipt for the 52 QUTCC/raw artifacts missing from previous releases |
+| [checkpoints.json](checkpoints.json) | 280 frozen milestone artifacts with release URLs, size and SHA-256 |
+| [checkpoint_release_receipt.json](checkpoint_release_receipt.json) | Verified upload receipt for the 40 retained QUTCC/raw artifacts |
 | [environment-tested.json](environment-tested.json) | Software used for release verification, with scope/device |
 | [verification.json](verification.json) | Automated checks and their practical scope |
 | [cleanup_verification.json](cleanup_verification.json) | Post-v0.1.0 archive/unused-code cleanup checks; original release evidence is retained |
@@ -55,8 +55,11 @@ settings file and every portable checkpoint.
 
 ## Checkpoint interpretation
 
-Clean checkpoints are epochs 5,10,…,50. Corrupted checkpoints are adaptation
-5,10,…,30 following thirty clean epochs; do not label them as scratch training.
+Published checkpoints are epochs 5,10,…,50. The 12 corrupted raw adaptation
+checkpoints were withdrawn and deleted on 2026-10-30 at the owner's request;
+they are excluded from the download index. Clean checkpoints are retained.
+[Deletion verification](checkpoint_withdrawal_20261030.json) records the removed
+assets and confirms the other assets in that release were unchanged.
 Every model/camera/checkpoint is calibrated independently. The default `paper`
 evaluation uses RCPS-HB for all baselines and Algorithm 1 for QUTCC. `native`
 is an uncalibrated control. Earlier empirical-matching reports remain historical;

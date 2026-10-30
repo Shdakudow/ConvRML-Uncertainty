@@ -19,7 +19,8 @@ ROOT = Path(__file__).resolve().parents[1]
 class ReleaseMetadata(unittest.TestCase):
     def test_all_checkpoint_assets_are_verified_and_uniquely_identified(self):
         artifacts = json.loads(download.INDEX_PATH.read_text())["artifacts"]
-        self.assertEqual(len(artifacts), 292)
+        self.assertEqual(len(artifacts), 280)
+        self.assertFalse(any(v["dataset"] == "raw_corrupted" for v in artifacts))
         keys = [(v["dataset"], v["method"], v["member"], v["epoch"]) for v in artifacts]
         self.assertEqual(len(keys), len(set(keys)))
         for row in artifacts:
