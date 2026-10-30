@@ -6,11 +6,11 @@ import torch.nn.functional as F
 from ._validation import check_image
 
 
-def reduce_sensor_resolution(y: torch.Tensor, factor: int = 4) -> torch.Tensor:
+def reduce_sensor_resolution(y: torch.Tensor, factor: int = 8) -> torch.Tensor:
     """Average factor-square bins, restore the padded size, and crop to the input.
 
     Replicate bottom/right edges to a multiple of factor before pooling. For a
-    270x480 input and factor=4, pool 272x480 to 68x120, interpolate to 272x480,
+    270x480 input and factor=8, pool 272x480 to 34x60, interpolate to 272x480,
     then crop to 270x480. No original rows are discarded or geometrically stretched
     to compensate for a truncated pooling grid. Outputs remain normalized averages.
     """

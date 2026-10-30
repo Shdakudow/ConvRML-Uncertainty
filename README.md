@@ -98,7 +98,7 @@ links the original datasets and specifies the exact input formats and split IDs.
 
 [Raw-input modifications](input_modifications/README.md) provides separate modules
 for Gaussian, Poisson, combined noise, exposure, dead pixels, fixed-pattern noise,
-Gaussian blur, factor-four resolution loss and JPEG compression. The preparation
+Gaussian blur, factor-eight resolution loss and JPEG compression. The preparation
 command creates separate MIRFLICKR measurement datasets while preserving the
 original targets and split identities. It does not submit model training.
 

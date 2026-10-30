@@ -10,7 +10,7 @@ from ._validation import check_image
 
 
 def jpeg_compression(
-    y: torch.Tensor, quality: int = 85, subsampling: int = 0
+    y: torch.Tensor, quality: int = 50, subsampling: int = 0
 ) -> torch.Tensor:
     """Round-trip through 8-bit JPEG; default 4:4:4 avoids chroma downsampling.
 

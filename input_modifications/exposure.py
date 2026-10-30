@@ -5,10 +5,11 @@ import torch
 from ._validation import check_image, check_nonnegative
 
 
-def change_exposure(y: torch.Tensor, gain: float = 0.75) -> torch.Tensor:
+def change_exposure(y: torch.Tensor, gain: float = 0.50) -> torch.Tensor:
     """Return clip(gain*y) without changing the paired scene target.
 
-    This tests brightness/gain mismatch. Scaling an already recorded measurement
+    One global gain applies to all pixels and channels in an image. This tests
+    brightness/gain mismatch. Scaling an already recorded measurement
     also scales its existing noise; it does not simulate a fresh acquisition at
     a different exposure time with newly sampled photon and read noise.
     """

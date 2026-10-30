@@ -117,13 +117,27 @@ class SensorModifications(unittest.TestCase):
     def test_factor_four_keeps_the_last_two_rows_of_270_pixel_measurements(self):
         y = torch.zeros(1, 3, 270, 480)
         y[..., -2:, :] = 1
-        z = reduce_sensor_resolution(y)
+        z = reduce_sensor_resolution(y, factor=4)
         self.assertEqual(z.shape, y.shape)
         self.assertGreater(float(z[..., -1, :].mean()), 0.5)
         torch.testing.assert_close(
             reduce_sensor_resolution(torch.ones_like(y)), torch.ones_like(y)
         )
         self.assertIsNot(reduce_sensor_resolution(y, 1), y)
+
+    def test_factor_eight_default_retains_edge_pixels_and_shape(self):
+        y = torch.zeros(1, 3, 270, 480)
+        y[..., -2:, :] = 1
+        result = reduce_sensor_resolution(y)
+        self.assertEqual(result.shape, y.shape)
+        self.assertGreater(float(result[..., -1, :].mean()), 0.4)
+        torch.testing.assert_close(result, reduce_sensor_resolution(y, factor=8))
+
+    def test_current_presets_record_stronger_global_exposure_resolution_and_jpeg(self):
+        self.assertEqual(PRESETS["exposure_050"], {"gain": 0.5})
+        self.assertEqual(PRESETS["exposure_150"], {"gain": 1.5})
+        self.assertEqual(PRESETS["resolution"], {"factor": 8})
+        self.assertEqual(PRESETS["jpeg"], {"quality": 50, "subsampling": 0})
 
     def test_jpeg_supports_gray_and_rgb_and_preserves_shape_dtype_and_range(self):
         for channels in (1, 3):
