@@ -1,0 +1,329 @@
+{
+  "protocol": {
+    "protocol": "mirflickr_raw_input_modifications_v1",
+    "source_manifest": "/home/jy2228/ConvRML/experiments/dlmd_raw_adaptive_size_20261016/data/split.json",
+    "source_sha256": "155670232c27b3201582f5a1b67fb4196e8123e40f388d9c951df4418f7144fb",
+    "code_sha256": "85e01838a0565a3747e3bb35dc93b5b2d74c04d8cf3b22bfa59c57fcf7c3d942",
+    "seed": 20261030,
+    "shape": [
+      3,
+      270,
+      480
+    ],
+    "counts": {
+      "train": 17999,
+      "val": 2000,
+      "calibration": 3000,
+      "test": 2000
+    },
+    "variants": {
+      "gaussian": {
+        "sigma": 0.01
+      },
+      "poisson": {
+        "peak_photons": 1330.0
+      },
+      "poisson_gaussian": {
+        "gaussian_sigma": 0.01,
+        "peak_photons": 1330.0
+      },
+      "exposure_075": {
+        "gain": 0.75
+      },
+      "exposure_125": {
+        "gain": 1.25
+      },
+      "dead_pixels": {
+        "drop_rate": 0.1
+      },
+      "fixed_pattern": {
+        "gain_std": 0.01,
+        "offset_std": 0.003
+      },
+      "gaussian_blur": {
+        "sigma": 0.5,
+        "radius": 2
+      },
+      "resolution": {
+        "factor": 4
+      },
+      "jpeg": {
+        "quality": 85,
+        "subsampling": 0
+      }
+    },
+    "smoke": false,
+    "software": {
+      "torch": "2.5.1+cu118",
+      "numpy": "2.0.2",
+      "pillow": "12.3.0"
+    },
+    "input_format": "prepared uint8 RGB / 255; not native sensor-bit-depth arrays",
+    "output_format": "clipped, rounded uint8 RGB PNG; JPEG variant decoded once before PNG storage",
+    "target_policy": "Original targets referenced read-only; no resampling, new targets, or split changes",
+    "sensor_policy": "One dead-pixel mask and one gain/offset pattern shared across all splits/frames",
+    "noise_policy": "Independent named image streams; Poisson SD varies with signal; parameters are pre-clipping/quantization",
+    "training_submitted": false
+  },
+  "source_commit": "13b21961823fcc742abeafc975cde91de1131630",
+  "preparation_job_id": "847772",
+  "verification_job_id": "847847",
+  "data_root": "/home/jy2228/ConvRML/experiments/raw_input_modifications_20261030/data",
+  "completed_at": "2026-10-30T22:03:13.318781+00:00",
+  "generated_bytes": 37386895980,
+  "ready": {
+    "passed": true,
+    "smoke": false,
+    "protocol": "mirflickr_raw_input_modifications_v1",
+    "completed_at": "2026-10-30T22:03:13.318781+00:00",
+    "counts": {
+      "train": 17999,
+      "val": 2000,
+      "calibration": 3000,
+      "test": 2000
+    },
+    "source_pairs": 24999,
+    "generated_pngs": 249990,
+    "verification": "All source file/pixel hashes and every generated PNG readback verified; split IDs/order preserved",
+    "source_sha256": "155670232c27b3201582f5a1b67fb4196e8123e40f388d9c951df4418f7144fb",
+    "code_sha256": "85e01838a0565a3747e3bb35dc93b5b2d74c04d8cf3b22bfa59c57fcf7c3d942",
+    "sensor": {
+      "dead_mask": {
+        "path": "/home/jy2228/ConvRML/experiments/raw_input_modifications_20261030/data/sensor/dead_mask.npy",
+        "sha256": "c05a55d8d524426850ae6d4344c46c5c0b6381e1dc71962492a70148f1dc2347"
+      },
+      "gain": {
+        "path": "/home/jy2228/ConvRML/experiments/raw_input_modifications_20261030/data/sensor/gain.npy",
+        "sha256": "83c8187c370edc4388179a4a9a2ec34b5e28109af48d2a9f64467cd61620858c"
+      },
+      "offset": {
+        "path": "/home/jy2228/ConvRML/experiments/raw_input_modifications_20261030/data/sensor/offset.npy",
+        "sha256": "2ee5809d6ce1c583924ee7a9257129a2d8525b4df83327cb406c736c85d6a63a"
+      },
+      "dead_pixel_count": 12960,
+      "spatial_pixels": 129600
+    },
+    "datasets": {
+      "clean": {
+        "manifest": "/home/jy2228/ConvRML/experiments/raw_input_modifications_20261030/data/clean/manifest.json",
+        "manifest_sha256": "e1273a0a1e118d9da26a70fb4b650e264e5c28c594f1ce8ccb52d63b96b32fd5",
+        "count": 24999
+      },
+      "gaussian": {
+        "manifest": "/home/jy2228/ConvRML/experiments/raw_input_modifications_20261030/data/gaussian/manifest.json",
+        "manifest_sha256": "fc2c11f8224326533ae2fe1a8618a570b10b0836e40f23507a4760b65982b126",
+        "count": 24999,
+        "mean_input_change": {
+          "mae": 0.007842627615376541,
+          "mse": 9.92986877184294e-05,
+          "changed_fraction": 0.8430258683598373,
+          "zero_fraction": 0.01849244607644388,
+          "saturated_fraction": 0.0
+        },
+        "input_rmse": 0.009964872689524408
+      },
+      "poisson": {
+        "manifest": "/home/jy2228/ConvRML/experiments/raw_input_modifications_20261030/data/poisson/manifest.json",
+        "manifest_sha256": "5c21c010adb6a974b5d2a7af2e6f4d955ffdc2105aa97a3d23fdbfc74c4b97dc",
+        "count": 24999,
+        "mean_input_change": {
+          "mae": 0.007105985120143933,
+          "mse": 9.64964988054037e-05,
+          "changed_fraction": 0.7855063173720365,
+          "zero_fraction": 0.005141316352242567,
+          "saturated_fraction": 0.0
+        },
+        "input_rmse": 0.009823263144464965
+      },
+      "poisson_gaussian": {
+        "manifest": "/home/jy2228/ConvRML/experiments/raw_input_modifications_20261030/data/poisson_gaussian/manifest.json",
+        "manifest_sha256": "c35ff0d1b13642f7728673446fa3a2451fed8dfdb28f8914dd65e7efaf0e8abc",
+        "count": 24999,
+        "mean_input_change": {
+          "mae": 0.010837220236166824,
+          "mse": 0.00019426481304058292,
+          "changed_fraction": 0.8815844195496215,
+          "zero_fraction": 0.019550183241897577,
+          "saturated_fraction": 0.0
+        },
+        "input_rmse": 0.013937891269506408
+      },
+      "exposure_075": {
+        "manifest": "/home/jy2228/ConvRML/experiments/raw_input_modifications_20261030/data/exposure_075/manifest.json",
+        "manifest_sha256": "84f350ad0a64fd2ca9c316592c24f004ee6238572932e5542993654098928bb1",
+        "count": 24999,
+        "mean_input_change": {
+          "mae": 0.031570648320163416,
+          "mse": 0.0016164450725183552,
+          "changed_fraction": 0.9654406807959561,
+          "zero_fraction": 0.003606533047330124,
+          "saturated_fraction": 0.0
+        },
+        "input_rmse": 0.04020503789972539
+      },
+      "exposure_125": {
+        "manifest": "/home/jy2228/ConvRML/experiments/raw_input_modifications_20261030/data/exposure_125/manifest.json",
+        "manifest_sha256": "aa96823b799596d2f160210bdf0b8cb473b16ba806cef991af197f2c039b910b",
+        "count": 24999,
+        "mean_input_change": {
+          "mae": 0.031647867919477525,
+          "mse": 0.0016245132273429972,
+          "changed_fraction": 0.9654406807959561,
+          "zero_fraction": 0.003606533047330124,
+          "saturated_fraction": 7.4178893081649185e-06
+        },
+        "input_rmse": 0.04030525061754358
+      },
+      "dead_pixels": {
+        "manifest": "/home/jy2228/ConvRML/experiments/raw_input_modifications_20261030/data/dead_pixels/manifest.json",
+        "manifest_sha256": "aed13dcee6bebc88791bd5ff79744b7bddd03ffcef6816a7757a74ccc4278970",
+        "count": 24999,
+        "mean_input_change": {
+          "mae": 0.012694393902198434,
+          "mse": 0.0026012826989205407,
+          "changed_fraction": 0.09964528056430899,
+          "zero_fraction": 0.10325181361163911,
+          "saturated_fraction": 0.0
+        },
+        "input_rmse": 0.051002771482739455
+      },
+      "fixed_pattern": {
+        "manifest": "/home/jy2228/ConvRML/experiments/raw_input_modifications_20261030/data/fixed_pattern/manifest.json",
+        "manifest_sha256": "f9841fa4c4519a0a1fb84c42c9ca59000afd627b2ff55bc67cc65042bb5689ac",
+        "count": 24999,
+        "mean_input_change": {
+          "mae": 0.0025201979010331236,
+          "mse": 1.286404149099831e-05,
+          "changed_fraction": 0.5533516508355808,
+          "zero_fraction": 0.00668034252234287,
+          "saturated_fraction": 0.0
+        },
+        "input_rmse": 0.003586647667529989
+      },
+      "gaussian_blur": {
+        "manifest": "/home/jy2228/ConvRML/experiments/raw_input_modifications_20261030/data/gaussian_blur/manifest.json",
+        "manifest_sha256": "84e4f2b412e2f62b3a8852f7e12636b6fa720bf5da17200262358275b368d367",
+        "count": 24999,
+        "mean_input_change": {
+          "mae": 0.0001563911346093156,
+          "mse": 6.140252049517272e-07,
+          "changed_fraction": 0.039856119450539344,
+          "zero_fraction": 0.003606289004646605,
+          "saturated_fraction": 0.0
+        },
+        "input_rmse": 0.0007835976039726814
+      },
+      "resolution": {
+        "manifest": "/home/jy2228/ConvRML/experiments/raw_input_modifications_20261030/data/resolution/manifest.json",
+        "manifest_sha256": "8bb72b633be1158a0397bb4cd19890e1450d82ea38e2b39c22826247cf67bcfa",
+        "count": 24999,
+        "mean_input_change": {
+          "mae": 0.0015609708492269328,
+          "mse": 6.917938085499966e-06,
+          "changed_fraction": 0.3735598205821237,
+          "zero_fraction": 0.0033354386644601584,
+          "saturated_fraction": 0.0
+        },
+        "input_rmse": 0.0026301973472536173
+      },
+      "jpeg": {
+        "manifest": "/home/jy2228/ConvRML/experiments/raw_input_modifications_20261030/data/jpeg/manifest.json",
+        "manifest_sha256": "571fde79fd6ae21c50a2b32055863ab5c0d198b9b85db338313e111322700937",
+        "count": 24999,
+        "mean_input_change": {
+          "mae": 0.0025319777468739355,
+          "mse": 1.3236665303889047e-05,
+          "changed_fraction": 0.5472216147905176,
+          "zero_fraction": 0.004974728104350512,
+          "saturated_fraction": 0.0
+        },
+        "input_rmse": 0.003638222822187922
+      }
+    },
+    "training_submitted": false,
+    "elapsed_seconds": 625.7187940439908
+  },
+  "independent_verification": {
+    "passed": true,
+    "source_pairs": 24999,
+    "generated_pngs": 249990,
+    "generated_bytes": 37386895980,
+    "code_sha256": "85e01838a0565a3747e3bb35dc93b5b2d74c04d8cf3b22bfa59c57fcf7c3d942",
+    "source_sha256": "155670232c27b3201582f5a1b67fb4196e8123e40f388d9c951df4418f7144fb",
+    "verification": "All manifest IDs/order and all target hashes match the original; exact PNG file counts; 12 independent loader/reproduction checks per variant",
+    "datasets": [
+      {
+        "modification": "clean",
+        "generated_pngs": 0,
+        "bytes": 0,
+        "sampled_pairs": 12
+      },
+      {
+        "modification": "gaussian",
+        "generated_pngs": 24999,
+        "bytes": 5663327433,
+        "sampled_pairs": 12
+      },
+      {
+        "modification": "poisson",
+        "generated_pngs": 24999,
+        "bytes": 5483559100,
+        "sampled_pairs": 12
+      },
+      {
+        "modification": "poisson_gaussian",
+        "generated_pngs": 24999,
+        "bytes": 6120295447,
+        "sampled_pairs": 12
+      },
+      {
+        "modification": "exposure_075",
+        "generated_pngs": 24999,
+        "bytes": 2850204844,
+        "sampled_pairs": 12
+      },
+      {
+        "modification": "exposure_125",
+        "generated_pngs": 24999,
+        "bytes": 3532350575,
+        "sampled_pairs": 12
+      },
+      {
+        "modification": "dead_pixels",
+        "generated_pngs": 24999,
+        "bytes": 4251916016,
+        "sampled_pairs": 12
+      },
+      {
+        "modification": "fixed_pattern",
+        "generated_pngs": 24999,
+        "bytes": 4213230414,
+        "sampled_pairs": 12
+      },
+      {
+        "modification": "gaussian_blur",
+        "generated_pngs": 24999,
+        "bytes": 2928860382,
+        "sampled_pairs": 12
+      },
+      {
+        "modification": "resolution",
+        "generated_pngs": 24999,
+        "bytes": 1511814180,
+        "sampled_pairs": 12
+      },
+      {
+        "modification": "jpeg",
+        "generated_pngs": 24999,
+        "bytes": 831337589,
+        "sampled_pairs": 12
+      }
+    ],
+    "training_submitted": false
+  },
+  "local_tests": {
+    "passed": 15,
+    "command": "python -m unittest tests.test_input_modifications tests.test_release_metadata -v"
+  },
+  "training_submitted": false
+}

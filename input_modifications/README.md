@@ -117,6 +117,10 @@ it does not train models or recalibrate checkpoints. The historical retired
 `raw_corrupted` dataset fingerprint is **not** the identity of these new datasets.
 Any subsequent training/evaluation needs an explicitly recorded new protocol.
 
+The [completed MIRFLICKR preparation report](../reproducibility/raw_input_modifications_20261030.json)
+records all 249,990 generated measurements, the independent audit, exact settings,
+source/code identities, dataset paths, and measured changes after PNG quantization.
+
 ## Verification
 
 ```bash
