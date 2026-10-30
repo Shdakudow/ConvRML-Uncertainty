@@ -14,6 +14,7 @@ changes the loader and recorded settings, not the model implementation.
 ```text
 models/           im2im.py, qutcc.py, ensemble.py, mc_dropout.py — shared across datasets
 dataset.py        PLD NumPy-cache and DLMD paired-image loaders
+input_modifications/  One file per raw-input modification and dataset preparation
 configs/          Recorded settings, seeds, split sizes and dataset descriptions
 train.py          Training loop, validation and epoch checkpoints
 infer.py          Calibration, test predictions, metrics and export
@@ -94,6 +95,12 @@ size and SHA-256. Downloads verify both before accepting a file. GitHub CLI
 access is needed for private release assets; public assets can download without it.
 Prepared image data are external; [data availability](reproducibility/DATA.md)
 links the original datasets and specifies the exact input formats and split IDs.
+
+[Raw-input modifications](input_modifications/README.md) provides separate modules
+for Gaussian, Poisson, combined noise, exposure, dead pixels, fixed-pattern noise,
+Gaussian blur, factor-four resolution loss and JPEG compression. The preparation
+command creates separate MIRFLICKR measurement datasets while preserving the
+original targets and split identities. It does not submit model training.
 
 `python -m convrml.evaluate` loads frozen weights, fits on the separate calibration
 split and reports held-out SSIM, PSNR, MAE, LPIPS-AlexNet, coverage, width,
