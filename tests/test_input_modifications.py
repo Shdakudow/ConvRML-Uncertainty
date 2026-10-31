@@ -125,18 +125,36 @@ class SensorModifications(unittest.TestCase):
         )
         self.assertIsNot(reduce_sensor_resolution(y, 1), y)
 
-    def test_factor_eight_default_retains_edge_pixels_and_shape(self):
+    def test_factor_eight_retains_edge_pixels_and_shape(self):
         y = torch.zeros(1, 3, 270, 480)
         y[..., -2:, :] = 1
-        result = reduce_sensor_resolution(y)
+        result = reduce_sensor_resolution(y, factor=8)
         self.assertEqual(result.shape, y.shape)
         self.assertGreater(float(result[..., -1, :].mean()), 0.4)
         torch.testing.assert_close(result, reduce_sensor_resolution(y, factor=8))
 
+    def test_factor_64_default_uses_five_by_eight_bins_and_retains_input_shape(self):
+        from unittest.mock import patch
+        import torch.nn.functional as functional
+
+        y = torch.zeros(1, 3, 270, 480)
+        y[..., -2:, :] = 1
+        original_interpolate = functional.interpolate
+        with patch(
+            "input_modifications.resolution.F.interpolate",
+            wraps=original_interpolate,
+        ) as interpolate:
+            result = reduce_sensor_resolution(y)
+        self.assertEqual(tuple(interpolate.call_args.args[0].shape), (1, 3, 5, 8))
+        self.assertEqual(tuple(interpolate.call_args.kwargs["size"]), (320, 512))
+        self.assertEqual(result.shape, y.shape)
+        self.assertGreater(float(result[..., -1, :].mean()), 0)
+        torch.testing.assert_close(result, reduce_sensor_resolution(y, factor=64))
+
     def test_current_presets_record_stronger_global_exposure_resolution_and_jpeg(self):
         self.assertEqual(PRESETS["exposure_050"], {"gain": 0.5})
         self.assertEqual(PRESETS["exposure_150"], {"gain": 1.5})
-        self.assertEqual(PRESETS["resolution"], {"factor": 8})
+        self.assertEqual(PRESETS["resolution"], {"factor": 64})
         self.assertEqual(PRESETS["jpeg"], {"quality": 50, "subsampling": 0})
 
     def test_jpeg_supports_gray_and_rgb_and_preserves_shape_dtype_and_range(self):
@@ -184,7 +202,7 @@ class PairedDatasetPreparation(unittest.TestCase):
                 for index in range(2):
                     row = {"id": f"{role}_{index}", "original_split": role}
                     for field in ("measurement", "target"):
-                        pixels = rng.integers(0, 256, (10, 13, 3), dtype=np.uint8)
+                        pixels = rng.integers(0, 256, (96, 80, 3), dtype=np.uint8)
                         path = source / f"{role}_{index}_{field}.png"
                         Image.fromarray(pixels).save(path)
                         file_hash = hashlib.sha256(path.read_bytes()).hexdigest()
@@ -223,7 +241,7 @@ class PairedDatasetPreparation(unittest.TestCase):
                 from dataset import ImagePairs
 
                 pair = ImagePairs(entry["manifest"], "test")[0]
-                self.assertEqual(tuple(pair.shape), (2, 3, 10, 13))
+                self.assertEqual(tuple(pair.shape), (2, 3, 96, 80))
             second = prepare(manifest, output, workers=2)
             for name in first["datasets"]:
                 self.assertEqual(

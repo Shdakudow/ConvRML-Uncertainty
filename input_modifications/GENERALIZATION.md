@@ -32,7 +32,7 @@ strong settings to reduce loss of clean-input performance.
 
 The current endpoint settings are Gaussian SD 0.01, effective Poisson count scale
 1330, global exposure gains 0.50/1.50, 10% dead locations, fixed-pattern gain SD
-0.01/offset SD 0.003, blur sigma 0.5, resolution factor 8, and JPEG quality 50 with
+0.01/offset SD 0.003, blur sigma 0.5, resolution factor 64, and JPEG quality 50 with
 4:4:4 subsampling. These endpoints are experimental controls, not sufficient
 evidence that every intermediate strength or combination will work well.
 

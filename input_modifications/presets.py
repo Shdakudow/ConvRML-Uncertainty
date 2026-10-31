@@ -19,7 +19,7 @@ PRESETS = {
     "dead_pixels": {"drop_rate": 0.10},
     "fixed_pattern": {"gain_std": 0.01, "offset_std": 0.003},
     "gaussian_blur": {"sigma": 0.5, "radius": 2},
-    "resolution": {"factor": 8},
+    "resolution": {"factor": 64},
     "jpeg": {"quality": 50, "subsampling": 0},
 }
 

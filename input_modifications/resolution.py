@@ -6,13 +6,15 @@ import torch.nn.functional as F
 from ._validation import check_image
 
 
-def reduce_sensor_resolution(y: torch.Tensor, factor: int = 8) -> torch.Tensor:
+def reduce_sensor_resolution(y: torch.Tensor, factor: int = 64) -> torch.Tensor:
     """Average factor-square bins, restore the padded size, and crop to the input.
 
     Replicate bottom/right edges to a multiple of factor before pooling. For a
-    270x480 input and factor=8, pool 272x480 to 34x60, interpolate to 272x480,
+    270x480 input and factor=64, pool 320x512 to 5x8, interpolate to 320x512,
     then crop to 270x480. No original rows are discarded or geometrically stretched
     to compensate for a truncated pooling grid. Outputs remain normalized averages.
+    Factor is per spatial axis. At factor 64 the replicated bottom/right regions
+    are substantial, so this is an extreme binning-and-resampling stress test.
     """
     check_image(y)
     if isinstance(factor, bool) or not isinstance(factor, int) or factor < 1:

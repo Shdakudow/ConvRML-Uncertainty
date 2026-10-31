@@ -18,7 +18,7 @@ is additional to noise and processing already present in these recordings.
 | [dead_pixels.py](dead_pixels.py) | `10%` of spatial locations | Persistent missing RGB locations; strong failure stress test |
 | [fixed_pattern.py](fixed_pattern.py) | Gain SD `1%`, offset SD `0.003` | Persistent per-channel pixel gain and offset variation |
 | [gaussian_blur.py](gaussian_blur.py) | Sigma `0.5` pixels, `5×5` kernel | Gaussian measurement-plane filtering |
-| [resolution.py](resolution.py) | Averaging factor `8` | Bin, bilinearly restore, then crop to the original dimensions |
+| [resolution.py](resolution.py) | Averaging factor `64` | Bin, bilinearly restore, then crop to the original dimensions |
 | [jpeg.py](jpeg.py) | Quality `50`, subsampling `0` / 4:4:4 | One lossy JPEG round-trip without chroma downsampling |
 
 The count scale `1330` gives about `0.01` **RMS added noise** for a dataset mean
@@ -101,8 +101,10 @@ IDs/order remain identical across variants. Output paths are kept separate from
 all source-image folders. Sensor patterns are shared across **all splits and
 frames**; Gaussian/Poisson draws use separate reproducible per-image streams.
 
-Factor eight needs explicit edge handling: 270×480 is padded on the bottom to
-272×480, pooled to 34×60, interpolated to 272×480, and cropped back to 270×480.
+Factor 64 applies to each spatial axis: 270×480 is padded on the bottom/right to
+320×512, pooled to just 5×8 bins, interpolated to 320×512, then cropped back to
+270×480. The large replicated border influences the edge bins; this is an
+extreme binning-and-resampling stress test.
 The original bottom two rows are included. JPEG is decoded once, then stored as
 PNG to prevent an accidental second lossy encode.
 
@@ -137,7 +139,7 @@ python -m unittest tests.test_input_modifications -v
 ```
 
 Checks cover noise statistics, seeded reproducibility, persistent defects,
-unmodified originals/targets, factor-four/eight edge retention, JPEG formats, separate
+unmodified originals/targets, factor-four/eight/64 edge retention, JPEG formats, separate
 loader-compatible manifests, and identical resumption with a different worker count.
 
 [Generalized-model training design](GENERALIZATION.md) explains joint sampling,
