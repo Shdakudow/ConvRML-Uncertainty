@@ -51,3 +51,7 @@ five-epoch checkpoints, and `COMPLETE.json` after all 30 epochs finish.
 The earlier [fine-tuning launch](../../reproducibility/generalized_inputs_30epochs_launch_20261031.json)
 was cancelled because training must start from scratch. Its outputs must not be
 used to initialize this run. New scratch runs use a separate experiment directory.
+
+The [current scratch launch](../../reproducibility/generalized_inputs_scratch30_launch_20261031.json)
+records the corrected source and job IDs. Passing smoke checks or submitting
+jobs does not mean the 30 epochs have finished.
