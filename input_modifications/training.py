@@ -44,8 +44,11 @@ def _apply(image, condition, generator):
             image, gaussian_sigma=0.01, peak_photons=1330, generator=generator
         )
     if condition == "exposure":
-        brighter = torch.randint(2, (), device=image.device, generator=generator).item()
-        return change_exposure(image, gain=1.50 if brighter else 0.50)
+        exposure_gains = (0.50, 1.50)
+        gain_index = torch.randint(
+            len(exposure_gains), (), device=image.device, generator=generator
+        ).item()
+        return change_exposure(image, gain=exposure_gains[gain_index])
     if condition == "dead_pixels":
         mask = sample_dead_pixel_mask(image, drop_rate=0.10, generator=generator)
         return apply_dead_pixels(image, mask)
@@ -68,36 +71,46 @@ def sample_training_modification(
     *,
     generator: Optional[torch.Generator] = None,
 ) -> Tuple[torch.Tensor, List[str]]:
-    """Return modified measurements and one family label per image.
+    """Choose one input condition per image and return (modified_batch, labels).
 
-    Input: float BCHW measurements in [0,1], C=1 or 3, H/W >= 64.
-    Sample independently per image: 10% clean, 10% for each of nine methods.
-    Exposure's share splits into 5% darker and 5% brighter globally. These are
-    sampling probabilities, not modification strengths. Only mixed Poisson +
-    Gaussian deliberately combines noise processes; other methods are separate.
+    Each condition has a 10% chance: clean or one of nine modifications.
+    Exposure randomly uses global gain 0.50 or 1.50 within its 10% share.
+    Conditions are sampled independently, so batch counts need not be equal.
 
-    Targets are not accepted or changed. No files are written. Tensor results
-    retain floating point precision; JPEG alone includes its codec quantization.
-    The generator must match the measurement device. Reuse it between calls to
-    obtain new draws; recreate it with the same seed to replay the sequence.
+    Measurements must be float BCHW tensors in [0,1], with C=1 or 3 and
+    H/W >= 64. Original measurements are unchanged; targets are not accepted.
+    No images are saved. Only JPEG includes codec quantization.
 
-    Dead masks and fixed patterns are sampled per image as independent simulated
-    sensors. For frames/clips from one sensor, use the individual method helpers
-    with a shared mask/pattern instead. JPEG runs its codec on the CPU, so applying
-    this sampler before transferring a training batch to the GPU is simplest.
+    Reuse a generator on the measurement's device for reproducible random draws.
+    Applying this on CPU batches is simplest because JPEG uses a CPU codec.
+    Masks/patterns are sampled per image; for frames sharing a sensor, use the
+    individual helpers with a persistent mask/pattern instead.
     """
+    # 1. Check that every modification supports this batch.
     check_image(measurement)
-    if measurement.shape[1] not in (1, 3) or min(measurement.shape[-2:]) < 64:
+    batch_size, channels, height, width = measurement.shape
+    if channels not in (1, 3) or min(height, width) < 64:
         raise ValueError("The training mixture needs C=1 or 3 and H/W >= 64.")
-    choices = torch.randint(
-        len(CONDITIONS),
-        (measurement.shape[0],),
+
+    # 2. Draw one equally likely condition index for each image.
+    condition_indices = torch.randint(
+        high=len(CONDITIONS),
+        size=(batch_size,),
         device=measurement.device,
         generator=generator,
     ).tolist()
-    labels = [CONDITIONS[index] for index in choices]
-    images = [
-        _apply(image.unsqueeze(0), condition, generator)
-        for image, condition in zip(measurement, labels)
-    ]
-    return torch.cat(images, dim=0), labels
+
+    # 3. Apply only the selected condition to each image.
+    modified_images = []
+    labels = []
+    for image_index, condition_index in enumerate(condition_indices):
+        condition = CONDITIONS[condition_index]
+        image = measurement[image_index : image_index + 1]  # Keep shape [1,C,H,W].
+        modified_image = _apply(image, condition, generator)
+
+        modified_images.append(modified_image)
+        labels.append(condition)
+
+    # 4. Join the images back into a batch of the original shape.
+    modified_batch = torch.cat(modified_images, dim=0)
+    return modified_batch, labels
