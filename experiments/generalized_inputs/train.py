@@ -96,7 +96,7 @@ def weights_hash(model):
     return digest.hexdigest()
 
 
-def prepare_initial_weights(model, output, method, smoke):
+def prepare_initial_weights(model, output, method, smoke, previous_config=None):
     """Save fresh epoch-zero weights before smoke; replay them across CPU types."""
     path = output / "initial_random.pt"
     expected = dict(
@@ -105,8 +105,10 @@ def prepare_initial_weights(model, output, method, smoke):
         pretrained=False,
         method=method,
         seed=SETTINGS["seed"],
-        protocol=SETTINGS["protocol"],
-        source_sha256=source_hash(),
+        protocol=(previous_config or SETTINGS)["protocol"],
+        source_sha256=(
+            previous_config["source_sha256"] if previous_config else source_hash()
+        ),
     )
     if smoke:
         if path.exists():
@@ -129,7 +131,7 @@ def prepare_initial_weights(model, output, method, smoke):
 
 
 def learning_rate(step, total_steps):
-    """Preserve the clean scratch-training schedule, with a 30-epoch horizon."""
+    """Warm up for the original nine epochs, then decay through epoch 50."""
     fraction = min(step / total_steps, 1.0)
     warmup = SETTINGS["warmup_fraction"]
     if fraction <= warmup:
@@ -138,6 +140,40 @@ def learning_rate(step, total_steps):
         )
     cosine = (1 + math.cos(math.pi * (fraction - warmup) / (1 - warmup))) / 2
     return SETTINGS["final_lr"] + (SETTINGS["peak_lr"] - SETTINGS["final_lr"]) * cosine
+
+
+def validate_epoch_extension(previous, current):
+    """Allow only the reviewed 30-to-50 extension, retaining the training identity."""
+    allowed = {
+        "protocol",
+        "epochs",
+        "warmup_fraction",
+        "schedule",
+        "source_sha256",
+        "source_commit",
+        "epoch_extension",
+    }
+    changed = {
+        key
+        for key in previous.keys() | current.keys()
+        if previous.get(key) != current.get(key)
+    }
+    if changed - allowed:
+        raise ValueError(
+            f"Epoch extension changed training identity: {changed - allowed}"
+        )
+    if previous["epochs"] != 30 or current["epochs"] != 50:
+        raise ValueError("Only the requested 30-to-50 epoch extension is allowed.")
+    if not math.isclose(
+        previous["epochs"] * previous["warmup_fraction"],
+        current["epochs"] * current["warmup_fraction"],
+    ):
+        raise ValueError("Epoch extension must retain the original warmup duration.")
+    if (
+        previous["initialization"] != "fresh_random_no_pretrained_weights"
+        or previous["pretrained"]
+    ):
+        raise ValueError("Only the existing from-scratch runs can be extended.")
 
 
 class ValidationPanel(Dataset):
@@ -236,8 +272,13 @@ def run(args):
     torch.cuda.manual_seed_all(SETTINGS["seed"])
     model = initialize_model(args.method)
     args.output.mkdir(parents=True, exist_ok=True)
+    previous_config = json.loads(args.extension.read_text()) if args.extension else None
+    if previous_config and (args.smoke or not (args.output / "latest.pt").exists()):
+        raise ValueError(
+            "An epoch extension requires the existing run's resume checkpoint."
+        )
     initial_weights_sha256 = prepare_initial_weights(
-        model, args.output, args.method, args.smoke
+        model, args.output, args.method, args.smoke, previous_config
     )
     model = model.cuda()
     optimizer = torch.optim.Adam(
@@ -274,6 +315,14 @@ def run(args):
         calibration_used=False,
         environment=dict(torch=torch.__version__, cuda=torch.version.cuda),
     )
+    if previous_config:
+        meta["epoch_extension"] = dict(
+            previous_epochs=previous_config["epochs"],
+            previous_source_sha256=previous_config["source_sha256"],
+            previous_source_commit=previous_config["source_commit"],
+            previous_config_sha256=file_hash(args.extension),
+        )
+        validate_epoch_extension(previous_config, meta)
     args.output.mkdir(parents=True, exist_ok=True)
     if args.smoke:
         model.train()
@@ -317,7 +366,9 @@ def run(args):
             validation=validation,
             seconds_per_step=seconds_per_step,
             estimated_epoch_hours=estimated_epoch_seconds / 3600,
-            estimated_30_epoch_hours=30 * estimated_epoch_seconds / 3600,
+            estimated_total_epoch_hours=SETTINGS["epochs"]
+            * estimated_epoch_seconds
+            / 3600,
             gpu=torch.cuda.get_device_name(),
             peak_memory_gib=torch.cuda.max_memory_allocated() / 1024**3,
         )
@@ -326,17 +377,33 @@ def run(args):
         return
 
     smoke = json.loads((args.output / "smoke.json").read_text())
-    if not smoke["passed"] or smoke["config"]["source_sha256"] != meta["source_sha256"]:
+    verified_source = (
+        previous_config["source_sha256"] if previous_config else meta["source_sha256"]
+    )
+    if not smoke["passed"] or smoke["config"]["source_sha256"] != verified_source:
         raise ValueError("A passing smoke run with identical source is required.")
     if smoke["config"]["initial_weights_sha256"] != initial_weights_sha256:
         raise ValueError("Full run must start with the same fresh weights as smoke.")
     latest = args.output / "latest.pt"
     epoch, offset, global_step, loss_sum, loss_count = 1, 0, 0, 0.0, 0
     history, condition_counts = [], Counter()
+    extension_applied = False
     if latest.exists():
         state = torch.load(latest, map_location="cpu", weights_only=False)
         if state["config"] != meta:
-            raise ValueError("Resume configuration changed.")
+            if not previous_config or state["config"] != previous_config:
+                raise ValueError("Resume configuration changed.")
+            validate_epoch_extension(state["config"], meta)
+            original_warmup_steps = (
+                previous_config["epochs"]
+                * previous_config["warmup_fraction"]
+                * math.ceil(len(train) / SETTINGS["effective_batch"])
+            )
+            if state["global_step"] >= original_warmup_steps:
+                raise ValueError(
+                    "This extension must happen during the unchanged warmup."
+                )
+            extension_applied = True
         load_model_weights(model, state["model"])
         optimizer.load_state_dict(state["optimizer"])
         augmentation_rng.set_state(state["augmentation_rng"])
@@ -395,6 +462,20 @@ def run(args):
     signal.signal(signal.SIGUSR1, request_stop)
     signal.signal(signal.SIGTERM, request_stop)
     write_json(args.output / "config.json", meta)
+    if extension_applied:
+        checkpoint()
+        write_json(
+            args.output / "extension_applied.json",
+            dict(
+                previous_epochs=30,
+                epochs=50,
+                next_epoch=epoch,
+                offset=offset,
+                global_step=global_step,
+                initial_weights_sha256=initial_weights_sha256,
+                source_sha256=meta["source_sha256"],
+            ),
+        )
     if not latest.exists():
         baseline = validate(model, panel)
         write_json(args.output / "baseline_validation.json", baseline)
@@ -501,6 +582,11 @@ def main():
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--smoke", action="store_true")
+    parser.add_argument(
+        "--extension",
+        type=Path,
+        help="Original config.json authorizing this run's 30-to-50 epoch extension",
+    )
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     with (args.output / "run.lock").open("w") as lock:

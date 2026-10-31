@@ -1,4 +1,4 @@
-"""Submit two smoke-gated, resumable 30-epoch scratch-training jobs on Unicorn."""
+"""Submit two smoke-gated, resumable 50-epoch scratch-training jobs on Unicorn."""
 
 import argparse
 import fcntl
@@ -61,9 +61,9 @@ def main():
                 str(root / "results" / method),
             ]
             smoke = submit(
-                f"scratch30-{method}-smoke", arguments + ["--smoke"], smoke=True
+                f"scratch50-{method}-smoke", arguments + ["--smoke"], smoke=True
             )
-            submit(f"scratch30-{method}", arguments, dependency=smoke)
+            submit(f"scratch50-{method}", arguments, dependency=smoke)
 
 
 if __name__ == "__main__":

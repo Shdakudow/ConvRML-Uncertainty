@@ -73,14 +73,41 @@ class GeneralizedTraining(unittest.TestCase):
     def test_scratch_schedule_warms_up_and_decays_without_segment_resets(self):
         total = 10000
         self.assertAlmostEqual(training.learning_rate(0, total), 1e-5)
-        self.assertAlmostEqual(training.learning_rate(3000, total), 1e-4)
+        self.assertAlmostEqual(training.learning_rate(1800, total), 1e-4)
         self.assertAlmostEqual(training.learning_rate(total, total), 1e-9)
         self.assertLess(
-            training.learning_rate(1000, total), training.learning_rate(2000, total)
+            training.learning_rate(1000, total), training.learning_rate(1500, total)
         )
         self.assertGreater(
             training.learning_rate(5000, total), training.learning_rate(8000, total)
         )
+
+    def test_50_epoch_extension_keeps_all_existing_warmup_learning_rates(self):
+        for step in (0, 8000, 9000, 20000, 40500):
+            extended_lr = training.learning_rate(step, 50 * 4500)
+            with patch.dict(training.SETTINGS, warmup_fraction=0.3):
+                original_lr = training.learning_rate(step, 30 * 4500)
+            self.assertAlmostEqual(extended_lr, original_lr, places=15)
+        self.assertAlmostEqual(training.learning_rate(50 * 4500, 50 * 4500), 1e-9)
+
+    def test_epoch_extension_rejects_other_training_identity_changes(self):
+        current = dict(training.SETTINGS, pretrained=False)
+        previous = dict(
+            current,
+            epochs=30,
+            warmup_fraction=0.3,
+            protocol="original30",
+            schedule="original",
+        )
+        training.validate_epoch_extension(previous, current)
+        for changed in [
+            dict(current, seed=123),
+            dict(current, manifest_sha256="different"),
+            dict(current, effective_batch=8),
+            dict(current, warmup_fraction=0.3),
+        ]:
+            with self.assertRaises(ValueError):
+                training.validate_epoch_extension(previous, changed)
 
     def test_validation_panel_is_fixed_balanced_and_preserves_original_targets(self):
         torch.set_num_threads(1)

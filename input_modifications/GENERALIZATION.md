@@ -1,6 +1,6 @@
 # Training a model across raw-input modifications
 
-The [30-epoch training runner](../experiments/generalized_inputs/README.md)
+The [50-epoch training runner](../experiments/generalized_inputs/README.md)
 implements the agreed online mixture with fresh random initialization.
 Training progress and finished results must be distinguished from the earlier
 frozen-model inference pilots; those pilots did not train generalized weights.
