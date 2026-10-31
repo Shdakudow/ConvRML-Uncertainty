@@ -1,4 +1,4 @@
-"""Fine-tune clean QUTCC/Im2im weights on online measurement modifications.
+"""Train QUTCC/Im2im from scratch on online measurement modifications.
 
 Run from a frozen repository snapshot. No modified datasets, calibration fitting,
 or test evaluation are created by this training entry point.
@@ -22,7 +22,7 @@ from torchmetrics.functional.image import structural_similarity_index_measure as
 REPOSITORY = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPOSITORY))
 
-from convrml.checkpoints import load_model_weights, read_checkpoint, save_checkpoint
+from convrml.checkpoints import load_model_weights, save_checkpoint
 from dataset import ImagePairs
 from input_modifications.online import CONDITIONS, _apply, sample_training_modification
 from models import Im2im, QUTCC
@@ -78,6 +78,34 @@ def audit_manifest(path):
         if len(roles[role]) != count or len(ids) != count or seen.intersection(ids):
             raise ValueError(f"Invalid count or overlapping IDs in {role}.")
         seen.update(ids)
+
+
+def initialize_model(method):
+    """Create fresh random weights; both backbones use pretrained=False."""
+    torch.manual_seed(SETTINGS["seed"])
+    return QUTCC() if method == "qutcc" else Im2im()
+
+
+def weights_hash(model):
+    """Record the complete initial state so smoke and full runs can be compared."""
+    digest = hashlib.sha256()
+    for name, tensor in sorted(model.state_dict().items()):
+        digest.update(name.encode())
+        digest.update(str((tensor.dtype, tuple(tensor.shape))).encode())
+        digest.update(tensor.detach().cpu().contiguous().numpy().tobytes())
+    return digest.hexdigest()
+
+
+def learning_rate(step, total_steps):
+    """Preserve the clean scratch-training schedule, with a 30-epoch horizon."""
+    fraction = min(step / total_steps, 1.0)
+    warmup = SETTINGS["warmup_fraction"]
+    if fraction <= warmup:
+        return SETTINGS["initial_lr"] + (fraction / warmup) * (
+            SETTINGS["peak_lr"] - SETTINGS["initial_lr"]
+        )
+    cosine = (1 + math.cos(math.pi * (fraction - warmup) / (1 - warmup))) / 2
+    return SETTINGS["final_lr"] + (SETTINGS["peak_lr"] - SETTINGS["final_lr"]) * cosine
 
 
 class ValidationPanel(Dataset):
@@ -174,25 +202,11 @@ def run(args):
     torch.set_num_threads(2)
     torch.manual_seed(SETTINGS["seed"])
     torch.cuda.manual_seed_all(SETTINGS["seed"])
-    model = QUTCC() if args.method == "qutcc" else Im2im()
-    parent, parent_hash = read_checkpoint(args.initialize)
-    config = parent["config"]
-    if (
-        parent_hash != SETTINGS["parent_sha256"][args.method]
-        or parent["epoch"] != SETTINGS["parent_epoch"]
-        or config["method"] != args.method
-        or config["camera"] != "raw"
-        or config["protocol"] != "paper_qutcc_convnext_uniform_pinball_20261018_v1"
-        or SETTINGS["manifest_sha256"] not in config["dataset_identity"].values()
-    ):
-        raise ValueError(
-            "Initialization is not the verified clean epoch-50 checkpoint."
-        )
-    load_model_weights(model, parent["model"])
-    del parent
+    model = initialize_model(args.method)
+    initial_weights_sha256 = weights_hash(model)
     model = model.cuda()
     optimizer = torch.optim.Adam(
-        model.parameters(), lr=SETTINGS["learning_rate"], betas=tuple(SETTINGS["betas"])
+        model.parameters(), lr=SETTINGS["initial_lr"], betas=tuple(SETTINGS["betas"])
     )
     augmentation_rng = torch.Generator().manual_seed(SETTINGS["seed"] + 1000)
     quantile_rng = torch.Generator(device="cuda").manual_seed(SETTINGS["seed"] + 2000)
@@ -205,15 +219,14 @@ def run(args):
         **SETTINGS,
         method=args.method,
         dataset="raw_online_ten_condition_mixture",
-        initialization="fine_tune_verified_clean_epoch50_fresh_Adam_moments",
-        parent_checkpoint_sha256=parent_hash,
-        parent_path=str(args.initialize),
+        pretrained=False,
+        initial_weights_sha256=initial_weights_sha256,
+        initialization_checkpoint=None,
         manifest_path=str(args.manifest),
         source_sha256=source_hash(),
         source_commit=(REPOSITORY / "source_commit.txt").read_text().strip(),
         conditions=list(CONDITIONS),
         conditioning="blind; method labels never enter model",
-        schedule="constant 1e-5 for 30 additional epochs",
         loss=(
             "sampled uniform-q pinball"
             if args.method == "qutcc"
@@ -278,6 +291,8 @@ def run(args):
     smoke = json.loads((args.output / "smoke.json").read_text())
     if not smoke["passed"] or smoke["config"]["source_sha256"] != meta["source_sha256"]:
         raise ValueError("A passing smoke run with identical source is required.")
+    if smoke["config"]["initial_weights_sha256"] != initial_weights_sha256:
+        raise ValueError("Full run must start with the same fresh weights as smoke.")
     latest = args.output / "latest.pt"
     epoch, offset, global_step, loss_sum, loss_count = 1, 0, 0, 0.0, 0
     history, condition_counts = [], Counter()
@@ -369,6 +384,13 @@ def run(args):
         model.train()
         epoch_started = time.monotonic()
         for batch in loader:
+            lr = learning_rate(
+                global_step,
+                SETTINGS["epochs"]
+                * math.ceil(len(train) / SETTINGS["effective_batch"]),
+            )
+            for group in optimizer.param_groups:
+                group["lr"] = lr
             value, labels = train_batch(
                 model, optimizer, batch, augmentation_rng, quantile_rng
             )
@@ -387,6 +409,7 @@ def run(args):
                     total=len(train),
                     global_step=global_step,
                     loss=value,
+                    learning_rate=lr,
                     condition_counts=dict(condition_counts),
                     gpu=torch.cuda.get_device_name(),
                 )
@@ -403,6 +426,7 @@ def run(args):
         row = dict(
             epoch=epoch,
             training_loss=loss_sum / loss_count,
+            learning_rate=optimizer.param_groups[0]["lr"],
             condition_counts=dict(condition_counts),
             validation=validation,
             training_and_validation_seconds=time.monotonic() - epoch_started,
@@ -438,7 +462,6 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--method", choices=("qutcc", "im2im"), required=True)
     parser.add_argument("--manifest", type=Path, required=True)
-    parser.add_argument("--initialize", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--smoke", action="store_true")
     args = parser.parse_args()

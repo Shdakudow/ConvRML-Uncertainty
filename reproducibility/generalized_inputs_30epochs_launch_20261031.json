@@ -1,5 +1,5 @@
 {
-  "status": "submitted; consult cluster status for current progress",
+  "status": "CANCELLED: user requires training from scratch",
   "recorded_at": "2026-10-31T02:23:57.886388+00:00",
   "training_complete": false,
   "epochs": 30,
@@ -65,5 +65,11 @@
   "conditioning": "blind; modification label never supplied to model",
   "modified_datasets_saved": false,
   "test_used": false,
-  "calibration_used": false
+  "calibration_used": false,
+  "cancelled_jobs": [
+    "851126",
+    "851128"
+  ],
+  "cancellation_reason": "Incorrect clean-checkpoint initialization; all replacement training must start from fresh random weights.",
+  "eligible_for_resume": false
 }

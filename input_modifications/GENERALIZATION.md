@@ -1,7 +1,7 @@
 # Training a model across raw-input modifications
 
 The [30-epoch training runner](../experiments/generalized_inputs/README.md)
-implements the agreed online mixture from clean epoch-50 initialization.
+implements the agreed online mixture with fresh random initialization.
 Training progress and finished results must be distinguished from the earlier
 frozen-model inference pilots; those pilots did not train generalized weights.
 
@@ -13,9 +13,9 @@ two fixed modification settings do not cover all the other conditions. Separatel
 trained specialists are useful baselines or optional distillation teachers; their
 weights do not automatically combine into a generalized model.
 
-Initialize each generalized model from its corresponding clean checkpoint. Jointly
-fine-tune on the desired mixture while retaining the architecture's established
-objective. Preserve QUTCC's sampled-quantile pinball objective and Im2im's center
+Train each generalized model from scratch with no pretrained or clean-checkpoint
+weights, while retaining the architecture's established objective. Preserve
+QUTCC's sampled-quantile pinball objective and Im2im's center
 and endpoint objectives. Keep a fixed, held-out validation panel per condition to
 measure tradeoffs against the clean checkpoint and any trained specialists.
 

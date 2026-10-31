@@ -1,4 +1,4 @@
-"""Submit two smoke-gated, resumable 30-epoch jobs on Unicorn."""
+"""Submit two smoke-gated, resumable 30-epoch scratch-training jobs on Unicorn."""
 
 import argparse
 import fcntl
@@ -23,7 +23,6 @@ def main():
         manifest = (
             args.project / "experiments/dlmd_raw_adaptive_size_20261016/data/split.json"
         )
-        parents = args.project / "experiments/qutcc_paper_style_20261018/results/raw"
         jobs = {}
 
         def submit(label, arguments, dependency=None, smoke=False):
@@ -58,15 +57,13 @@ def main():
                 method,
                 "--manifest",
                 str(manifest),
-                "--initialize",
-                str(parents / method / "checkpoints/epoch_050.pt"),
                 "--output",
                 str(root / "results" / method),
             ]
             smoke = submit(
-                f"online30-{method}-smoke", arguments + ["--smoke"], smoke=True
+                f"scratch30-{method}-smoke", arguments + ["--smoke"], smoke=True
             )
-            submit(f"online30-{method}", arguments, dependency=smoke)
+            submit(f"scratch30-{method}", arguments, dependency=smoke)
 
 
 if __name__ == "__main__":

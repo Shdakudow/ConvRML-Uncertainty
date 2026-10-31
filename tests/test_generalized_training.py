@@ -3,6 +3,7 @@
 import importlib.util
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 import torch
 from torch.utils.data import Dataset
@@ -28,6 +29,39 @@ class ToyPairs(Dataset):
 
 
 class GeneralizedTraining(unittest.TestCase):
+    def test_scratch_initialization_repeats_seed_and_has_no_parent_weights(self):
+        # Tiny constructors exercise the initialization path without allocating
+        # multiple ConvNeXt models on the CPU; the GPU smoke checks the real model.
+        for method, constructor in [("qutcc", "QUTCC"), ("im2im", "Im2im")]:
+            with patch.object(
+                training, constructor, side_effect=lambda: torch.nn.Linear(4, 3)
+            ):
+                first = training.initialize_model(method)
+                torch.manual_seed(999)
+                replay = training.initialize_model(method)
+            self.assertEqual(
+                training.weights_hash(first), training.weights_hash(replay)
+            )
+            self.assertTrue(torch.equal(first.weight, replay.weight))
+            self.assertEqual(
+                training.SETTINGS["initialization"],
+                "fresh_random_no_pretrained_weights",
+            )
+            self.assertNotIn("parent_epoch", training.SETTINGS)
+            self.assertNotIn("parent_sha256", training.SETTINGS)
+
+    def test_scratch_schedule_warms_up_and_decays_without_segment_resets(self):
+        total = 10000
+        self.assertAlmostEqual(training.learning_rate(0, total), 1e-5)
+        self.assertAlmostEqual(training.learning_rate(3000, total), 1e-4)
+        self.assertAlmostEqual(training.learning_rate(total, total), 1e-9)
+        self.assertLess(
+            training.learning_rate(1000, total), training.learning_rate(2000, total)
+        )
+        self.assertGreater(
+            training.learning_rate(5000, total), training.learning_rate(8000, total)
+        )
+
     def test_validation_panel_is_fixed_balanced_and_preserves_original_targets(self):
         torch.set_num_threads(1)
         source = ToyPairs()
