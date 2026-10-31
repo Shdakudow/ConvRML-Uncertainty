@@ -96,6 +96,38 @@ def weights_hash(model):
     return digest.hexdigest()
 
 
+def prepare_initial_weights(model, output, method, smoke):
+    """Save fresh epoch-zero weights before smoke; replay them across CPU types."""
+    path = output / "initial_random.pt"
+    expected = dict(
+        epoch=0,
+        trained_steps=0,
+        pretrained=False,
+        method=method,
+        seed=SETTINGS["seed"],
+        protocol=SETTINGS["protocol"],
+        source_sha256=source_hash(),
+    )
+    if smoke:
+        if path.exists():
+            raise FileExistsError("Fresh initialization already exists; use a new run.")
+        digest = weights_hash(model)
+        save_checkpoint(
+            path, dict(**expected, model=model.state_dict(), weights_sha256=digest)
+        )
+        return digest
+    initial = torch.load(path, map_location="cpu", weights_only=False)
+    if any(initial.get(key) != value for key, value in expected.items()):
+        raise ValueError(
+            "Initial state must be this run's untrained epoch-zero weights."
+        )
+    load_model_weights(model, initial["model"])
+    digest = weights_hash(model)
+    if digest != initial["weights_sha256"]:
+        raise ValueError("Untrained epoch-zero weight hash mismatch.")
+    return digest
+
+
 def learning_rate(step, total_steps):
     """Preserve the clean scratch-training schedule, with a 30-epoch horizon."""
     fraction = min(step / total_steps, 1.0)
@@ -203,7 +235,10 @@ def run(args):
     torch.manual_seed(SETTINGS["seed"])
     torch.cuda.manual_seed_all(SETTINGS["seed"])
     model = initialize_model(args.method)
-    initial_weights_sha256 = weights_hash(model)
+    args.output.mkdir(parents=True, exist_ok=True)
+    initial_weights_sha256 = prepare_initial_weights(
+        model, args.output, args.method, args.smoke
+    )
     model = model.cuda()
     optimizer = torch.optim.Adam(
         model.parameters(), lr=SETTINGS["initial_lr"], betas=tuple(SETTINGS["betas"])
@@ -221,7 +256,9 @@ def run(args):
         dataset="raw_online_ten_condition_mixture",
         pretrained=False,
         initial_weights_sha256=initial_weights_sha256,
-        initialization_checkpoint=None,
+        pretrained_checkpoint=None,
+        initial_state_file="initial_random.pt",
+        initial_trained_steps=0,
         manifest_path=str(args.manifest),
         source_sha256=source_hash(),
         source_commit=(REPOSITORY / "source_commit.txt").read_text().strip(),

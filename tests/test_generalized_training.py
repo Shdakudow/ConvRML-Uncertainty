@@ -3,6 +3,7 @@
 import importlib.util
 from pathlib import Path
 import unittest
+import tempfile
 from unittest.mock import patch
 
 import torch
@@ -29,6 +30,25 @@ class ToyPairs(Dataset):
 
 
 class GeneralizedTraining(unittest.TestCase):
+    def test_epoch_zero_state_replays_exactly_and_rejects_trained_initialization(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            fresh = torch.nn.Linear(4, 3)
+            expected = training.prepare_initial_weights(fresh, output, "qutcc", True)
+            recreated = torch.nn.Linear(4, 3)
+            self.assertNotEqual(expected, training.weights_hash(recreated))
+            actual = training.prepare_initial_weights(recreated, output, "qutcc", False)
+            self.assertEqual(expected, actual)
+            self.assertTrue(torch.equal(fresh.weight, recreated.weight))
+            with self.assertRaises(FileExistsError):
+                training.prepare_initial_weights(fresh, output, "qutcc", True)
+            path = output / "initial_random.pt"
+            state = torch.load(path, weights_only=False)
+            state["trained_steps"] = 1
+            torch.save(state, path)
+            with self.assertRaises(ValueError):
+                training.prepare_initial_weights(recreated, output, "qutcc", False)
+
     def test_scratch_initialization_repeats_seed_and_has_no_parent_weights(self):
         # Tiny constructors exercise the initialization path without allocating
         # multiple ConvNeXt models on the CPU; the GPU smoke checks the real model.

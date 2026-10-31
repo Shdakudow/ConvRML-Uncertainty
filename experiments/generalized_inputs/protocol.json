@@ -1,5 +1,5 @@
 {
-  "protocol": "raw_online_ten_condition_from_scratch_20261031_v1",
+  "protocol": "raw_online_ten_condition_from_scratch_20261031_v2",
   "epochs": 30,
   "seed": 202610310,
   "manifest_sha256": "155670232c27b3201582f5a1b67fb4196e8123e40f388d9c951df4418f7144fb",

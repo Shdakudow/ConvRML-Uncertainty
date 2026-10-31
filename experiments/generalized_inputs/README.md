@@ -24,8 +24,12 @@ and test images are not loaded. Interval calibration is a separate post-training
 step; clean calibration parameters are not claimed to calibrate the new models.
 
 `submit.py` creates a short GPU smoke job for each method, then one dependent
-30-epoch job. Smoke updates are discarded; actual training recreates the fresh
-random initialization and verifies its weight hash matches the smoke run.
+30-epoch job. Before any smoke updates, freshly randomized weights are saved as
+`initial_random.pt` with epoch 0, zero trained steps, and `pretrained=False`.
+Smoke updates are discarded; actual training loads only that run's untrained
+epoch-zero state and verifies the complete weight hash. This keeps initialization
+identical across CPU types. There is no argument for loading an external trained
+checkpoint. Recovery loads only the matching scratch run's own resume state.
 `run.sbatch` requests a checkpoint before allocation expiry and requeues
 the same job. Cancellation does not requeue it. Full resume state includes Adam,
 augmentation/quantile RNGs, epoch permutation offset, and accumulated epoch counts.
