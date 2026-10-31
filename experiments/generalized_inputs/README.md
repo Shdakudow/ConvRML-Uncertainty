@@ -71,6 +71,10 @@ the new phase runs; `COMPLETE.json` is written for epoch 100 at final completion
 The wrapper replaces itself with the trainer so checkpoint/requeue signals reach
 the same child PID used by Slurm.
 
+The [queued 100-epoch plan](../../reproducibility/generalized_inputs_100epochs_after50_20261031.json)
+records the dependency job IDs, learning rates, and verification checks. The
+continuations wait for their respective models to finish epoch 50 successfully.
+
 ## Historical 30-to-50 extension
 
 The existing scratch runs continue from their own full checkpoints, preserving
