@@ -41,3 +41,7 @@ python experiments/generalized_inputs/submit.py \
 Outputs include `jobs.json`, GPU logs, and `results/{qutcc,im2im}/` containing
 configuration, smoke checks, baseline validation, progress, history, resume state,
 five-epoch checkpoints, and `COMPLETE.json` after all 30 epochs finish.
+
+The [launch record](../../reproducibility/generalized_inputs_30epochs_launch_20261031.json)
+records the frozen source commit, job IDs, and GPU smoke timings. Submission and
+passing smoke checks do not mean the 30-epoch runs have finished.
