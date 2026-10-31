@@ -187,5 +187,6 @@ unmodified originals/targets, factor-four/eight/64 edge retention, JPEG formats,
 loader-compatible manifests, and identical resumption with a different worker count.
 
 [Generalized-model training design](GENERALIZATION.md) explains joint sampling,
-parameter conditioning, and validation. It is a proposed training protocol, not a
-claim that generalized weights have already been trained.
+parameter conditioning, and validation. The
+[30-epoch runner](../experiments/generalized_inputs/README.md) trains the agreed
+online mixture. The optional parameter-conditioning proposal remains unimplemented.

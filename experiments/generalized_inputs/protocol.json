@@ -1,0 +1,24 @@
+{
+  "protocol": "raw_online_ten_condition_finetune_20261031_v1",
+  "epochs": 30,
+  "seed": 202610310,
+  "parent_epoch": 50,
+  "manifest_sha256": "155670232c27b3201582f5a1b67fb4196e8123e40f388d9c951df4418f7144fb",
+  "parent_sha256": {
+    "qutcc": "297750d72e1b3c754ff23b4cbe3e8edc41e9f41800d3fa21d13b7418653edb0a",
+    "im2im": "360551a7db56ca66c6aae29a0be975cad9a5165ccaa8ff2f76b887e906d35406"
+  },
+  "counts": {"train": 17999, "val": 2000, "calibration": 3000, "test": 2000},
+  "condition_probability": 0.1,
+  "effective_batch": 4,
+  "microbatch": 1,
+  "learning_rate": 0.00001,
+  "optimizer": "Adam",
+  "betas": [0.9, 0.99],
+  "precision": "float32",
+  "validation_per_condition": 100,
+  "validation_seed": 202610319,
+  "checkpoint_every_steps": 500,
+  "milestone_every_epochs": 5,
+  "segment_hours": 10.5
+}
