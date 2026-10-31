@@ -132,6 +132,12 @@ same first 50 held-out images, using the existing clean QUTCC/Im2im checkpoints
 and unchanged clean calibration. It records inference results, not generalized
 training results.
 
+The [factor-64 reconstruction pilot](../reproducibility/resolution64_reconstruction_20261030.json)
+uses the same 50 scenes and frozen models/calibration. At only 5×8 averaged bins,
+mean PSNR falls to 13.97 dB (QUTCC) and 13.93 dB (Im2im), with empirical interval
+coverage of 28.02% and 25.30%. These are pilot inference results; the full dataset
+has not been regenerated at factor 64.
+
 ## Verification
 
 ```bash
