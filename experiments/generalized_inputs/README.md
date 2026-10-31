@@ -62,6 +62,9 @@ budget, schedule, protocol version, and source provenance to change. The runner
 checks that the handoff occurs during the original warmup and saves
 `extension_applied.json` with its preserved step and offset.
 
+The [50-epoch continuation record](../../reproducibility/generalized_inputs_50epochs_extension_20261031.json)
+records both handoff positions, replacement job IDs, and verified 50-epoch progress.
+
 The earlier [fine-tuning launch](../../reproducibility/generalized_inputs_30epochs_launch_20261031.json)
 was cancelled because training must start from scratch. Its outputs must not be
 used to initialize this run. New scratch runs use a separate experiment directory.
