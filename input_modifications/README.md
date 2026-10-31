@@ -188,5 +188,8 @@ loader-compatible manifests, and identical resumption with a different worker co
 
 [Generalized-model training design](GENERALIZATION.md) explains joint sampling,
 parameter conditioning, and validation. The
-[50-epoch runner](../experiments/generalized_inputs/README.md) trains the agreed
+[training runner](../experiments/generalized_inputs/README.md) trains the agreed
 online mixture. The optional parameter-conditioning proposal remains unimplemented.
+
+The current plan completes 50 epochs, then continues through epoch 100 with a
+separate lower-rate phase, preserving the trained state and all original targets.

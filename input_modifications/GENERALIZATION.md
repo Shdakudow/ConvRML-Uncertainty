@@ -1,7 +1,9 @@
 # Training a model across raw-input modifications
 
-The [50-epoch training runner](../experiments/generalized_inputs/README.md)
+The [training runner](../experiments/generalized_inputs/README.md)
 implements the agreed online mixture with fresh random initialization.
+The active plan finishes 50 epochs before a lower-learning-rate continuation to
+100 total epochs; model and optimizer state carry forward between phases.
 Training progress and finished results must be distinguished from the earlier
 frozen-model inference pilots; those pilots did not train generalized weights.
 

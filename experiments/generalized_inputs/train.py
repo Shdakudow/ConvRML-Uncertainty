@@ -131,7 +131,21 @@ def prepare_initial_weights(model, output, method, smoke, previous_config=None):
 
 
 def learning_rate(step, total_steps):
-    """Warm up for the original nine epochs, then decay through epoch 50."""
+    """Keep the first 50 epochs intact, then use a separate lower-rate phase."""
+    if "base_epochs" in SETTINGS:
+        boundary = total_steps * SETTINGS["base_epochs"] / SETTINGS["epochs"]
+        if step >= boundary:
+            fraction = min((step - boundary) / (total_steps - boundary), 1.0)
+            cosine = (1 + math.cos(math.pi * fraction)) / 2
+            return (
+                SETTINGS["continuation_final_lr"]
+                + (
+                    SETTINGS["continuation_initial_lr"]
+                    - SETTINGS["continuation_final_lr"]
+                )
+                * cosine
+            )
+        total_steps = boundary
     fraction = min(step / total_steps, 1.0)
     warmup = SETTINGS["warmup_fraction"]
     if fraction <= warmup:
@@ -143,7 +157,7 @@ def learning_rate(step, total_steps):
 
 
 def validate_epoch_extension(previous, current):
-    """Allow only the reviewed 30-to-50 extension, retaining the training identity."""
+    """Allow the reviewed epoch extensions while retaining training identity."""
     allowed = {
         "protocol",
         "epochs",
@@ -153,6 +167,10 @@ def validate_epoch_extension(previous, current):
         "source_commit",
         "epoch_extension",
     }
+    if previous["epochs"] == 50 and current["epochs"] == 100:
+        allowed.update(
+            {"base_epochs", "continuation_initial_lr", "continuation_final_lr"}
+        )
     changed = {
         key
         for key in previous.keys() | current.keys()
@@ -162,9 +180,23 @@ def validate_epoch_extension(previous, current):
         raise ValueError(
             f"Epoch extension changed training identity: {changed - allowed}"
         )
-    if previous["epochs"] != 30 or current["epochs"] != 50:
-        raise ValueError("Only the requested 30-to-50 epoch extension is allowed.")
-    if not math.isclose(
+    if previous["epochs"] == 50 and current["epochs"] == 100:
+        if current["base_epochs"] != 50 or not (
+            0
+            < current["continuation_final_lr"]
+            <= current["continuation_initial_lr"]
+            < previous["peak_lr"]
+        ):
+            raise ValueError(
+                "The continuation must start after 50 at a lower peak rate."
+            )
+        if previous["warmup_fraction"] != current["warmup_fraction"]:
+            raise ValueError("The original 50-epoch schedule must remain unchanged.")
+    elif previous["epochs"] != 30 or current["epochs"] != 50:
+        raise ValueError(
+            "Only the requested 30-to-50 or 50-to-100 extensions are allowed."
+        )
+    elif not math.isclose(
         previous["epochs"] * previous["warmup_fraction"],
         current["epochs"] * current["warmup_fraction"],
     ):
@@ -174,6 +206,23 @@ def validate_epoch_extension(previous, current):
         or previous["pretrained"]
     ):
         raise ValueError("Only the existing from-scratch runs can be extended.")
+
+
+def validate_after50_checkpoint(state, complete):
+    """Require every epoch-50 update and validation before phase two can start."""
+    expected_steps = 50 * math.ceil(
+        SETTINGS["counts"]["train"] / SETTINGS["effective_batch"]
+    )
+    if (
+        not complete.get("passed")
+        or complete.get("epochs") != 50
+        or state["epoch"] != 50
+        or state["next_epoch"] != 51
+        or state["offset"] != 0
+        or state["global_step"] != expected_steps
+        or [row["epoch"] for row in state["history"]] != list(range(1, 51))
+    ):
+        raise ValueError("Epochs 51-100 require a complete validated 50-epoch run.")
 
 
 class ValidationPanel(Dataset):
@@ -273,12 +322,26 @@ def run(args):
     model = initialize_model(args.method)
     args.output.mkdir(parents=True, exist_ok=True)
     previous_config = json.loads(args.extension.read_text()) if args.extension else None
+    initial_config = (
+        json.loads(args.initial_config.read_text())
+        if args.initial_config
+        else previous_config
+    )
+    if (
+        previous_config
+        and previous_config["epochs"] == 50
+        and SETTINGS["epochs"] == 100
+        and not args.after50
+    ):
+        raise ValueError(
+            "The 100-epoch continuation must wait for the completed epoch-50 run."
+        )
     if previous_config and (args.smoke or not (args.output / "latest.pt").exists()):
         raise ValueError(
             "An epoch extension requires the existing run's resume checkpoint."
         )
     initial_weights_sha256 = prepare_initial_weights(
-        model, args.output, args.method, args.smoke, previous_config
+        model, args.output, args.method, args.smoke, initial_config
     )
     model = model.cuda()
     optimizer = torch.optim.Adam(
@@ -323,6 +386,11 @@ def run(args):
             previous_config_sha256=file_hash(args.extension),
         )
         validate_epoch_extension(previous_config, meta)
+        if (
+            initial_config["initial_weights_sha256"]
+            != previous_config["initial_weights_sha256"]
+        ):
+            raise ValueError("Epoch-zero provenance changed across continuations.")
     args.output.mkdir(parents=True, exist_ok=True)
     if args.smoke:
         model.train()
@@ -378,7 +446,7 @@ def run(args):
 
     smoke = json.loads((args.output / "smoke.json").read_text())
     verified_source = (
-        previous_config["source_sha256"] if previous_config else meta["source_sha256"]
+        initial_config["source_sha256"] if initial_config else meta["source_sha256"]
     )
     if not smoke["passed"] or smoke["config"]["source_sha256"] != verified_source:
         raise ValueError("A passing smoke run with identical source is required.")
@@ -399,7 +467,12 @@ def run(args):
                 * previous_config["warmup_fraction"]
                 * math.ceil(len(train) / SETTINGS["effective_batch"])
             )
-            if state["global_step"] >= original_warmup_steps:
+            if args.after50:
+                complete = json.loads(
+                    (args.output / "COMPLETE_50epochs.json").read_text()
+                )
+                validate_after50_checkpoint(state, complete)
+            elif state["global_step"] >= original_warmup_steps:
                 raise ValueError(
                     "This extension must happen during the unchanged warmup."
                 )
@@ -467,8 +540,8 @@ def run(args):
         write_json(
             args.output / "extension_applied.json",
             dict(
-                previous_epochs=30,
-                epochs=50,
+                previous_epochs=previous_config["epochs"],
+                epochs=SETTINGS["epochs"],
                 next_epoch=epoch,
                 offset=offset,
                 global_step=global_step,
@@ -585,7 +658,17 @@ def main():
     parser.add_argument(
         "--extension",
         type=Path,
-        help="Original config.json authorizing this run's 30-to-50 epoch extension",
+        help="Original config.json recording the predecessor run for an epoch extension",
+    )
+    parser.add_argument(
+        "--initial-config",
+        type=Path,
+        help="Original epoch-zero provenance for a chained continuation",
+    )
+    parser.add_argument(
+        "--after50",
+        action="store_true",
+        help="Require a finished 50-epoch predecessor before continuing",
     )
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
