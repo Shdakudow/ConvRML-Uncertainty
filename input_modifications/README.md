@@ -124,6 +124,12 @@ That immutable run used JPEG 85, factor 4, and gains 0.75/1.25. The current
 defaults above are the stronger follow-up settings; use a new output directory
 when materializing them.
 
+The [stronger-setting reconstruction pilot](../reproducibility/stronger_input_reconstruction_20261030.json)
+evaluates JPEG 50, resolution factor 8, and global exposure gains 0.50/1.50 on the
+same first 50 held-out images, using the existing clean QUTCC/Im2im checkpoints
+and unchanged clean calibration. It records inference results, not generalized
+training results.
+
 ## Verification
 
 ```bash
