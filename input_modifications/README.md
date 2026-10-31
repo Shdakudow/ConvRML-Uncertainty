@@ -51,6 +51,38 @@ defective_measurement = apply_dead_pixels(measurement, dead_mask)
 
 ## Prepare independent datasets
 
+### Train without saving modified copies
+
+[training.py](training.py) samples **one condition per image**: 10% clean and
+10% for each of the nine method families. It uses the settings in the table above.
+Exposure is one family: its share splits equally between global gains 0.50 and
+1.50 (5% each overall). Other strengths stay fixed in this first sampler.
+Probabilities are approximate frequencies, not exact quotas in every batch.
+
+```python
+from input_modifications.training import sample_training_modification
+
+# Create once, outside the epoch/batch loop; do not reset it on every batch.
+rng = torch.Generator().manual_seed(42)
+for measurement, target in train_loader:  # CPU float BCHW tensors in [0,1]
+    model_input, conditions = sample_training_modification(
+        measurement, generator=rng
+    )
+    # Feed model_input to the model; use the original target for its loss.
+```
+
+Call this only on training measurements. Both models can use the same protocol.
+Inputs must have one or three channels and height/width at least 64. No image
+copies are saved, and targets are never passed to the sampler. Each image samples
+an independent simulated sensor mask/pattern; use the individual helpers to share
+patterns within a sensor's frames. Tensor transforms keep floating point values;
+JPEG includes codec quantization. This does not round every transform to PNG.
+For CPU data-loader workers, initialize a separate generator per worker from its
+PyTorch worker seed; a copied generator would otherwise repeat streams. Save the
+generator state in a training checkpoint to resume its sequence.
+
+### Save independent datasets when needed
+
 ```bash
 python -m input_modifications.prepare_dataset \
   --manifest /path/to/original/split.json \

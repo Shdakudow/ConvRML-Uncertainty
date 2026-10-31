@@ -23,12 +23,13 @@ Generate modifications from original **training measurements only**, retaining
 the paired original scene targets. Sample a type and its parameters anew as
 training proceeds, rather than repeatedly seeing one fixed corrupted copy.
 
-A candidate starting mixture is 20% clean inputs and 80% modifications balanced
-across the nine method families. Those probabilities are a proposal to tune on
-validation, not an established optimum. Exposure's brighter/darker settings form
-one family. Sample continuous strengths where appropriate and valid discrete
-levels for resolution and JPEG. Include identity or mild settings as well as the
-strong settings to reduce loss of clean-input performance.
+The agreed starting mixture is 10% clean inputs and 10% for each of the nine
+method families. [training.py](training.py) implements this online, without
+saving modified datasets. Exposure's brighter/darker settings form one family,
+with 5% probability each overall. These frequencies apply in expectation, not as
+exact batch quotas. Strengths stay at the settings below for this first version;
+sampling multiple strengths is a possible later experiment, not implemented here.
+The mixture is an experimental starting point, not an established optimum.
 
 The current endpoint settings are Gaussian SD 0.01, effective Poisson count scale
 1330, global exposure gains 0.50/1.50, 10% dead locations, fixed-pattern gain SD

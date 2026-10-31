@@ -13,6 +13,7 @@ from .jpeg import jpeg_compression
 from .poisson import poisson_noise
 from .poisson_gaussian import poisson_gaussian_noise
 from .resolution import reduce_sensor_resolution
+from .training import sample_training_modification
 
 __all__ = [
     "gaussian_noise",
@@ -27,4 +28,5 @@ __all__ = [
     "gaussian_sensor_blur",
     "reduce_sensor_resolution",
     "jpeg_compression",
+    "sample_training_modification",
 ]
