@@ -1,5 +1,5 @@
 {
-  "status": "scratch training submitted; status is a launch snapshot",
+  "status": "Both smoke tests passed; scratch training started. Scheduler preempted QUTCC; checkpoint saved and job requeued. Im2im running.",
   "recorded_at": "2026-10-31T02:54:30.190924+00:00",
   "training_complete": false,
   "epochs": 30,
@@ -32,6 +32,24 @@
   "test_used": false,
   "local_checks_passed": 25,
   "smoke": {
+    "qutcc": {
+      "passed": true,
+      "gpu": "NVIDIA RTX 6000 Ada Generation",
+      "estimated_epoch_hours": 0.5520110893936825,
+      "condition_counts": {
+        "dead_pixels": 6,
+        "clean": 4,
+        "gaussian": 3,
+        "gaussian_blur": 3,
+        "poisson_gaussian": 1,
+        "exposure": 2,
+        "poisson": 6,
+        "fixed_pattern": 3,
+        "resolution": 2,
+        "jpeg": 2
+      },
+      "initial_weights_sha256": "4c0b9af045d9d13d0c90a2146fd712bcf1d3ee70455a153984419cf0f472da7d"
+    },
     "im2im": {
       "passed": true,
       "gpu": "NVIDIA RTX A6000",
@@ -53,10 +71,46 @@
   },
   "last_observed": {
     "qutcc": {
-      "stage": "submitted or initializing"
+      "method": "qutcc",
+      "stage": "training",
+      "epoch": 1,
+      "epochs": 30,
+      "processed": 4,
+      "total": 17999,
+      "global_step": 1,
+      "loss": 0.1050501111894846,
+      "learning_rate": 1e-05,
+      "condition_counts": {
+        "dead_pixels": 1,
+        "clean": 1,
+        "gaussian": 1,
+        "gaussian_blur": 1
+      },
+      "gpu": "NVIDIA RTX 6000 Ada Generation"
     },
     "im2im": {
-      "stage": "submitted or initializing"
+      "method": "im2im",
+      "stage": "training",
+      "epoch": 1,
+      "epochs": 30,
+      "processed": 100,
+      "total": 17999,
+      "global_step": 25,
+      "loss": 0.10458248853683472,
+      "learning_rate": 1.0053333333333334e-05,
+      "condition_counts": {
+        "dead_pixels": 16,
+        "clean": 5,
+        "gaussian": 9,
+        "gaussian_blur": 13,
+        "poisson_gaussian": 9,
+        "jpeg": 6,
+        "fixed_pattern": 11,
+        "poisson": 11,
+        "resolution": 11,
+        "exposure": 9
+      },
+      "gpu": "NVIDIA RTX A6000"
     }
   }
 }
