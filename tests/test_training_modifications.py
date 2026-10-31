@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import torch
 
-from input_modifications.training import CONDITIONS, sample_training_modification
+from input_modifications.online import CONDITIONS, sample_training_modification
 
 
 class TrainingModifications(unittest.TestCase):
@@ -17,7 +17,7 @@ class TrainingModifications(unittest.TestCase):
     def test_ten_conditions_are_sampled_uniformly_per_image(self):
         # Isolate the categorical draw from costly image transforms.
         y = torch.zeros(1, 1, 64, 64).expand(3000, -1, -1, -1)
-        with patch("input_modifications.training._apply", side_effect=lambda y, *_: y):
+        with patch("input_modifications.online._apply", side_effect=lambda y, *_: y):
             _, labels = sample_training_modification(
                 y, generator=torch.Generator().manual_seed(42)
             )

@@ -24,7 +24,7 @@ the paired original scene targets. Sample a type and its parameters anew as
 training proceeds, rather than repeatedly seeing one fixed corrupted copy.
 
 The agreed starting mixture is 10% clean inputs and 10% for each of the nine
-method families. [training.py](training.py) implements this online, without
+method families. [online.py](online.py) implements this online, without
 saving modified datasets. Exposure's brighter/darker settings form one family,
 with 5% probability each overall. These frequencies apply in expectation, not as
 exact batch quotas. Strengths stay at the settings below for this first version;

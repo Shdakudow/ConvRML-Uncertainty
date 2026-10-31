@@ -53,14 +53,20 @@ defective_measurement = apply_dead_pixels(measurement, dead_mask)
 
 ### Train without saving modified copies
 
-[training.py](training.py) samples **one condition per image**: 10% clean and
+[online.py](online.py) samples **one condition per image**: 10% clean and
 10% for each of the nine method families. It uses the settings in the table above.
 Exposure is one family: its share splits equally between global gains 0.50 and
 1.50 (5% each overall). Other strengths stay fixed in this first sampler.
 Probabilities are approximate frequencies, not exact quotas in every batch.
 
+This module is an online input transform. The existing Dataset/DataLoader reads
+the original measurement/target pairs; the transform modifies only the measurement
+batch before the model forward pass. Model inference, loss computation, and
+optimizer updates remain in the training loop. No training loop is implemented
+in this module.
+
 ```python
-from input_modifications.training import sample_training_modification
+from input_modifications.online import sample_training_modification
 
 # Create once, outside the epoch/batch loop; do not reset it on every batch.
 rng = torch.Generator().manual_seed(42)
