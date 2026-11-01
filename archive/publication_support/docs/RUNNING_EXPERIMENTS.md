@@ -36,7 +36,7 @@ requires an authenticated GitHub CLI with access, or manually supplied indexed f
 ## Evaluate RML / normalized DiffuserCam
 
 ```bash
-python infer.py --dataset rml --method qutcc \
+python calibration.py --dataset rml --method qutcc \
   --checkpoints weights/rml/qutcc/exp2__rml__qutcc__epoch_050.pt \
   --manifest "$CONVRML_DATA/rml/manifest.json" --pairs "$CONVRML_DATA/rml/pairs.npy" \
   --calibration-manifest "$CONVRML_DATA/rml/calibration/manifest.json" \
@@ -55,7 +55,7 @@ parallel-camera data, distinct from raw DLMD.
 ## Evaluate raw DiffuserCam
 
 ```bash
-python infer.py --dataset raw_clean --method qutcc \
+python calibration.py --dataset raw_clean --method qutcc \
   --checkpoints weights/raw/qutcc/exp3__raw_clean__qutcc__epoch_050.pt \
   --manifest "$CONVRML_DATA/raw_clean/split.json" \
   --calibration-manifest "$CONVRML_DATA/raw_clean/split.json" \

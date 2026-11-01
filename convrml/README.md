@@ -11,8 +11,9 @@ commands. Optional plotting, provenance tools and GitHub Actions live in
 | [quantile_embedding.py](quantile_embedding.py) | Sinusoidal scalar-q embedding |
 | [intervals.py](intervals.py) | Native Gaussian-moment bounds before calibration |
 | [calibration.py](calibration.py) | Baseline RCPS-HB scales and QUTCC Algorithm 1 calibrated quantiles |
+| [evaluation.py](evaluation.py) | Held-out test loop, per-image metrics, CSV and example exports |
 | [dataset.py](../dataset.py) | PLD NumPy-cache and DLMD RGB paired-file datasets |
-| [../train.py](../train.py) / [../infer.py](../infer.py) | Training loop and calibration → test → export workflow |
+| [../train.py](../train.py) / [../calibration.py](../calibration.py) | Training loop and calibration → test → export workflow |
 | [metrics.py](metrics.py) | SSIM, PSNR, MAE, LPIPS, coverage, width, crossings and uncertainty/error correlations |
 | [protocol.py](protocol.py) / [experiment_settings.json](../configs/experiment_settings.json) | Model/data selection, recorded settings, identity and resume checks |
 | [checkpoints.py](checkpoints.py) | Atomic saving, legacy Im2im name translation, strict loading, resume and ensemble assembly |

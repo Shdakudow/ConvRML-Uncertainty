@@ -33,7 +33,7 @@ def source_fingerprint():
         list((root / "convrml").glob("*.py"))
         + list((root / "models").rglob("*.py"))
         + [SETTINGS_PATH, root / "configs/__init__.py"]
-        + [root / name for name in ("dataset.py", "train.py", "infer.py")]
+        + [root / name for name in ("dataset.py", "train.py", "calibration.py")]
     )
     digest = hashlib.sha256()
     for path in files:

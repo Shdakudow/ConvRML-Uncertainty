@@ -14,7 +14,7 @@ import torch
 from torch import nn
 
 import train
-import infer as evaluate
+import calibration as evaluate
 from convrml import checkpoints, download, protocol
 from models.qutcc import pinball
 from models import Im2im, QUTCC

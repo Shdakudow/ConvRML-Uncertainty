@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Rename the public `infer.py` entry point to `calibration.py`. Separate held-out
+  metrics/exports into `convrml/evaluation.py`, group CLI options, and name request,
+  checkpoint, calibration, and report steps explicitly. Update commands, package
+  metadata, source identity, and tests; retain `python -m convrml.evaluate`.
 - Standardize Im2im names to `backbone.*` and translate legacy `base.*`/`net.*`
   weights in the checkpoint loader, independently of dataset selection. Construct
   three RGB heads directly rather than creating and replacing a default head.

@@ -17,7 +17,7 @@ dataset.py        PLD NumPy-cache and DLMD paired-image loaders
 input_modifications/  One file per raw-input modification and dataset preparation
 configs/          Recorded settings, seeds, split sizes and dataset descriptions
 train.py          Training loop, validation and epoch checkpoints
-infer.py          Calibration, test predictions, metrics and export
+calibration.py          Calibration, test predictions, metrics and export
 convrml/          Shared backbone, FiLM, runtime, calibration and metrics
 reproducibility/   Settings, ordered split IDs, checkpoint index and tested environment
 tests/             Local correctness checks
@@ -32,7 +32,7 @@ your CPU or CUDA device, then:
 ```bash
 python -m pip install -e . -c reproducibility/constraints-tested.txt
 python train.py --help
-python infer.py --help
+python calibration.py --help
 python -m convrml.download --help
 ```
 
@@ -46,9 +46,11 @@ Start with one file in [models/](models/): `forward` defines the network,
 images. Then read [dataset.py](dataset.py) to see how paired images reach the model.
 
 In [train.py](train.py), `train_one_epoch` contains the forward/backward loop;
-`run_training` handles setup, validation and checkpoints. In [infer.py](infer.py),
-the workflow is `calibrate_checkpoint` → `evaluate_test_set` → `save_results`.
-[calibration.py](convrml/calibration.py) contains the calibration algorithms and
+`run_training` handles setup, validation and checkpoints. The
+[calibration entry point](calibration.py) validates the request, loads frozen
+weights, then runs `calibrate_checkpoint` → `evaluate_test_set` → `save_results`.
+[Calibration algorithms](convrml/calibration.py) and
+[test metrics/exports](convrml/evaluation.py) live in separate modules;
 [checkpoints.py](convrml/checkpoints.py) handles saving, strict loading and resume.
 Recorded experiment settings stay in [configs/](configs/).
 See [tensor shapes and intensity conventions](models/README.md#tensor-and-intensity-conventions)
@@ -71,7 +73,7 @@ python train.py --dataset rml --method qutcc \
   --manifest /path/to/rml/manifest.json --pairs /path/to/rml/pairs.npy \
   --output runs/rml/qutcc --epochs 50 --device cuda
 
-python infer.py --dataset rml --method qutcc \
+python calibration.py --dataset rml --method qutcc \
   --checkpoints weights/rml/qutcc/exp2__rml__qutcc__epoch_050.pt \
   --manifest /path/to/rml/manifest.json --pairs /path/to/rml/pairs.npy \
   --calibration-manifest /path/to/rml/calibration/manifest.json \
@@ -85,8 +87,9 @@ interchangeable weights. Historical checkpoint filenames/metadata retain their
 original IDs. The package commands `python -m convrml.train` and
 `python -m convrml.evaluate` remain equivalent to these entry points.
 
-The layout follows [upstream ConvRML](https://github.com/lakabuli/ConvRML):
-`models/`, `configs/`, `dataset.py`, `train.py` and `infer.py`. Our recorded
+The layout uses `models/`, `configs/`, `dataset.py`, `train.py`, and the renamed
+`calibration.py` entry point. The model/data organization follows
+[upstream ConvRML](https://github.com/lakabuli/ConvRML). Our recorded
 prepared-data formats, preprocessing and independent splits remain unchanged.
 
 The [checkpoint index](reproducibility/checkpoints.json) identifies every saved

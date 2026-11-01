@@ -101,7 +101,7 @@ def validate(model, method, dataset, run, device, workers, smoke):
     """Return count and mean clipped PSNR/SSIM/MAE using one prediction per image.
 
     This validation step measures reconstruction quality only. Interval calibration
-    and held-out test evaluation happen separately in infer.py.
+    and held-out test evaluation happen separately in calibration.py.
     """
     model.eval()
     totals, count = {}, 0
