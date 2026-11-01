@@ -53,6 +53,23 @@ Outputs include `jobs.json`, GPU logs, and `results/{qutcc,im2im}/` containing
 configuration, smoke checks, baseline validation, progress, history, resume state,
 five-epoch checkpoints, and `COMPLETE.json` after all 100 epochs finish.
 
+## Submission scripts
+
+`submit.py` handles a new scratch run: it checks the manifest hash and snapshot
+files, then submits one smoke job and one dependent training job per model.
+`schedule_after50.py` queues continuations of an existing run after checking both
+predecessor IDs and matching the model/data/modification source files.
+Both use `slurm.py` for command construction, a shared submission lock, and atomic
+job records. Epoch labels for fresh runs come from `protocol.json`.
+
+If submission stops partway through, rerun the same command from the same frozen
+snapshot. Matching recorded jobs are reused and only missing jobs are submitted.
+Changed commands are rejected. Continuation records are merged into `jobs.json`
+without discarding predecessor records. Existing failed jobs remain recorded;
+their recovery is managed separately in Slurm. Record the frozen checkout's
+revision in `source_commit.txt` before submitting (for a checkout, use
+`git rev-parse HEAD > source_commit.txt`).
+
 ## Automatic continuation after epoch 50
 
 For the active runs, use `schedule_after50.py --run-root /path/to/existing/run`.
