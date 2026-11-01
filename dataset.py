@@ -13,6 +13,8 @@ from PIL import Image
 import torch
 from torch.utils.data import Dataset
 
+SPLIT_ORDER = ("train", "val", "test", "calibration")
+
 
 class NumpyPairs(Dataset):
     """PLD experiment: memory-mapped (N, 2, 3, 256, 256) uint8 cache.
@@ -24,20 +26,25 @@ class NumpyPairs(Dataset):
 
     def __init__(self, pairs_path, manifest_path, split):
         manifest = json.loads(Path(manifest_path).read_text())
-        roles = [
-            role for role in ("train", "val", "test", "calibration") if role in manifest
-        ]
-        if split not in roles:
+        available_splits = [name for name in SPLIT_ORDER if name in manifest]
+        if split not in available_splits:
             raise ValueError("Requested split is absent from the manifest")
+
         self.rows = manifest[split]
         self.ids = tuple(str(row["id"]) for row in self.rows)
-        self.start = sum(len(manifest[role]) for role in roles[: roles.index(split)])
+
+        # The cache concatenates splits in SPLIT_ORDER. Locate this split's start.
+        split_position = available_splits.index(split)
+        preceding_splits = available_splits[:split_position]
+        self.start = sum(len(manifest[name]) for name in preceding_splits)
+
+        # Memory mapping reads requested pairs without loading the whole cache.
         self.array = np.load(pairs_path, mmap_mode="r")
         if self.array.ndim != 5 or self.array.shape[1:3] != (2, 3):
             raise ValueError("Expected (N, 2, 3, H, W) measurement/target pairs")
-        if self.array.dtype != np.uint8 or len(self.array) != sum(
-            len(manifest[r]) for r in roles
-        ):
+
+        expected_pair_count = sum(len(manifest[name]) for name in available_splits)
+        if self.array.dtype != np.uint8 or len(self.array) != expected_pair_count:
             raise ValueError(
                 "Cache dtype/count does not match the uint8 split manifest"
             )
@@ -51,8 +58,10 @@ class NumpyPairs(Dataset):
             index += len(self)
         if not 0 <= index < len(self):
             raise IndexError("Pair index is outside the selected split")
-        pair = np.array(self.array[self.start + index], copy=True)
-        return torch.from_numpy(pair).float() / 255
+        cache_index = self.start + index
+        # Copy the read-only cache slice before making a PyTorch tensor.
+        pixels = np.array(self.array[cache_index], copy=True)
+        return torch.from_numpy(pixels).float() / 255
 
 
 class ImagePairs(Dataset):
@@ -65,22 +74,33 @@ class ImagePairs(Dataset):
 
     def __init__(self, manifest_path, split):
         self.manifest_path = Path(manifest_path).resolve()
-        self.rows = json.loads(self.manifest_path.read_text())["roles"][split]
+        manifest = json.loads(self.manifest_path.read_text())
+        self.rows = manifest["roles"][split]
         self.ids = tuple(str(row["id"]) for row in self.rows)
 
     def __len__(self):
         return len(self.rows)
 
+    def _load_image(self, image_path):
+        """Load one RGB image as float32 [C,H,W], resolving relative paths."""
+        path = Path(image_path)
+        if not path.is_absolute():
+            path = self.manifest_path.parent / path
+
+        with Image.open(path) as image:
+            pixels = np.asarray(image.convert("RGB")).copy()
+
+        # Pillow uses [H,W,C]; the model expects [C,H,W] with values in [0,1].
+        channels_first = torch.from_numpy(pixels).permute(2, 0, 1)
+        return channels_first.float() / 255
+
     def __getitem__(self, index):
-        """Return float32 (2,3,H,W) in [0,1], preserving the paired RGB dimensions."""
-        pair = []
-        for field in ("measurement", "target"):
-            path = Path(self.rows[index][field]["path"])
-            if not path.is_absolute():
-                path = self.manifest_path.parent / path
-            with Image.open(path) as image:
-                rgb = np.asarray(image.convert("RGB")).copy()
-            pair.append(torch.from_numpy(rgb).permute(2, 0, 1).float() / 255)
-        if pair[0].shape != pair[1].shape:
+        """Return [measurement, target] as float32 (2,3,H,W) in [0,1]."""
+        row = self.rows[index]
+        measurement = self._load_image(row["measurement"]["path"])
+        target = self._load_image(row["target"]["path"])
+
+        if measurement.shape != target.shape:
             raise ValueError("Measurement and target must have matching RGB dimensions")
-        return torch.stack(pair)
+
+        return torch.stack((measurement, target))
