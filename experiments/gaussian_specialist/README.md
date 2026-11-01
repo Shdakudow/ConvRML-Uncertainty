@@ -40,3 +40,7 @@ python experiments/gaussian_specialist/submit.py \
 Each full GPU job depends on its own smoke test. Smoke updates are discarded;
 full training starts again at epoch zero. Results stay in a new run directory;
 the generalized runs and their checkpoints remain separate.
+
+The [launch record](../../reproducibility/gaussian_specialists_50epochs_launch_20261101.json)
+contains job IDs, matched initial-weight hashes, smoke results, and the original
+generalized models' epoch-50 Gaussian validation scores for comparison.
