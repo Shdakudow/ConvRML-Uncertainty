@@ -22,6 +22,6 @@
   "validation_per_condition": 100,
   "validation_seed": 202610319,
   "checkpoint_every_steps": 500,
-  "milestone_every_epochs": 5,
+  "milestone_every_epochs": 10,
   "segment_hours": 10.5
 }

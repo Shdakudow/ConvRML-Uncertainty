@@ -556,7 +556,10 @@ def run(args):
     if (
         offset == 0
         and epoch > 1
-        and (epoch - 1) % SETTINGS["milestone_every_epochs"] == 0
+        and (
+            (epoch - 1) % SETTINGS["milestone_every_epochs"] == 0
+            or epoch - 1 == SETTINGS["epochs"]
+        )
     ):
         milestone(epoch - 1)
     segment_started = time.monotonic()
@@ -631,7 +634,10 @@ def run(args):
         offset, loss_sum, loss_count = 0, 0.0, 0
         condition_counts = Counter()
         checkpoint()
-        if completed_epoch % SETTINGS["milestone_every_epochs"] == 0:
+        if (
+            completed_epoch % SETTINGS["milestone_every_epochs"] == 0
+            or completed_epoch == SETTINGS["epochs"]
+        ):
             milestone(completed_epoch)
         if STOP:
             raise SystemExit(STOP)

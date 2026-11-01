@@ -38,8 +38,11 @@ checkpoint. Recovery loads only the matching scratch run's own resume state.
 `run.sbatch` requests a checkpoint before allocation expiry and requeues
 the same job. Cancellation does not requeue it. Full resume state includes Adam,
 augmentation/quantile RNGs, epoch permutation offset, and accumulated epoch counts.
-Training is checkpointed every 500 steps and at epoch boundaries. Compact model
-weights are retained every five epochs, including epochs 30, 50, and 100.
+Full recovery state is checkpointed every 500 steps and at epoch boundaries.
+The current default retains compact model weights every ten epochs, including
+epochs 30, 50, and 100, and always at the final epoch. Already-running jobs keep
+their original frozen five-epoch snapshot setting; recovery checkpoints remain
+frequent in both cases.
 
 Use a frozen copy of the repository containing `source_commit.txt`:
 
@@ -51,7 +54,7 @@ python experiments/generalized_inputs/submit.py \
 
 Outputs include `jobs.json`, GPU logs, and `results/{qutcc,im2im}/` containing
 configuration, smoke checks, baseline validation, progress, history, resume state,
-five-epoch checkpoints, and `COMPLETE.json` after all 100 epochs finish.
+ten-epoch model checkpoints, and `COMPLETE.json` after all 100 epochs finish.
 
 ## Submission scripts
 
