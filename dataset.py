@@ -3,6 +3,17 @@
 Both datasets return (2, 3, H, W): measurement first, ground truth second.
 Uint8 RGB values are converted to float32 and divided by 255. Neither loader
 adds corruption, resizes images, regenerates splits, or changes ground truth.
+
+Example for MIRFLICKR image files:
+    from torch.utils.data import DataLoader
+
+    dataset = ImagePairs("split.json", split="train")
+    measurement, target = dataset[0]  # Each has shape (3, H, W).
+    batch = next(iter(DataLoader(dataset, batch_size=4)))
+    measurements, targets = batch[:, 0], batch[:, 1]
+
+The batch has shape (B, 2, 3, H, W). Apply online modifications to measurements
+after loading; keep targets unchanged. Use NumpyPairs for a NumPy pair cache.
 """
 
 import json
@@ -25,6 +36,13 @@ class NumpyPairs(Dataset):
     """
 
     def __init__(self, pairs_path, manifest_path, split):
+        """Select a split from the shared cache using its manifest ordering.
+
+        Args:
+            pairs_path: uint8 .npy file shaped (N, 2, 3, H, W).
+            manifest_path: JSON mapping split names to ordered rows with IDs.
+            split: "train", "val", "test", or "calibration".
+        """
         manifest = json.loads(Path(manifest_path).read_text())
         available_splits = [name for name in SPLIT_ORDER if name in manifest]
         if split not in available_splits:
@@ -50,6 +68,7 @@ class NumpyPairs(Dataset):
             )
 
     def __len__(self):
+        """Return the number of pairs in the selected split."""
         return len(self.rows)
 
     def __getitem__(self, index):
@@ -73,12 +92,21 @@ class ImagePairs(Dataset):
     """
 
     def __init__(self, manifest_path, split):
+        """Read the selected split's paths; images are opened when requested.
+
+        Args:
+            manifest_path: JSON containing roles[split], a list of rows with
+                id, measurement.path, and target.path. Relative image paths
+                resolve against this JSON file's directory.
+            split: An existing split name, such as "train" or "val".
+        """
         self.manifest_path = Path(manifest_path).resolve()
         manifest = json.loads(self.manifest_path.read_text())
         self.rows = manifest["roles"][split]
         self.ids = tuple(str(row["id"]) for row in self.rows)
 
     def __len__(self):
+        """Return the number of pairs in the selected split."""
         return len(self.rows)
 
     def _load_image(self, image_path):
