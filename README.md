@@ -105,6 +105,9 @@ Gaussian blur, resolution loss with factor 64, and JPEG compression. The prepara
 command creates separate MIRFLICKR measurement datasets while preserving the
 original targets and split identities. It does not submit model training.
 
+[Gaussian-only specialists](experiments/gaussian_specialist/README.md) provide a
+50-epoch controlled comparison with the generalized input-training runs.
+
 `python -m convrml.evaluate` loads frozen weights, fits on the separate calibration
 split and reports held-out SSIM, PSNR, MAE, LPIPS-AlexNet, coverage, width,
 crossings and Pearson/Spearman correlations of width with absolute error. It saves

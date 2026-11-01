@@ -24,11 +24,13 @@ sys.path.insert(0, str(REPOSITORY))
 
 from convrml.checkpoints import load_model_weights, save_checkpoint
 from dataset import ImagePairs
+from input_modifications.gaussian import gaussian_noise
 from input_modifications.online import CONDITIONS, _apply, sample_training_modification
 from models import Im2im, QUTCC
 
 STOP = 0
-SETTINGS = json.loads(Path(__file__).with_name("protocol.json").read_text())
+SETTINGS_PATH = Path(__file__).with_name("protocol.json")
+SETTINGS = json.loads(SETTINGS_PATH.read_text())
 
 
 def request_stop(signum, _frame):
@@ -58,9 +60,10 @@ def source_hash():
         "models",
         "input_modifications",
         "experiments/generalized_inputs",
+        "experiments/gaussian_specialist",
     ):
         paths.extend((REPOSITORY / name).rglob("*.py"))
-    paths.append(Path(__file__).with_name("protocol.json"))
+    paths.append(SETTINGS_PATH)
     digest = hashlib.sha256()
     for path in sorted(paths):
         digest.update(str(path.relative_to(REPOSITORY)).encode())
@@ -96,7 +99,9 @@ def weights_hash(model):
     return digest.hexdigest()
 
 
-def prepare_initial_weights(model, output, method, smoke, previous_config=None):
+def prepare_initial_weights(
+    model, output, method, smoke, previous_config=None, initial_reference=None
+):
     """Save fresh epoch-zero weights before smoke; replay them across CPU types."""
     path = output / "initial_random.pt"
     expected = dict(
@@ -110,10 +115,38 @@ def prepare_initial_weights(model, output, method, smoke, previous_config=None):
             previous_config["source_sha256"] if previous_config else source_hash()
         ),
     )
+    matched_hash = SETTINGS.get("matched_initial_weights_sha256", {}).get(method)
+    if matched_hash:
+        expected["matched_initial_weights_sha256"] = matched_hash
     if smoke:
         if path.exists():
             raise FileExistsError("Fresh initialization already exists; use a new run.")
+        if matched_hash:
+            if initial_reference is None:
+                raise ValueError(
+                    "The matched experiment requires an untrained epoch-zero reference."
+                )
+            reference = torch.load(
+                initial_reference, map_location="cpu", weights_only=False
+            )
+            required = dict(
+                epoch=0,
+                trained_steps=0,
+                pretrained=False,
+                method=method,
+                seed=SETTINGS["seed"],
+            )
+            if any(reference.get(key) != value for key, value in required.items()):
+                raise ValueError(
+                    "The initialization reference must have zero trained steps."
+                )
+            load_model_weights(model, reference["model"])
+            del reference
         digest = weights_hash(model)
+        if matched_hash and digest != matched_hash:
+            raise ValueError(
+                "The untrained reference does not match the comparison's initial weights."
+            )
         save_checkpoint(
             path, dict(**expected, model=model.state_dict(), weights_sha256=digest)
         )
@@ -125,7 +158,7 @@ def prepare_initial_weights(model, output, method, smoke, previous_config=None):
         )
     load_model_weights(model, initial["model"])
     digest = weights_hash(model)
-    if digest != initial["weights_sha256"]:
+    if digest != initial["weights_sha256"] or (matched_hash and digest != matched_hash):
         raise ValueError("Untrained epoch-zero weight hash mismatch.")
     return digest
 
@@ -284,13 +317,24 @@ def validate(model, panel):
     )
 
 
+def modify_training_measurements(measurement, generator):
+    """Select the protocol's input distribution; targets never enter this helper."""
+    condition = SETTINGS.get("training_condition", "mixture")
+    if condition == "mixture":
+        return sample_training_modification(measurement, generator=generator)
+    if condition == "gaussian":
+        modified = gaussian_noise(
+            measurement, sigma=SETTINGS["gaussian_sigma"], generator=generator
+        )
+        return modified, ["gaussian"] * len(measurement)
+    raise ValueError(f"Unsupported training condition: {condition}")
+
+
 def train_batch(
     model, optimizer, batch, augmentation_rng, quantile_rng, *, check_gradients=False
 ):
     """Modify CPU measurements only, then accumulate an effective batch of four."""
-    modified, labels = sample_training_modification(
-        batch[:, 0], generator=augmentation_rng
-    )
+    modified, labels = modify_training_measurements(batch[:, 0], augmentation_rng)
     optimizer.zero_grad(set_to_none=True)
     value = 0.0
     for index in range(len(batch)):
@@ -341,7 +385,12 @@ def run(args):
             "An epoch extension requires the existing run's resume checkpoint."
         )
     initial_weights_sha256 = prepare_initial_weights(
-        model, args.output, args.method, args.smoke, initial_config
+        model,
+        args.output,
+        args.method,
+        args.smoke,
+        initial_config,
+        initial_reference=args.initial_random_state,
     )
     model = model.cuda()
     optimizer = torch.optim.Adam(
@@ -357,7 +406,11 @@ def run(args):
     meta = dict(
         **SETTINGS,
         method=args.method,
-        dataset="raw_online_ten_condition_mixture",
+        dataset=(
+            "raw_online_gaussian_sigma001"
+            if SETTINGS.get("training_condition") == "gaussian"
+            else "raw_online_ten_condition_mixture"
+        ),
         pretrained=False,
         initial_weights_sha256=initial_weights_sha256,
         pretrained_checkpoint=None,
@@ -656,7 +709,19 @@ def run(args):
 
 
 def main():
+    global SETTINGS_PATH
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--protocol",
+        type=Path,
+        default=SETTINGS_PATH,
+        help="Protocol JSON inside the frozen repository snapshot",
+    )
+    parser.add_argument(
+        "--initial-random-state",
+        type=Path,
+        help="Verified untrained epoch-zero reference for a matched comparison",
+    )
     parser.add_argument("--method", choices=("qutcc", "im2im"), required=True)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -677,6 +742,9 @@ def main():
         help="Require a finished 50-epoch predecessor before continuing",
     )
     args = parser.parse_args()
+    SETTINGS_PATH = args.protocol.resolve()
+    SETTINGS.clear()
+    SETTINGS.update(json.loads(SETTINGS_PATH.read_text()))
     args.output.mkdir(parents=True, exist_ok=True)
     with (args.output / "run.lock").open("w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)

@@ -9,6 +9,10 @@ Global exposure splits its share between gains 0.50 and 1.50. All other strength
 remain at the reviewed settings, including resolution factor 64 and JPEG 50.
 Targets stay original, and no modified image datasets are saved.
 
+The [Gaussian-only specialist experiment](../gaussian_specialist/README.md) reuses
+this engine with its own protocol JSON, 50 epochs, and matched untrained weights.
+`--protocol` selects that configuration; it leaves existing frozen runs unchanged.
+
 The models are blind: modification labels are logged but never supplied to the
 network. Both architectures retain their existing losses. Fresh Adam moments,
 effective batch four, microbatch one, and float32 are recorded in

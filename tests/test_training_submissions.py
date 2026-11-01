@@ -13,16 +13,17 @@ from unittest.mock import patch
 SOURCE = Path(__file__).resolve().parents[1] / "experiments/generalized_inputs"
 
 
-def load_script(name):
+def load_script(name, directory=SOURCE):
     spec = importlib.util.spec_from_file_location(
-        "generalized_" + name, SOURCE / f"{name}.py"
+        "generalized_" + name, directory / f"{name}.py"
     )
     module = importlib.util.module_from_spec(spec)
+    original_path = list(sys.path)
     sys.path.insert(0, str(SOURCE))
     try:
         spec.loader.exec_module(module)
     finally:
-        sys.path.pop(0)
+        sys.path[:] = original_path
     return module
 
 
@@ -32,6 +33,48 @@ slurm = sys.modules["slurm"]
 
 
 class SubmissionPlans(unittest.TestCase):
+    def test_gaussian_specialists_receive_their_protocol_and_untrained_references(self):
+        gaussian = load_script("submit", SOURCE.parent / "gaussian_specialist")
+        directory = self.repository / "experiments/gaussian_specialist"
+        directory.mkdir()
+        protocol = json.loads((self.source / "protocol.json").read_text())
+        protocol.update(epochs=50, training_condition="gaussian", gaussian_sigma=0.01)
+        protocol_path = directory / "protocol.json"
+        protocol_path.write_text(json.dumps(protocol))
+        comparison = self.root / "comparison"
+        for method in ("qutcc", "im2im"):
+            initial = comparison / "results" / method / "initial_random.pt"
+            initial.parent.mkdir(parents=True)
+            initial.write_text("untrained reference fixture")
+        with patch.object(
+            slurm.subprocess, "check_output", side_effect=["31", "32", "33", "34"]
+        ) as sbatch:
+            jobs = gaussian.submit_specialists(
+                self.run, self.project, comparison, self.repository
+            )
+        self.assertEqual(
+            set(jobs),
+            {
+                "gaussian50-qutcc-smoke",
+                "gaussian50-qutcc",
+                "gaussian50-im2im-smoke",
+                "gaussian50-im2im",
+            },
+        )
+        for index, call in enumerate(sbatch.call_args_list):
+            command = call.args[0]
+            self.assertEqual(
+                command[command.index("--protocol") + 1], str(protocol_path.resolve())
+            )
+            method = "qutcc" if index < 2 else "im2im"
+            expected_reference = comparison / "results" / method / "initial_random.pt"
+            self.assertEqual(
+                command[command.index("--initial-random-state") + 1],
+                str(expected_reference.resolve()),
+            )
+        self.assertIn("--dependency=afterok:31", sbatch.call_args_list[1].args[0])
+        self.assertIn("--dependency=afterok:33", sbatch.call_args_list[3].args[0])
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)

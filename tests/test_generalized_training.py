@@ -1,6 +1,7 @@
 """Check deterministic validation conditions, split separation, and target safety."""
 
 import importlib.util
+import json
 from pathlib import Path
 import unittest
 import tempfile
@@ -39,6 +40,94 @@ class ToyPairs(Dataset):
 
 
 class GeneralizedTraining(unittest.TestCase):
+    def test_gaussian_specialist_modifies_every_input_without_changing_sources(self):
+        measurement = torch.full((16, 3, 64, 64), 0.5)
+        original = measurement.clone()
+        with patch.dict(
+            training.SETTINGS, training_condition="gaussian", gaussian_sigma=0.01
+        ):
+            with patch.object(
+                training,
+                "sample_training_modification",
+                side_effect=AssertionError("Mixture must not be sampled"),
+            ):
+                modified, labels = training.modify_training_measurements(
+                    measurement, torch.Generator().manual_seed(42)
+                )
+        self.assertEqual(labels, ["gaussian"] * len(measurement))
+        self.assertAlmostEqual(
+            float((modified - measurement).std()), 0.01, delta=0.0001
+        )
+        torch.testing.assert_close(measurement, original, rtol=0, atol=0)
+        self.assertTrue(
+            all(not torch.equal(a, b) for a, b in zip(modified, measurement))
+        )
+
+    def test_matched_initialization_accepts_only_verified_untrained_weights(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            initial = torch.nn.Linear(4, 3)
+            digest = training.weights_hash(initial)
+            state = dict(
+                epoch=0,
+                trained_steps=0,
+                pretrained=False,
+                method="qutcc",
+                seed=training.SETTINGS["seed"],
+                model=initial.state_dict(),
+            )
+            reference = root / "reference.pt"
+            torch.save(state, reference)
+            with patch.dict(
+                training.SETTINGS, matched_initial_weights_sha256={"qutcc": digest}
+            ):
+                model = torch.nn.Linear(4, 3)
+                actual = training.prepare_initial_weights(
+                    model, root / "good", "qutcc", True, initial_reference=reference
+                )
+                self.assertEqual(actual, digest)
+                self.assertTrue(torch.equal(model.weight, initial.weight))
+                state["trained_steps"] = 1
+                torch.save(state, reference)
+                with self.assertRaisesRegex(ValueError, "zero trained steps"):
+                    training.prepare_initial_weights(
+                        model,
+                        root / "trained",
+                        "qutcc",
+                        True,
+                        initial_reference=reference,
+                    )
+                state["trained_steps"] = 0
+                state["model"] = torch.nn.Linear(4, 3).state_dict()
+                torch.save(state, reference)
+                with self.assertRaisesRegex(ValueError, "does not match"):
+                    training.prepare_initial_weights(
+                        model,
+                        root / "wrong",
+                        "qutcc",
+                        True,
+                        initial_reference=reference,
+                    )
+
+    def test_gaussian_protocol_matches_first_50_epoch_schedule_and_validation(self):
+        gaussian = json.loads(
+            SOURCE.parent.parent.joinpath(
+                "gaussian_specialist/protocol.json"
+            ).read_text()
+        )
+        for step in (0, 8000, 40500, 100000, 224999):
+            expected = training.learning_rate(step, 100 * 4500)
+            with patch.dict(training.SETTINGS, gaussian, clear=True):
+                actual = training.learning_rate(step, 50 * 4500)
+            self.assertAlmostEqual(actual, expected, places=15)
+        original = ToyPairs()
+        baseline = training.ValidationPanel(original, 3)
+        with patch.dict(training.SETTINGS, gaussian, clear=True):
+            specialist = training.ValidationPanel(original, 3)
+            for index in range(3, 6):  # Gaussian is condition 1 in both panels.
+                for actual, expected in zip(specialist[index][:2], baseline[index][:2]):
+                    torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+
     def test_epoch_zero_state_replays_exactly_and_rejects_trained_initialization(self):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary)
