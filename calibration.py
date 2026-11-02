@@ -1,9 +1,24 @@
-"""Calibrate frozen public models, then measure a separate held-out test split.
+"""Calibrate saved models, then evaluate them on a separate held-out test split.
 
-Baselines use RCPS-HB; QUTCC selects quantile inputs with paper Algorithm 1.
-Run ``python calibration.py --help`` for the model, data, and runtime options.
-Calibration formulas live in convrml/calibration.py; held-out metrics and exports
-live in convrml/evaluation.py. No model weights are updated by this workflow.
+Reading order: main -> run_evaluation -> _run_evaluation. The workflow loads
+frozen weights, fits interval parameters on calibration pairs, evaluates test
+pairs with those parameters fixed, and saves the results. It never trains weights.
+
+Paper mode uses separate lower/upper RCPS-HB scales for Im2im, ensemble and
+MC dropout. QUTCC instead searches for two scalar q inputs shared by all images
+using paper Algorithm 1. Native mode skips fitting and uses the original bounds.
+Neither procedure forces exact test coverage or clips predictions to [0,1].
+QUTCC's search assumes monotone quantile responses; it does not enforce them.
+
+Outputs in --output:
+    calibration.json: fitted scales or q values, request settings and split identity.
+    report.json: aggregate/per-image raw and clipped metrics, provenance and timings.
+    per_image.csv: one metric row per test image.
+    examples.npz: optional first N measurements/targets and clipped predictions/bounds.
+    failure.json: an explicit record when paper calibration is infeasible.
+
+The fitting formulas are in convrml/calibration.py; metrics and exports are in
+convrml/evaluation.py. Run ``python calibration.py --help`` for command options.
 """
 
 import argparse
@@ -33,13 +48,24 @@ from convrml.protocol import (
 
 
 def arguments(argv=None):
+    """Parse CLI options; an explicit argv list is useful for scripts and tests.
+
+    --manifest supplies test IDs. Paper mode also needs calibration IDs, either
+    in a separate manifest or a disjoint role in the same DLMD manifest. PLD uses
+    NumPy pair caches; DLMD reads image paths from the manifest without --pairs.
+    The dataset selects the recorded experiment profile automatically.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     model_options = parser.add_argument_group("Model and checkpoints")
     data_options = parser.add_argument_group("Data splits")
     calibration_options = parser.add_argument_group("Calibration procedure")
     runtime_options = parser.add_argument_group("Runtime and outputs")
     model_options.add_argument(
-        "--experiment", type=int, choices=[2, 3], help=argparse.SUPPRESS
+        # Retained for older commands; new commands only need --dataset.
+        "--experiment",
+        type=int,
+        choices=[2, 3],
+        help=argparse.SUPPRESS,
     )
     data_options.add_argument(
         "--dataset", choices=list(settings()["datasets"]), required=True
@@ -114,7 +140,11 @@ def arguments(argv=None):
 
 
 def manifest_ids(path):
-    """Read split membership without opening any measurement or target images."""
+    """Return {split: ordered image-ID strings}, without reading image pixels.
+
+    Accept both PLD's top-level split keys and DLMD's nested ``roles`` mapping.
+    Order matters: test IDs must align with loader order in the exported CSV.
+    """
     value = json.loads(Path(path).read_text())
     roles = value.get("roles", value)
     return {
@@ -125,7 +155,12 @@ def manifest_ids(path):
 
 
 def load_calibration_split(args):
-    """Check disjoint IDs, then open only the calibration pairs."""
+    """Return (calibration dataset, identity record) after checking split isolation.
+
+    audit_manifest checks the saved split counts/order unless --smoke is set.
+    The overlap check still runs in smoke mode: calibration IDs must not appear
+    in train, validation or test. Identity records manifest and ordered-ID hashes.
+    """
     identity = audit_manifest(args.calibration_manifest, args.dataset, smoke=args.smoke)
     calibration_ids = set(manifest_ids(args.calibration_manifest)["calibration"])
     for role, ids in manifest_ids(args.manifest).items():
@@ -141,8 +176,13 @@ def load_calibration_split(args):
 def make_predictor(model, run, device):
     """Build a measurement (N,3,H,W) -> (center, lower, upper) callable.
 
-    Inputs are in [0,1]; each output keeps the input shape but is unbounded.
-    All methods share this interface despite their different forward() outputs.
+    Inputs are floating RGB intensities in [0,1]. Each output has the same shape
+    and intensity units, but is unbounded. These are native, uncalibrated bounds.
+    ``run`` is the recorded model/precision profile, not an optimizer or trainer.
+
+    MC dropout aggregates repeated stochastic passes. Other models implement
+    their native bounds directly. QUTCC's calibrated q inputs are applied later
+    by apply_calibration, rather than changing this native predictor.
     """
 
     config = settings()
@@ -170,7 +210,12 @@ def calibrate_checkpoint(
     """Fit and save calibration before loading test pixels.
 
     Returns (fitted parameters, calibration data identity, elapsed seconds).
-    Native mode saves an empty fit; infeasible paper calibration writes failure.json.
+    ``fitted`` contains baseline scales or QUTCC q endpoints, plus fitting/audit
+    metadata. Native mode returns an empty fit and no calibration identity.
+
+    ``request`` records inference options; ``provenance`` identifies checkpoint
+    files and epochs. Both help diagnose an infeasible fit in failure.json.
+    Such a failure is raised immediately, so no test metrics are exported.
     """
     started = time.monotonic()
     fitted, identity = {}, None
@@ -193,13 +238,20 @@ def calibrate_checkpoint(
             )
             raise
     write_json(
-        output / "calibration.json", dict(fitted, request=request, data=identity)
+        # Persist the fit before the caller opens the held-out test dataset.
+        output / "calibration.json",
+        dict(fitted, request=request, data=identity),
     )
     return fitted, identity, time.monotonic() - started
 
 
 def validate_request(args):
-    """Reject invalid options and existing fitted outputs before loading weights."""
+    """Reject invalid options and existing fitted outputs before loading weights.
+
+    Ensemble checkpoints must be supplied in member order; the checkpoint loader
+    separately verifies their identities, seeds and matching epochs. A fresh
+    output directory prevents silently replacing an earlier fit or failure.
+    """
     if args.calibration not in ("paper", "native"):
         raise ValueError("Calibration must be paper or native")
     expected_checkpoints = (5, 10) if args.method == "ensemble" else (1,)
@@ -221,7 +273,13 @@ def validate_request(args):
 
 
 def load_frozen_checkpoint(args, run, device, *, model_loader=None):
-    """Load verified weights, then seed the inference stream (including MC masks)."""
+    """Return (model, checkpoint provenance, inference seed, load time in seconds).
+
+    Seed after model construction so initialization cannot consume the random
+    stream intended for MC inference. This makes repeated evaluations replayable;
+    it does not change the training seeds stored in the checkpoint.
+    ``model_loader`` is only an optional fixture hook for correctness checks.
+    """
     started = time.monotonic()
     model, provenance = load_predictor(
         args.checkpoints, run, device, smoke=args.smoke, model_loader=model_loader
@@ -237,7 +295,12 @@ def load_frozen_checkpoint(args, run, device, *, model_loader=None):
 
 
 def make_request(args, device, provenance, seed):
-    """Record the requested method, calibration mode, and inference settings."""
+    """Build the inference-settings record stored in calibration and test reports.
+
+    Alpha is the target miss fraction (0.10 means nominal 90% coverage), not a
+    dropout probability. The RCPS confidence budget delta is a separate setting
+    used by the fitting code. Neither is chosen using test ground truth.
+    """
     config = settings()
     return dict(
         experiment=args.experiment,
@@ -260,6 +323,8 @@ def run_evaluation(args, *, model_loader=None):
 
     A directory lock prevents concurrent writers. ``model_loader`` is an optional
     test hook; normal runs strictly load the checkpoint's recorded model identity.
+    The lock is released automatically on success or error. Existing report/fit
+    files remain protected even after the lock is released.
     """
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -270,7 +335,15 @@ def run_evaluation(args, *, model_loader=None):
 
 @torch.inference_mode()
 def _run_evaluation(args, *, model_loader=None):
+    """Run the four workflow stages under the output lock and inference_mode.
+
+    inference_mode disables gradient recording. Loading/checkpoint utilities set
+    model evaluation behavior; MC bounds deliberately enable their dropout masks.
+    Test IDs can be inspected up front, but test pixels are opened only after the
+    fit has been saved. Neither calibration nor test ground truth updates weights.
+    """
     validate_request(args)
+    # Record the exact source (including documentation) and software versions.
     source, software = source_fingerprint(), environment()
     data_identity = audit_manifest(args.manifest, args.dataset, smoke=args.smoke)
     test_ids = manifest_ids(args.manifest)["test"]
@@ -281,6 +354,8 @@ def _run_evaluation(args, *, model_loader=None):
         args.experiment,
         args.dataset,
         args.method,
+        # Member zero supplies the common ensemble inference profile. The loader
+        # validates every supplied member with its own initialization/data seeds.
         0 if args.method == "ensemble" else None,
     )
     output = args.output.resolve()
@@ -310,6 +385,8 @@ def _run_evaluation(args, *, model_loader=None):
     check_shape(test, args.dataset, smoke=args.smoke)
 
     def calibrated_predict(measurement):
+        # QUTCC queries the fitted q values; baselines scale native distances
+        # from the center. In native mode fitted={} leaves predictions unchanged.
         return apply_calibration(measurement, predict, model, args.method, fitted)
 
     # 3. Evaluate test images with the fixed calibration parameters.
@@ -325,6 +402,7 @@ def _run_evaluation(args, *, model_loader=None):
     )
 
     # 4. Assemble provenance and export scores, CSV rows, and optional examples.
+    # Raw/clipped views are reported separately; clipping is not calibration.
     report = make_report(
         result,
         metadata=dict(
@@ -358,6 +436,7 @@ def _run_evaluation(args, *, model_loader=None):
 
 
 def main():
+    """CLI entry point; run_evaluation is the equivalent callable Python API."""
     run_evaluation(arguments())
 
 
