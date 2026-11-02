@@ -27,6 +27,12 @@ def read_checkpoint(path):
 
 
 def identity(checkpoint):
+    """Normalize recorded names from portable and historical checkpoints.
+
+    Legacy ``ensemble_0`` identifies a member; ``mc_005`` identifies p=0.05.
+    Historical ``camera=raw`` maps to the clean/corrupted DLMD dataset selectors.
+    These translations affect metadata only; model tensors load separately.
+    """
     meta = checkpoint.get("run") or checkpoint.get("config") or checkpoint
     arm = meta.get("arm", meta.get("method"))
     if isinstance(arm, str) and arm.startswith("ensemble_"):
@@ -60,7 +66,11 @@ def identity(checkpoint):
 
 
 def validate_identity(checkpoint, run, *, smoke=False):
-    """Reject superseded training protocols or mismatched benchmark provenance."""
+    """Match method/dataset/member, accepted protocol and historical data hashes.
+
+    ``run`` comes from protocol.profile. Inference accepts verified legacy weights;
+    exact optimizer/RNG resume has additional source/environment checks below.
+    """
     info = identity(checkpoint)
     for key in ("method", "dataset", "member"):
         if info[key] != run[key]:
@@ -173,7 +183,11 @@ def initialize_from_clean(model, path, method, *, smoke=False):
 
 
 def model_checkpoint(checkpoint):
-    """Select inference fields from a full resume checkpoint, without optimizer state."""
+    """Select milestone fields from full state, retaining weight/data provenance.
+
+    Optimizer moments, batch progress and RNG tensors belong only in latest.pt;
+    milestone exports contain enough identity information for strict inference.
+    """
     keys = (
         "schema",
         "run",

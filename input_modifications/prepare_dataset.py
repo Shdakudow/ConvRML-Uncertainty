@@ -107,6 +107,11 @@ def sensor_state(shape, base_seed):
 
 
 def initialize_worker(output, base_seed, shape, variants):
+    """Initialize process-local state once, with the same simulated sensor per worker.
+
+    Image noise gets a separate named seed in build_pair. The persistent sensor
+    mask/gain/offset must instead match across every worker, split and image.
+    """
     global _WORKER
     torch.set_num_threads(1)
     mask, pattern = sensor_state(shape, base_seed)
@@ -121,6 +126,7 @@ def initialize_worker(output, base_seed, shape, variants):
 
 
 def transform(y, variant, image_seed, state):
+    """Apply one measurement-only variant; reuse persistent sensor defects."""
     if variant == "dead_pixels":
         return apply_dead_pixels(y, state["mask"])
     if variant == "fixed_pattern":
@@ -153,6 +159,12 @@ def save_measurement(path, pixels):
 
 
 def build_pair(item):
+    """Validate one original pair and export each requested measurement variant.
+
+    Targets are only read/hashed and referenced in manifests. Their pixel data
+    are never passed to transforms. Output hashes describe decoded uint8 pixels
+    and PNG bytes separately, so quantization and file encoding remain traceable.
+    """
     role, index, row = item
     state = _WORKER
     original, original_record = read_rgb(row["measurement"])
@@ -271,15 +283,12 @@ def make_preview(output, roles, variants):
     for row_index, role in enumerate(ROLES):
         row = roles[role][0]
         for column_index, name in enumerate(columns):
-            path = (
-                row["measurement"]["path"]
-                if name == "original"
-                else (
-                    row["target"]["path"]
-                    if name == "target"
-                    else output / name / "measurements" / role / "00000.png"
-                )
-            )
+            if name == "original":
+                path = row["measurement"]["path"]
+            elif name == "target":
+                path = row["target"]["path"]
+            else:
+                path = output / name / "measurements" / role / "00000.png"
             with Image.open(path) as image:
                 thumbnail = image.convert("RGB").resize((tile_width, tile_height))
             x, top = column_index * tile_width, row_index * (tile_height + label_height)
@@ -291,7 +300,12 @@ def make_preview(output, roles, variants):
 def prepare(
     manifest, output, *, workers=4, seed=20261030, variants=None, limit_per_split=None
 ):
-    """Build and audit all selected variants; return the final readiness report."""
+    """Validate source -> generate variants -> verify manifests -> write READY.json.
+
+    A matching protocol permits exact resumption; changed source/settings require
+    a new output directory. READY.json is published only after PNG readback,
+    original-target identities and split ordering all pass verification.
+    """
     if workers < 1 or (limit_per_split is not None and limit_per_split < 1):
         raise ValueError("workers and limit_per_split must be positive.")
     variants = list(PRESETS) if variants is None else list(variants)
@@ -304,6 +318,7 @@ def prepare(
     manifest, output = Path(manifest).resolve(strict=True), Path(output).resolve()
     if output == manifest.parent or manifest.is_relative_to(output):
         raise ValueError("Output must not contain or replace the source manifest.")
+    # 1. Resolve and audit the original pairs before creating output images.
     source_blob = manifest.read_bytes()
     source = json.loads(source_blob)
     roles = validate_source(source, manifest.parent, output, limit_per_split)
@@ -331,6 +346,7 @@ def prepare(
         training_submitted=False,
     )
     output.mkdir(parents=True, exist_ok=True)
+    # 2. Lock this build and reject an incompatible partial output directory.
     with (output / "prepare.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         protocol_path = output / "protocol.json"
@@ -347,6 +363,7 @@ def prepare(
             for index, row in enumerate(roles[role])
         ]
         built = {name: {role: [] for role in ROLES} for name in ["clean", *variants]}
+        # 3. Generate in source order; all workers reconstruct the same sensor.
         started = time.monotonic()
         initializer_args = (str(output), seed, shape, variants)
         if workers == 1:
@@ -382,6 +399,7 @@ def prepare(
                     )
                     write_json(output / "progress.json", progress)
                     print(json.dumps(progress), flush=True)
+        # 4. Write one loader-compatible manifest per variant, preserving targets.
         summaries = {}
         for name, selected_roles in built.items():
             for role in ROLES:
@@ -433,6 +451,7 @@ def prepare(
             summaries[name] = summary
         if digest(manifest.read_bytes()) != identity["source_sha256"]:
             raise ValueError("Source manifest changed during preparation.")
+        # 5. Mark readiness only after every variant and source check completes.
         make_preview(output, roles, variants)
         ready = dict(
             passed=True,

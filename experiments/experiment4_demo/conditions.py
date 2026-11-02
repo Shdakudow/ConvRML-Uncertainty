@@ -3,7 +3,7 @@
 import hashlib
 import torch
 from input_modifications.exposure import change_exposure
-from input_modifications.online import _apply
+from input_modifications.online import apply_condition
 
 # Exposure is one training family, displayed at its two possible global gains.
 CONDITIONS = (
@@ -87,7 +87,7 @@ def modify(image, condition, *, split, identifier):
             image, gain={"exposure_050": 0.5, "exposure_150": 1.5}[condition]
         )
     generator = torch.Generator().manual_seed(seed_for(split, identifier, condition))
-    return _apply(image, condition, generator)
+    return apply_condition(image, condition, generator)
 
 
 def calibration_conditions():
@@ -102,4 +102,8 @@ def calibration_conditions():
 
 
 def catalog():
-    return [dict(id=i, title=t, description=d, formula=f) for i, t, d, f in CONDITIONS]
+    """Return JSON-ready labels/formulas in the same order as inference conditions."""
+    return [
+        dict(id=identifier, title=title, description=description, formula=formula)
+        for identifier, title, description, formula in CONDITIONS
+    ]

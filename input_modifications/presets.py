@@ -1,4 +1,10 @@
-"""Named dataset settings; implementations live in one file per modification."""
+"""Shared settings for prepared corruptions and online training conditions.
+
+PRESETS records parameter values; each named module implements one transform.
+TRANSFORMS binds stateless presets for dataset preparation. Persistent sensor
+masks/patterns are handled explicitly, and online.py exposes apply_condition.
+Protocol snapshots record these values separately as immutable experiment evidence.
+"""
 
 from functools import partial
 

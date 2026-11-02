@@ -25,6 +25,31 @@ classes; there are no dataset-specific copies of these losses or architectures.
 The small `convrml/train.py` and `convrml/evaluate.py` modules forward the older
 package commands to the root scripts; the workflows are implemented once.
 
+## Tracing one experiment
+
+| Step | Follow this code | What to inspect |
+| --- | --- | --- |
+| Recorded settings | `protocol.profile` → `configs/experiment_settings.json` | Optimizer, schedule, precision, batch/microbatch sizes and four seed streams |
+| Image pairs | `protocol.dataset_for` → `dataset.py` | Manifest IDs/order, measurement/target paths, uint8 / 255 conversion |
+| Learned mapping | `protocol.make_model` → `models/` → `backbone.py` | `forward`, `loss`, and `bounds`; q conditioning is in `film.py` |
+| Weight updates | Root `train.py`: `run_training` → `train_one_epoch` | Learning rate, loss, backward, accumulation and Adam/AdamW step |
+| Saved training state | `checkpoints.save_training_progress` | `latest.pt` has optimizer/RNG state; milestone files retain model/data identity |
+| Interval fitting | Root `calibration.py` → `calibration.fit_calibration` | RCPS tail scales or QUTCC q inputs, fitted on calibration pairs only |
+| Held-out scores | `evaluation.evaluate_test_set` → `metrics.py` | `report.json`, `per_image.csv`, optional `examples.npz`; raw/clipped views stay separate |
+
+`run` and `config` are ordinary dictionaries of recorded settings, not trainer
+objects. `source_sha256` identifies source bytes, including comments. Manifest
+hashes identify saved split files; checkpoint hashes identify saved weight bytes.
+Together with software versions and seeds, these let a result be traced to its
+inputs and implementation. Exact-resume guards deliberately require the original
+source/environment; a readability edit does not rewrite historical run records.
+
+For online corruptions, `input_modifications/presets.py` holds the parameter
+table and `online.apply_condition` applies one named condition. Dataset preparation
+reuses sensor patterns across images; online augmentation draws a pattern per
+selected image. Neither path modifies targets. Optional experiment protocols are
+documented in [experiments/](../experiments/README.md).
+
 ## Following the backbone
 
 For a 256×256 measurement, [backbone.py](backbone.py) follows this path:

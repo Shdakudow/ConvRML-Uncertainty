@@ -59,17 +59,22 @@ def uncertainty_error_correlations(width, error):
     if width.shape != error.shape or width.ndim != 4:
         raise ValueError("Expected matching (N,C,H,W) width and absolute-error maps")
     result = {"pearson": [], "spearman": []}
-    for u, e in zip(
+    for uncertainty_map, error_map in zip(
         width.detach().double().cpu().numpy(), error.detach().double().cpu().numpy()
     ):
-        u, e = u.reshape(-1), e.reshape(-1)
-        valid = np.isfinite(u) & np.isfinite(e)
-        u, e = u[valid], e[valid]
+        uncertainty_values = uncertainty_map.reshape(-1)
+        error_values = error_map.reshape(-1)
+        valid = np.isfinite(uncertainty_values) & np.isfinite(error_values)
+        uncertainty_values, error_values = (
+            uncertainty_values[valid],
+            error_values[valid],
+        )
         pearson = spearman = np.nan
-        if len(u) >= 2:
-            pearson = _pearson(u, e)
+        if len(uncertainty_values) >= 2:
+            pearson = _pearson(uncertainty_values, error_values)
             spearman = _pearson(
-                rankdata(u, method="average"), rankdata(e, method="average")
+                rankdata(uncertainty_values, method="average"),
+                rankdata(error_values, method="average"),
             )
         result["pearson"].append(pearson)
         result["spearman"].append(spearman)

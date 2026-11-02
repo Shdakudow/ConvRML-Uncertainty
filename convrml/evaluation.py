@@ -53,6 +53,7 @@ def evaluate_test_set(
     started = time.monotonic()
     prediction_seconds, metric_seconds = 0.0, 0.0
     for batch in DataLoader(dataset, batch_size=batch_size, num_workers=workers):
+        # 1. Predict with calibration already frozen; synchronize for GPU timing.
         measurement, target = batch[:, 0].to(device), batch[:, 1].to(device)
         if device.type == "cuda":
             torch.cuda.synchronize(device)
@@ -64,6 +65,7 @@ def evaluate_test_set(
         if not all(torch.isfinite(value).all() for value in (prediction, lower, upper)):
             raise ValueError("Nonfinite calibrated predictions")
 
+        # 2. Measure raw/clipped views without altering the saved calibration fit.
         metric_started = time.monotonic()
         measured = {}
         for space in ("raw", "clipped"):
@@ -83,6 +85,7 @@ def evaluate_test_set(
             torch.cuda.synchronize(device)
         metric_seconds += time.monotonic() - metric_started
 
+        # 3. Preserve manifest order and nulls for undefined per-image metrics.
         for index in range(len(batch)):
             row = dict(index=offset + index, id=ids[offset + index])
             for space, values in measured.items():

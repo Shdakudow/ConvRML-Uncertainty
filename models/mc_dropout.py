@@ -23,16 +23,16 @@ from convrml.intervals import gaussian_interval_from_mean_variance
 @contextmanager
 def dropout_inference(model):
     """Enable dropout for prediction and restore every module's mode afterward."""
-    modes = {m: m.training for m in model.modules()}
+    modes = {module: module.training for module in model.modules()}
     try:
         model.eval()
-        for m in model.modules():
-            if isinstance(m, (nn.Dropout, nn.Dropout2d, nn.Dropout3d)):
-                m.train()
+        for module in model.modules():
+            if isinstance(module, (nn.Dropout, nn.Dropout2d, nn.Dropout3d)):
+                module.train()
         yield
     finally:
-        for m, mode in modes.items():
-            m.training = mode
+        for module, was_training in modes.items():
+            module.training = was_training
 
 
 class MCDropout(ConvNeXtFPN):
@@ -94,13 +94,13 @@ class MCDropout(ConvNeXtFPN):
         # Welford's update avoids retaining all stochastic images in memory.
         mean = squared_deviations = None
         with dropout_inference(self):
-            for i in range(samples):
+            for sample_index in range(samples):
                 sample = self(y).float()
                 if mean is None:
                     mean, squared_deviations = sample, torch.zeros_like(sample)
                 else:
                     delta = sample - mean
-                    mean = mean + delta / (i + 1)
+                    mean = mean + delta / (sample_index + 1)
                     squared_deviations = squared_deviations + delta * (sample - mean)
         variance = squared_deviations / samples
         lower, upper = gaussian_interval_from_mean_variance(mean, variance, alpha)

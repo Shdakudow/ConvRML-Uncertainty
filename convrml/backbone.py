@@ -78,17 +78,20 @@ class ConvNeXtFPN(nn.Module):
         Encoder stages have 128/256/512/1024 channels at 1/4,1/8,1/16,1/32 size.
         FPN merges coarse features with finer ones, then up1 doubles resolution.
         """
-        features = self.encoder((x - self.mean) / self.std)
-        d = self.refine[3](self.lateral[3](features[3]))
-        # d is the running decoder feature map; i indexes progressively finer stages.
-        for i in [2, 1, 0]:
-            d = self.refine[i](
+        encoder_features = self.encoder((x - self.mean) / self.std)
+        decoder_features = self.refine[3](self.lateral[3](encoder_features[3]))
+        # Start at the coarsest stage, then merge each finer encoder resolution.
+        for stage_index in [2, 1, 0]:
+            decoder_features = self.refine[stage_index](
                 F.interpolate(
-                    d, size=features[i].shape[-2:], mode="bilinear", align_corners=False
+                    decoder_features,
+                    size=encoder_features[stage_index].shape[-2:],
+                    mode="bilinear",
+                    align_corners=False,
                 )
-                + self.lateral[i](features[i])
+                + self.lateral[stage_index](encoder_features[stage_index])
             )
-        return self.up1(d)
+        return self.up1(decoder_features)
 
     def reconstruct(self, x, features):
         """Add each predicted RGB correction to x; pack heads along channels."""

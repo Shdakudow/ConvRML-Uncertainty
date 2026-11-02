@@ -205,94 +205,35 @@ def restore_rng(state):
 
 
 def fit_calibration(calibration, predict, q_model, run, device, workers, output):
-    """Fit frozen models using only calibration pairs, then audit their coverage.
+    """Fit on calibration pairs, then audit the fitted intervals on the same pairs.
 
-    The loader batches float (B,2,3,H,W): measurement then target in [0,1].
-    ``predict`` returns unbounded center/lower/upper tensors (B,3,H,W).
-    QUTCC instead queries ``q_model`` at candidate q levels. Returned metadata
-    stores q values or dimensionless endpoint scales; predictions are never clipped.
+    DataLoader batches are float (B,2,3,H,W): measurement, then target in [0,1].
+    Native predict() returns center/lower/upper in unbounded intensity units.
+    Baselines fit two dimensionless scales; QUTCC fits two scalar q inputs.
+    Model weights remain frozen and test images are not read. Endpoints are
+    neither clipped nor sorted by this fitting/audit workflow.
     """
     loader = DataLoader(calibration, batch_size=run["microbatch"], num_workers=workers)
     target_risk = settings()["alpha"]
     rng_before, rng_after = capture_rng(device), None
+
+    # 1. Fit the method's interval parameters on calibration pairs only.
     if run["method"] == "qutcc":
-        cache = {"lower": {}, "upper": {}}
-
-        def risk(lower_q, upper_q):
-            quantiles = {"lower": lower_q, "upper": upper_q}
-            missing = [side for side in quantiles if quantiles[side] not in cache[side]]
-            misses, pixels = {"lower": 0, "upper": 0}, 0
-            if missing:
-                for batch in loader:
-                    measurement, target = batch[:, 0].to(device), batch[:, 1].to(device)
-                    for side in missing:
-                        q = measurement.new_full((len(measurement),), quantiles[side])
-                        endpoint = q_model(measurement, q)
-                        if not torch.isfinite(endpoint).all():
-                            raise ValueError("Nonfinite quantile prediction")
-                        if side == "lower":
-                            misses[side] += int((target < endpoint).sum())
-                        else:
-                            misses[side] += int((target > endpoint).sum())
-                    pixels += target.numel()
-                for side in missing:
-                    cache[side][quantiles[side]] = misses[side] / pixels
-            return cache["lower"][lower_q], cache["upper"][upper_q]
-
-        fitted = paper_quantiles(risk, len(calibration), alpha=target_risk)
-    else:
-        shape = (len(calibration), *calibration[0][0].shape)
-        # Disk-backed scores keep full-resolution calibration off the GPU and
-        # avoid retaining every calibration prediction in RAM.
-        with tempfile.TemporaryDirectory(
-            prefix="calibration-", dir=output
-        ) as temporary:
-            scores = {
-                side: np.lib.format.open_memmap(
-                    Path(temporary) / f"tail_{index}.npy",
-                    mode="w+",
-                    dtype=np.float32,
-                    shape=shape,
-                )
-                for index, side in enumerate(("lower", "upper"))
-            }
-            offset = 0
-            try:
-                for batch in loader:
-                    measurement, target = batch[:, 0].to(device), batch[:, 1].to(device)
-                    center, lower, upper = predict(measurement)
-                    # A target misses a calibrated endpoint exactly when this
-                    # normalized residual exceeds that endpoint's scale factor.
-                    lower_score = (center - target) / (center - lower).clamp_min(1e-6)
-                    upper_score = (target - center) / (upper - center).clamp_min(1e-6)
-                    scores["lower"][
-                        offset : offset + len(batch)
-                    ] = lower_score.cpu().numpy()
-                    scores["upper"][
-                        offset : offset + len(batch)
-                    ] = upper_score.cpu().numpy()
-                    offset += len(batch)
-                fitted = rcps_scales(
-                    scores["lower"],
-                    scores["upper"],
-                    alpha=target_risk,
-                    delta=settings()["calibration"]["delta"],
-                )
-            finally:
-                for array in scores.values():
-                    array._mmap.close()
-        rng_after = capture_rng(device)
-        # Replay the identical MC masks to audit the fitted calibration intervals.
-        restore_rng(rng_before)
-    covered, total, crossing = 0, 0, 0
-    for batch in loader:
-        measurement, target = batch[:, 0].to(device), batch[:, 1].to(device)
-        _, lower, upper = apply_calibration(
-            measurement, predict, q_model, run["method"], fitted
+        fitted = _fit_quantile_inputs(
+            loader, q_model, device, len(calibration), target_risk
         )
-        covered += int(((target >= lower) & (target <= upper)).sum())
-        crossing += int((lower > upper).sum())
-        total += target.numel()
+    else:
+        fitted = _fit_baseline_scales(
+            calibration, loader, predict, device, output, target_risk
+        )
+        rng_after = capture_rng(device)
+        # The audit must replay the same MC masks used to fit the scales.
+        restore_rng(rng_before)
+
+    # 2. Measure coverage/crossings, then preserve the post-fit inference RNG.
+    covered, total, crossing = _audit_calibration(
+        loader, predict, q_model, run["method"], fitted, device
+    )
     if rng_after is not None:
         restore_rng(rng_after)
     coverage = covered / total
@@ -307,6 +248,99 @@ def fit_calibration(calibration, predict, q_model, run, device, workers, output)
         calibration_mode="paper",
     )
     return fitted
+
+
+def _fit_quantile_inputs(loader, q_model, device, n_images, target_risk):
+    """Evaluate tail misses for Algorithm 1; cache each side/q result separately.
+
+    The callback returns lower/upper miss fractions across all RGB values.
+    Caching avoids repeating a full calibration pass for an already tested q.
+    """
+    cache = {"lower": {}, "upper": {}}
+
+    def risk(lower_q, upper_q):
+        quantiles = {"lower": lower_q, "upper": upper_q}
+        missing = [side for side in quantiles if quantiles[side] not in cache[side]]
+        misses, pixels = {"lower": 0, "upper": 0}, 0
+        if missing:
+            for batch in loader:
+                measurement, target = batch[:, 0].to(device), batch[:, 1].to(device)
+                for side in missing:
+                    q = measurement.new_full((len(measurement),), quantiles[side])
+                    endpoint = q_model(measurement, q)
+                    if not torch.isfinite(endpoint).all():
+                        raise ValueError("Nonfinite quantile prediction")
+                    if side == "lower":
+                        misses[side] += int((target < endpoint).sum())
+                    else:
+                        misses[side] += int((target > endpoint).sum())
+                pixels += target.numel()
+            for side in missing:
+                cache[side][quantiles[side]] = misses[side] / pixels
+        return cache["lower"][lower_q], cache["upper"][upper_q]
+
+    return paper_quantiles(risk, n_images, alpha=target_risk)
+
+
+def _fit_baseline_scales(calibration, loader, predict, device, output, target_risk):
+    """Collect normalized residuals on disk and fit separate RCPS-HB tail scales.
+
+    Memmaps retain one row per image without keeping the prediction set on the
+    GPU. Temporary score files are closed and removed before returning the fit.
+    """
+    shape = (len(calibration), *calibration[0][0].shape)
+    # Disk-backed scores keep full-resolution calibration off the GPU and
+    # avoid retaining every calibration prediction in RAM.
+    with tempfile.TemporaryDirectory(prefix="calibration-", dir=output) as temporary:
+        scores = {
+            side: np.lib.format.open_memmap(
+                Path(temporary) / f"tail_{index}.npy",
+                mode="w+",
+                dtype=np.float32,
+                shape=shape,
+            )
+            for index, side in enumerate(("lower", "upper"))
+        }
+        offset = 0
+        try:
+            for batch in loader:
+                measurement, target = batch[:, 0].to(device), batch[:, 1].to(device)
+                center, lower, upper = predict(measurement)
+                # A target misses a calibrated endpoint exactly when this
+                # normalized residual exceeds that endpoint's scale factor.
+                lower_score = (center - target) / (center - lower).clamp_min(1e-6)
+                upper_score = (target - center) / (upper - center).clamp_min(1e-6)
+                scores["lower"][
+                    offset : offset + len(batch)
+                ] = lower_score.cpu().numpy()
+                scores["upper"][
+                    offset : offset + len(batch)
+                ] = upper_score.cpu().numpy()
+                offset += len(batch)
+            fitted = rcps_scales(
+                scores["lower"],
+                scores["upper"],
+                alpha=target_risk,
+                delta=settings()["calibration"]["delta"],
+            )
+        finally:
+            for array in scores.values():
+                array._mmap.close()
+    return fitted
+
+
+def _audit_calibration(loader, predict, q_model, method, fitted, device):
+    """Return counts of covered RGB values, all RGB values and crossed bounds."""
+    covered, total, crossing = 0, 0, 0
+    for batch in loader:
+        measurement, target = batch[:, 0].to(device), batch[:, 1].to(device)
+        _, lower, upper = apply_calibration(
+            measurement, predict, q_model, method, fitted
+        )
+        covered += int(((target >= lower) & (target <= upper)).sum())
+        crossing += int((lower > upper).sum())
+        total += target.numel()
+    return covered, total, crossing
 
 
 def apply_calibration(y, predict, q_model, method, fitted):

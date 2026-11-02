@@ -74,18 +74,18 @@ class DeepEnsemble(nn.Module):
         # E[variance + mean^2] - E[mean]^2 includes both within-member noise
         # estimates and between-member disagreement. Keep this operation order
         # to preserve the saved evaluations' floating-point behavior.
-        mean_sum = second = None
+        mean_sum = second_moment_sum = None
         for member in self.members:
             mean, variance = member(x)
             mean, variance = mean.float(), variance.float()
             mean_sum = mean if mean_sum is None else mean_sum + mean
-            second = (
+            second_moment_sum = (
                 variance + mean.square()
-                if second is None
-                else second + variance + mean.square()
+                if second_moment_sum is None
+                else second_moment_sum + variance + mean.square()
             )
         mean = mean_sum / len(self.members)
-        variance = (second / len(self.members) - mean.square()).clamp_min(0)
+        variance = (second_moment_sum / len(self.members) - mean.square()).clamp_min(0)
         return mean, variance
 
     def forward(self, x):

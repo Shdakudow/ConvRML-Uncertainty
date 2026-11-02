@@ -40,6 +40,7 @@ class Im2im(nn.Module):
     def bounds(self, y):
         """Return (center, lower, upper), each unbounded (N,3,H,W)."""
         outputs = self(y)
+        # Training stores heads as lower/center/upper; callers receive center first.
         return outputs[:, 1], outputs[:, 0], outputs[:, 2]
 
     def loss(self, y, target):

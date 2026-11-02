@@ -190,18 +190,20 @@ def load_arms(args):
 
 
 def predict(model, method, y, fit):
+    """Apply this experiment's fitted q pair or asymmetric scales, without clipping."""
     if method == "qutcc":
         return model.bounds(y, fit["lower_q"], fit["upper_q"])
-    p, lo, hi = model.bounds(y)
+    prediction, lower, upper = model.bounds(y)
     return (
-        p,
-        p - fit["scales"]["lower"] * (p - lo).clamp_min(1e-6),
-        p + fit["scales"]["upper"] * (hi - p).clamp_min(1e-6),
+        prediction,
+        prediction - fit["scales"]["lower"] * (prediction - lower).clamp_min(1e-6),
+        prediction + fit["scales"]["upper"] * (upper - prediction).clamp_min(1e-6),
     )
 
 
 @torch.inference_mode()
 def audit_calibration(model, method, dataset, fit):
+    """Measure empirical clipped coverage on calibration pairs, never test pairs."""
     covered = crossing = total = 0
     for batch in loader(dataset):
         interrupted()
@@ -219,6 +221,12 @@ def audit_calibration(model, method, dataset, fit):
 
 @torch.inference_mode()
 def calibrate(model, arm, dataset, output):
+    """Fit one frozen arm on the shared mixture; reuse only its saved fit.
+
+    This optional experiment deliberately uses empirical matching, unlike the
+    portable workflow's RCPS/Algorithm 1 procedures. Unattainable q targets stay
+    visible as failures, even when extreme endpoint images are exported.
+    """
     method = arm.split("_")[0]
     path = output / f"calibration/{arm}.json"
     if path.exists():

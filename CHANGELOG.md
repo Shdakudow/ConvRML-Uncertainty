@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Improve active-code readability and traceability: name decoder/moment/correlation
+  variables explicitly, separate calibration fitting from coverage auditing,
+  and share corruption presets between preparation and online augmentation.
+  Expose `apply_condition` while keeping the older `_apply` name compatible.
+  Separate the cluster smoke check from production training, format the optional
+  web template, and document paths from settings/data to weights and metrics.
+  Preserve model computations, learned state names and recorded protocol files;
+  verify calibration, RNG, gradients and training behavior on CPU fixtures.
 - Rewrite `train.py` around the load/create/resume/train/validate/save workflow,
   with explicit Adam/AdamW construction and an annotated gradient loop. Start the
   optimizer at its first scheduled learning rate rather than setting a peak rate

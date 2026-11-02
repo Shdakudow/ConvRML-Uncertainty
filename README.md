@@ -98,6 +98,10 @@ complete workflow, `train_one_epoch` for gradient updates, and `create_optimizer
 for explicit Adam/AdamW selection. The older `python -m convrml.train` and
 `python -m convrml.evaluate` commands remain small compatibility entry points.
 The main workflow does not require a cluster account or archived code.
+To follow one result from inputs to saved files, see the
+[experiment trace](convrml/README.md#tracing-one-experiment). Optional studies have
+a separate [entry-point map](experiments/README.md); they share the model classes
+but can use different training or calibration protocols.
 
 ## Verification
 

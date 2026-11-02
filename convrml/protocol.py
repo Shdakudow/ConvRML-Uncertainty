@@ -19,6 +19,7 @@ def settings():
 
 
 def sha256(path):
+    """Hash file bytes in chunks, without retaining a checkpoint in memory."""
     digest = hashlib.sha256()
     with Path(path).open("rb") as stream:
         for block in iter(lambda: stream.read(8 * 1024 * 1024), b""):
@@ -43,12 +44,18 @@ def source_fingerprint():
 
 
 def check_shape(dataset, dataset_name, *, smoke=False):
+    """Check benchmark dimensions, rather than restricting the model architecture.
+
+    A model can pad/crop other sizes. This check ensures a recorded experiment
+    uses its declared data preparation; --smoke permits smaller test fixtures.
+    """
     expected = tuple(settings()["datasets"][dataset_name]["shape"])
     if not smoke and tuple(dataset[0][0].shape) != expected:
         raise ValueError("Image dimensions differ from the recorded experiment")
 
 
 def write_json(path, value):
+    """Atomically replace complete JSON; reject NaN/Inf instead of hiding them."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
@@ -69,12 +76,15 @@ def profile(experiment, dataset, method, member=None):
         raise ValueError("Dataset does not belong to the requested experiment")
     if method not in config["methods"][f"experiment{experiment}"]:
         raise ValueError("Method is not part of this experiment")
-    if (method == "ensemble") != (member is not None):
+    is_ensemble = method == "ensemble"
+    has_member_index = member is not None
+    if is_ensemble != has_member_index:
         raise ValueError(
             "Ensemble training/loading requires a member index; other models do not"
         )
     if member is not None and member not in range(10):
         raise ValueError("Ensemble member index must be 0..9")
+    # Select a recorded optimizer profile, not a different model architecture.
     if dataset == "raw_corrupted":
         family = "adaptation"
     elif method == "qutcc" or experiment == 3:
@@ -84,6 +94,7 @@ def profile(experiment, dataset, method, member=None):
     result = dict(config["profiles"][family])
     if data["loader"] == "images":
         result["microbatch"] = 1
+    # Ensemble members use independent initialization AND image-order streams.
     policy = config["seed_policy"]
     if family == "baseline":
         index = member if method == "ensemble" else policy["arm_index"][method]
@@ -140,6 +151,7 @@ def dataset_for(dataset, manifest, pairs, split):
 
 
 def id_digest(ids):
+    """Hash ordered image IDs; both membership and order are experiment identity."""
     return hashlib.sha256(
         json.dumps(list(map(str, ids)), separators=(",", ":")).encode()
     ).hexdigest()
@@ -175,6 +187,7 @@ def audit_manifest(manifest, dataset, *, smoke=False):
 
 
 def autocast(run, device):
+    """Use the recorded BF16 context, or preserve normal FP32 computation."""
     return (
         torch.autocast(device.type, dtype=torch.bfloat16)
         if run["precision"] == "bfloat16"
@@ -187,11 +200,11 @@ def learning_rate(step, total_steps, run):
     peak = run["peak_lr"]
     if run["schedule"] == "constant":
         return peak
-    fraction, low = step / total_steps, peak / 10
-    if fraction <= 0.3:
-        return low + fraction / 0.3 * (peak - low)
-    minimum = low / 1e4
-    cosine = math.cos(math.pi * (fraction - 0.3) / 0.7)
+    progress, initial_lr = step / total_steps, peak / 10
+    if progress <= 0.3:
+        return initial_lr + progress / 0.3 * (peak - initial_lr)
+    minimum = initial_lr / 1e4
+    cosine = math.cos(math.pi * (progress - 0.3) / 0.7)
     return minimum + (peak - minimum) / 2 * (cosine + 1)
 
 
@@ -210,6 +223,7 @@ def center(model, method, y):
 
 
 def environment():
+    """Return software versions stored with training and evaluation artifacts."""
     from importlib.metadata import version
     import platform
     from . import __version__
@@ -229,6 +243,7 @@ def environment():
 
 
 def hardware(device):
+    """Record the actual accelerator label alongside timings and device settings."""
     import platform
 
     return dict(

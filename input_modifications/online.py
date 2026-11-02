@@ -14,6 +14,7 @@ from .jpeg import jpeg_compression
 from .poisson import poisson_noise
 from .poisson_gaussian import poisson_gaussian_noise
 from .resolution import reduce_sensor_resolution
+from .presets import PRESETS
 
 
 # Each family, including clean, has probability 1/10 for every image.
@@ -31,39 +32,54 @@ CONDITIONS = (
 )
 
 
-def _apply(image, condition, generator):
-    """Apply the current experiment setting to one BCHW measurement."""
+def apply_condition(image, condition, generator=None):
+    """Apply one BCHW condition using the same PRESETS as dataset preparation.
+
+    Only exposure chooses between two presets. Each other condition uses its
+    named parameter dictionary, keeping training and preparation values together.
+    Sensor masks/patterns are sampled on each call here; use the individual
+    persistent-pattern helpers when simulating multiple frames from one sensor.
+    """
     if condition == "clean":
         return image.clone()
     if condition == "gaussian":
-        return gaussian_noise(image, sigma=0.01, generator=generator)
+        return gaussian_noise(image, **PRESETS["gaussian"], generator=generator)
     if condition == "poisson":
-        return poisson_noise(image, peak_photons=1330, generator=generator)
+        return poisson_noise(image, **PRESETS["poisson"], generator=generator)
     if condition == "poisson_gaussian":
         return poisson_gaussian_noise(
-            image, gaussian_sigma=0.01, peak_photons=1330, generator=generator
+            image, **PRESETS["poisson_gaussian"], generator=generator
         )
     if condition == "exposure":
-        exposure_gains = (0.50, 1.50)
+        exposure_gains = (
+            PRESETS["exposure_050"]["gain"],
+            PRESETS["exposure_150"]["gain"],
+        )
         gain_index = torch.randint(
             len(exposure_gains), (), device=image.device, generator=generator
         ).item()
         return change_exposure(image, gain=exposure_gains[gain_index])
     if condition == "dead_pixels":
-        mask = sample_dead_pixel_mask(image, drop_rate=0.10, generator=generator)
+        mask = sample_dead_pixel_mask(
+            image, **PRESETS["dead_pixels"], generator=generator
+        )
         return apply_dead_pixels(image, mask)
     if condition == "fixed_pattern":
         pattern = sample_fixed_pattern(
-            image, gain_std=0.01, offset_std=0.003, generator=generator
+            image, **PRESETS["fixed_pattern"], generator=generator
         )
         return apply_fixed_pattern(image, pattern)
     if condition == "gaussian_blur":
-        return gaussian_sensor_blur(image, sigma=0.5, radius=2)
+        return gaussian_sensor_blur(image, **PRESETS["gaussian_blur"])
     if condition == "resolution":
-        return reduce_sensor_resolution(image, factor=64)
+        return reduce_sensor_resolution(image, **PRESETS["resolution"])
     if condition == "jpeg":
-        return jpeg_compression(image, quality=50, subsampling=0)
+        return jpeg_compression(image, **PRESETS["jpeg"])
     raise ValueError(f"Unknown input condition: {condition}")
+
+
+# Older frozen experiment scripts import this name; the implementation is shared.
+_apply = apply_condition
 
 
 def sample_training_modification(
@@ -106,7 +122,7 @@ def sample_training_modification(
     for image_index, condition_index in enumerate(condition_indices):
         condition = CONDITIONS[condition_index]
         image = measurement[image_index : image_index + 1]  # Keep shape [1,C,H,W].
-        modified_image = _apply(image, condition, generator)
+        modified_image = apply_condition(image, condition, generator)
 
         modified_images.append(modified_image)
         labels.append(condition)

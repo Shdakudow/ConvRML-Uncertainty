@@ -25,7 +25,11 @@ sys.path.insert(0, str(REPOSITORY))
 from convrml.checkpoints import load_model_weights, save_checkpoint
 from dataset import ImagePairs
 from input_modifications.gaussian import gaussian_noise
-from input_modifications.online import CONDITIONS, _apply, sample_training_modification
+from input_modifications.online import (
+    CONDITIONS,
+    apply_condition,
+    sample_training_modification,
+)
 from models import Im2im, QUTCC
 
 STOP = 0
@@ -34,6 +38,7 @@ SETTINGS = json.loads(SETTINGS_PATH.read_text())
 
 
 def request_stop(signum, _frame):
+    """Ask the batch loop to checkpoint before exiting for Slurm requeue/termination."""
     global STOP
     STOP = 75 if signum == signal.SIGUSR1 else 1
 
@@ -54,6 +59,7 @@ def file_hash(path):
 
 
 def source_hash():
+    """Identify the frozen engine, shared models, transforms and selected protocol."""
     paths = [REPOSITORY / "dataset.py"]
     for name in (
         "convrml",
@@ -278,7 +284,7 @@ class ValidationPanel(Dataset):
         generator = torch.Generator().manual_seed(
             SETTINGS["validation_seed"] + 10000 * condition_index + source_index
         )
-        modified = _apply(
+        modified = apply_condition(
             measurement.unsqueeze(0), CONDITIONS[condition_index], generator
         )[0]
         return modified, target, condition_index
@@ -286,6 +292,7 @@ class ValidationPanel(Dataset):
 
 @torch.inference_mode()
 def validate(model, panel):
+    """Evaluate the fixed validation panel, reporting each corruption separately."""
     model.eval()
     totals = {name: Counter() for name in CONDITIONS}
     loader = DataLoader(panel, batch_size=1, num_workers=2, pin_memory=True)
@@ -336,7 +343,7 @@ def train_batch(
     """Modify CPU measurements only, then accumulate an effective batch of four."""
     modified, labels = modify_training_measurements(batch[:, 0], augmentation_rng)
     optimizer.zero_grad(set_to_none=True)
-    value = 0.0
+    batch_loss = 0.0
     for index in range(len(batch)):
         measurement = modified[index : index + 1].cuda(non_blocking=True)
         target = batch[index : index + 1, 1].cuda(non_blocking=True)
@@ -348,17 +355,90 @@ def train_batch(
         if not torch.isfinite(loss):
             raise ValueError("Nonfinite training loss.")
         loss.backward()
-        value += float(loss.detach())
+        batch_loss += float(loss.detach())
     if check_gradients and not all(
         parameter.grad is None or torch.isfinite(parameter.grad).all()
         for parameter in model.parameters()
     ):
         raise ValueError("Nonfinite training gradients.")
     optimizer.step()
-    return value, labels
+    return batch_loss, labels
+
+
+def run_smoke_test(
+    args,
+    model,
+    optimizer,
+    training_pairs,
+    panel,
+    training_metadata,
+    augmentation_rng,
+    quantile_rng,
+):
+    """Check finite gradients, real weight updates and validation before full training.
+
+    Uses a disposable smoke model; the production run later reloads the saved
+    epoch-zero weights. Timings estimate resources without changing the protocol.
+    """
+    model.train()
+    before = next(model.parameters()).detach().clone()
+    times, losses, conditions = [], [], Counter()
+    loader = DataLoader(
+        Subset(training_pairs, range(32)),
+        batch_size=SETTINGS["effective_batch"],
+        num_workers=2,
+    )
+    for batch in loader:
+        torch.cuda.synchronize()
+        started = time.monotonic()
+        batch_loss, labels = train_batch(
+            model,
+            optimizer,
+            batch,
+            augmentation_rng,
+            quantile_rng,
+            check_gradients=True,
+        )
+        torch.cuda.synchronize()
+        times.append(time.monotonic() - started)
+        losses.append(batch_loss)
+        conditions.update(labels)
+    assert not torch.equal(before, next(model.parameters()))
+    started = time.monotonic()
+    validation = validate(model, panel)
+    validation_seconds = time.monotonic() - started
+    seconds_per_step = sum(times[1:]) / len(times[1:])
+    estimated_epoch_seconds = seconds_per_step * math.ceil(
+        len(training_pairs) / SETTINGS["effective_batch"]
+    ) + validation_seconds / len(panel) * (
+        len(CONDITIONS) * SETTINGS["validation_per_condition"]
+    )
+    smoke = dict(
+        config=training_metadata,
+        passed=True,
+        losses=losses,
+        condition_counts=dict(conditions),
+        validation=validation,
+        seconds_per_step=seconds_per_step,
+        estimated_epoch_hours=estimated_epoch_seconds / 3600,
+        estimated_total_epoch_hours=SETTINGS["epochs"] * estimated_epoch_seconds / 3600,
+        gpu=torch.cuda.get_device_name(),
+        peak_memory_gib=torch.cuda.max_memory_allocated() / 1024**3,
+    )
+    write_json(args.output / "smoke.json", smoke)
+    print(json.dumps(smoke), flush=True)
+    return
 
 
 def run(args):
+    """Audit -> initialize -> smoke or restore -> train/validate -> checkpoint.
+
+    This CUDA engine is separate from the portable root trainer because it adds
+    online corruptions and exact mid-epoch recovery after cluster preemption.
+    offset counts consumed images; global_step counts Adam updates. Both the
+    augmentation RNG and QUTCC q RNG are checkpointed independently.
+    """
+    # 1. Verify the dataset and recover the run's original epoch-zero weights.
     audit_manifest(args.manifest)
     torch.set_num_threads(2)
     torch.manual_seed(SETTINGS["seed"])
@@ -398,12 +478,12 @@ def run(args):
     )
     augmentation_rng = torch.Generator().manual_seed(SETTINGS["seed"] + 1000)
     quantile_rng = torch.Generator(device="cuda").manual_seed(SETTINGS["seed"] + 2000)
-    train = ImagePairs(args.manifest, "train")
-    val = ImagePairs(args.manifest, "val")
+    training_pairs = ImagePairs(args.manifest, "train")
+    validation_pairs = ImagePairs(args.manifest, "val")
     panel = ValidationPanel(
-        val, 2 if args.smoke else SETTINGS["validation_per_condition"]
+        validation_pairs, 2 if args.smoke else SETTINGS["validation_per_condition"]
     )
-    meta = dict(
+    training_metadata = dict(
         **SETTINGS,
         method=args.method,
         dataset=(
@@ -432,93 +512,57 @@ def run(args):
         environment=dict(torch=torch.__version__, cuda=torch.version.cuda),
     )
     if previous_config:
-        meta["epoch_extension"] = dict(
+        training_metadata["epoch_extension"] = dict(
             previous_epochs=previous_config["epochs"],
             previous_source_sha256=previous_config["source_sha256"],
             previous_source_commit=previous_config["source_commit"],
             previous_config_sha256=file_hash(args.extension),
         )
-        validate_epoch_extension(previous_config, meta)
+        validate_epoch_extension(previous_config, training_metadata)
         if (
             initial_config["initial_weights_sha256"]
             != previous_config["initial_weights_sha256"]
         ):
             raise ValueError("Epoch-zero provenance changed across continuations.")
     args.output.mkdir(parents=True, exist_ok=True)
+    # 2. A disposable smoke run must pass before production training can start.
     if args.smoke:
-        model.train()
-        before = next(model.parameters()).detach().clone()
-        times, losses, conditions = [], [], Counter()
-        loader = DataLoader(
-            Subset(train, range(32)),
-            batch_size=SETTINGS["effective_batch"],
-            num_workers=2,
+        return run_smoke_test(
+            args,
+            model,
+            optimizer,
+            training_pairs,
+            panel,
+            training_metadata,
+            augmentation_rng,
+            quantile_rng,
         )
-        for batch in loader:
-            torch.cuda.synchronize()
-            started = time.monotonic()
-            value, labels = train_batch(
-                model,
-                optimizer,
-                batch,
-                augmentation_rng,
-                quantile_rng,
-                check_gradients=True,
-            )
-            torch.cuda.synchronize()
-            times.append(time.monotonic() - started)
-            losses.append(value)
-            conditions.update(labels)
-        assert not torch.equal(before, next(model.parameters()))
-        started = time.monotonic()
-        validation = validate(model, panel)
-        validation_seconds = time.monotonic() - started
-        seconds_per_step = sum(times[1:]) / len(times[1:])
-        estimated_epoch_seconds = seconds_per_step * math.ceil(
-            len(train) / SETTINGS["effective_batch"]
-        ) + validation_seconds / len(panel) * (
-            len(CONDITIONS) * SETTINGS["validation_per_condition"]
-        )
-        smoke = dict(
-            config=meta,
-            passed=True,
-            losses=losses,
-            condition_counts=dict(conditions),
-            validation=validation,
-            seconds_per_step=seconds_per_step,
-            estimated_epoch_hours=estimated_epoch_seconds / 3600,
-            estimated_total_epoch_hours=SETTINGS["epochs"]
-            * estimated_epoch_seconds
-            / 3600,
-            gpu=torch.cuda.get_device_name(),
-            peak_memory_gib=torch.cuda.max_memory_allocated() / 1024**3,
-        )
-        write_json(args.output / "smoke.json", smoke)
-        print(json.dumps(smoke), flush=True)
-        return
 
     smoke = json.loads((args.output / "smoke.json").read_text())
     verified_source = (
-        initial_config["source_sha256"] if initial_config else meta["source_sha256"]
+        initial_config["source_sha256"]
+        if initial_config
+        else training_metadata["source_sha256"]
     )
     if not smoke["passed"] or smoke["config"]["source_sha256"] != verified_source:
         raise ValueError("A passing smoke run with identical source is required.")
     if smoke["config"]["initial_weights_sha256"] != initial_weights_sha256:
         raise ValueError("Full run must start with the same fresh weights as smoke.")
+    # 3. Restore the exact image offset, optimizer moments and random streams.
     latest = args.output / "latest.pt"
     epoch, offset, global_step, loss_sum, loss_count = 1, 0, 0, 0.0, 0
     history, condition_counts = [], Counter()
     extension_applied = False
     if latest.exists():
         state = torch.load(latest, map_location="cpu", weights_only=False)
-        if state["config"] != meta:
+        if state["config"] != training_metadata:
             if not previous_config or state["config"] != previous_config:
                 raise ValueError("Resume configuration changed.")
-            validate_epoch_extension(state["config"], meta)
+            validate_epoch_extension(state["config"], training_metadata)
             original_warmup_steps = (
                 previous_config["epochs"]
                 * previous_config["warmup_fraction"]
-                * math.ceil(len(train) / SETTINGS["effective_batch"])
+                * math.ceil(len(training_pairs) / SETTINGS["effective_batch"])
             )
             if args.after50:
                 complete = json.loads(
@@ -551,10 +595,11 @@ def run(args):
         del state
 
     def checkpoint():
+        """Save full recovery state; epoch counts only fully completed epochs."""
         save_checkpoint(
             latest,
             dict(
-                config=meta,
+                config=training_metadata,
                 epoch=epoch - 1,
                 model=model.state_dict(),
                 optimizer=optimizer.state_dict(),
@@ -573,12 +618,13 @@ def run(args):
         )
 
     def milestone(completed_epoch):
+        """Export completed-epoch weights without replacing an existing milestone."""
         path = args.output / "checkpoints" / f"epoch_{completed_epoch:03d}.pt"
         if not path.exists():
             save_checkpoint(
                 path,
                 dict(
-                    config=meta,
+                    config=training_metadata,
                     epoch=completed_epoch,
                     model=model.state_dict(),
                     history=history,
@@ -587,7 +633,7 @@ def run(args):
 
     signal.signal(signal.SIGUSR1, request_stop)
     signal.signal(signal.SIGTERM, request_stop)
-    write_json(args.output / "config.json", meta)
+    write_json(args.output / "config.json", training_metadata)
     if extension_applied:
         checkpoint()
         write_json(
@@ -599,7 +645,7 @@ def run(args):
                 offset=offset,
                 global_step=global_step,
                 initial_weights_sha256=initial_weights_sha256,
-                source_sha256=meta["source_sha256"],
+                source_sha256=training_metadata["source_sha256"],
             ),
         )
     if not latest.exists():
@@ -615,14 +661,15 @@ def run(args):
         )
     ):
         milestone(epoch - 1)
+    # 4. Resume the saved permutation offset, learning rate and input mixture.
     segment_started = time.monotonic()
     while epoch <= SETTINGS["epochs"]:
         order = torch.randperm(
-            len(train),
+            len(training_pairs),
             generator=torch.Generator().manual_seed(SETTINGS["seed"] + epoch),
         ).tolist()
         loader = DataLoader(
-            Subset(train, order[offset:]),
+            Subset(training_pairs, order[offset:]),
             batch_size=SETTINGS["effective_batch"],
             num_workers=2,
             pin_memory=True,
@@ -631,19 +678,19 @@ def run(args):
         model.train()
         epoch_started = time.monotonic()
         for batch in loader:
-            lr = learning_rate(
+            current_lr = learning_rate(
                 global_step,
                 SETTINGS["epochs"]
-                * math.ceil(len(train) / SETTINGS["effective_batch"]),
+                * math.ceil(len(training_pairs) / SETTINGS["effective_batch"]),
             )
             for group in optimizer.param_groups:
-                group["lr"] = lr
-            value, labels = train_batch(
+                group["lr"] = current_lr
+            batch_loss, labels = train_batch(
                 model, optimizer, batch, augmentation_rng, quantile_rng
             )
             offset += len(batch)
             global_step += 1
-            loss_sum += value * len(batch)
+            loss_sum += batch_loss * len(batch)
             loss_count += len(batch)
             condition_counts.update(labels)
             if global_step == 1 or global_step % 25 == 0:
@@ -653,10 +700,10 @@ def run(args):
                     epoch=epoch,
                     epochs=SETTINGS["epochs"],
                     processed=offset,
-                    total=len(train),
+                    total=len(training_pairs),
                     global_step=global_step,
-                    loss=value,
-                    learning_rate=lr,
+                    loss=batch_loss,
+                    learning_rate=current_lr,
                     condition_counts=dict(condition_counts),
                     gpu=torch.cuda.get_device_name(),
                 )
@@ -669,6 +716,7 @@ def run(args):
                 checkpoint()
             if STOP or requeue:
                 raise SystemExit(STOP or 75)
+        # 5. Commit validation/history before moving to the next complete epoch.
         validation = validate(model, panel)
         row = dict(
             epoch=epoch,
