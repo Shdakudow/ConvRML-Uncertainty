@@ -42,61 +42,41 @@ from convrml.protocol import (
 
 
 def arguments(argv=None):
+    """Read command-line options; the selected dataset supplies its saved profile."""
+    datasets = settings()["datasets"]
+    methods = ["im2im", "ensemble", "mc_dropout", "qutcc"]
     parser = argparse.ArgumentParser(description=__doc__)
+
+    # Model and data.
+    parser.add_argument("--dataset", choices=list(datasets), required=True)
+    parser.add_argument("--method", choices=methods, required=True)
+    parser.add_argument("--member", type=int, help="Ensemble member index, 0-9.")
+    parser.add_argument("--manifest", type=Path, required=True, help="Train/val JSON.")
+    parser.add_argument("--pairs", type=Path, help="PLD NumPy cache; omit for DLMD.")
+    parser.add_argument("--output", type=Path, required=True, help="Run output folder.")
+
+    # Training duration and starting point.
+    parser.add_argument("--epochs", type=int, help="Stop at this absolute epoch.")
+    parser.add_argument("--resume", action="store_true", help="Resume latest.pt.")
+    parser.add_argument(
+        "--initialize", type=Path, help="Clean epoch-30 adaptation weights."
+    )
+
+    # Runtime and small fixture checks.
+    default_device = "cuda" if torch.cuda.is_available() else "cpu"
+    parser.add_argument("--device", default=default_device)
+    parser.add_argument("--workers", type=int, default=2)
+    parser.add_argument(
+        "--smoke", action="store_true", help="At most two batches, one epoch."
+    )
+
+    # Compatibility with older commands; new commands only need --dataset.
     parser.add_argument(
         "--experiment", type=int, choices=[2, 3], help=argparse.SUPPRESS
     )
-    parser.add_argument(
-        "--dataset", choices=list(settings()["datasets"]), required=True
-    )
-    parser.add_argument(
-        "--method", choices=["im2im", "ensemble", "mc_dropout", "qutcc"], required=True
-    )
-    parser.add_argument(
-        "--member",
-        type=int,
-        help="Ensemble member index 0-9; one output folder per member",
-    )
-    parser.add_argument(
-        "--manifest",
-        type=Path,
-        required=True,
-        help="JSON with train/val IDs; DLMD rows also contain image paths",
-    )
-    parser.add_argument(
-        "--pairs",
-        type=Path,
-        help="PLD uint8 NumPy pair cache; omit for DLMD image-file data",
-    )
-    parser.add_argument(
-        "--output",
-        type=Path,
-        required=True,
-        help="Run folder for config, history, latest state and five-epoch weights",
-    )
-    parser.add_argument(
-        "--epochs", type=int, help="Absolute target epoch; schedule horizon stays fixed"
-    )
-    parser.add_argument(
-        "--resume", action="store_true", help="Resume this portable run's latest.pt"
-    )
-    parser.add_argument(
-        "--initialize",
-        type=Path,
-        help="Clean epoch-30 parent for corruption adaptation",
-    )
-    parser.add_argument(
-        "--device", default="cuda" if torch.cuda.is_available() else "cpu"
-    )
-    parser.add_argument("--workers", type=int, default=2)
-    parser.add_argument(
-        "--smoke",
-        action="store_true",
-        help="Two batches, one epoch; explicitly marked, small data allowed",
-    )
     args = parser.parse_args(argv)
     if args.experiment is None:
-        args.experiment = settings()["datasets"][args.dataset]["experiment"]
+        args.experiment = datasets[args.dataset]["experiment"]
     return args
 
 
