@@ -29,7 +29,7 @@ python -m convrml.download --dataset raw_clean --method qutcc --epoch 50 --outpu
 
 `--list` shows names/hashes without downloading. Ensemble downloads default to
 members 0–4; `--members 10` selects 0–9 and `--member N` selects one. Every file
-is checked against the [index](../../../reproducibility/checkpoints.json). Corrupted raw
+is checked against the [index](../../../convrml/checkpoint_index.json). Corrupted raw
 uses adaptation epochs 5–30; clean models use epochs 5–50. A private repository
 requires an authenticated GitHub CLI with access, or manually supplied indexed files.
 

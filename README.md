@@ -1,72 +1,39 @@
 # ConvRML-Uncertainty
 
-A ConvNeXt/FPN comparison of lensless reconstruction and uncertainty:
-**Im2im, deep ensemble, MC dropout and QUTCC**.
+Four methods for lensless reconstruction and uncertainty, sharing a ConvNeXt/FPN
+backbone: **Im2im, deep ensemble, MC dropout and QUTCC**.
+The models are defined once in [models/](models/). Dataset selection changes the
+loader and recorded training settings; each dataset has its own trained weights.
 
-The four methods are implemented once in [models/](models/). Dataset selection
-changes the loader and recorded settings, not the model implementation.
-
-| Dataset | Command selector | Existing comparisons | Prepared measurements |
+| Dataset | `--dataset` | Available comparisons | Prepared RGB size |
 | --- | --- | --- | --- |
-| [Parallel Lensless Dataset (PLD)](https://lakabuli.github.io/ConvRML/) | `rml`, `diffuser` | All four methods | RML / normalized diffuser, RGB 256×256 |
-| [DiffuserCam Lensless Mirflickr Dataset (DLMD)](https://waller-lab.github.io/LenslessLearning/dataset.html) | `raw_clean`, `raw_corrupted` | Im2im and QUTCC | Clean / fixed-corruption RGB 270×480 |
-
-```text
-models/           im2im.py, qutcc.py, ensemble.py, mc_dropout.py — shared across datasets
-dataset.py        PLD NumPy-cache and DLMD paired-image loaders
-input_modifications/  One file per raw-input modification and dataset preparation
-configs/          Recorded settings, seeds, split sizes and dataset descriptions
-train.py          Training loop, validation and epoch checkpoints
-calibration.py          Calibration, test predictions, metrics and export
-convrml/          Shared backbone, FiLM, runtime, calibration and metrics
-reproducibility/   Settings, ordered split IDs, checkpoint index and tested environment
-tests/             Local correctness checks
-archive/           Optional guides, plotting, CI configuration and historical code
-```
+| [Parallel Lensless Dataset (PLD)](https://lakabuli.github.io/ConvRML/) | `rml`, `diffuser` | All four methods | 256 × 256 |
+| [DiffuserCam Lensless Mirflickr (DLMD)](https://waller-lab.github.io/LenslessLearning/dataset.html) | `raw_clean`, `raw_corrupted` | Im2im and QUTCC | 270 × 480 |
 
 ## Install
 
-Linux/macOS, Python 3.9 or newer. Install a suitable PyTorch/torchvision build for
-your CPU or CUDA device, then:
+Python 3.9+, Linux/macOS. Install a suitable PyTorch/torchvision build for your
+CPU or CUDA device first, then:
 
 ```bash
+python -m pip install --upgrade pip
 python -m pip install -e . -c reproducibility/constraints-tested.txt
 python train.py --help
 python calibration.py --help
-python -m convrml.download --help
 ```
 
-[Quick start](archive/publication_support/docs/RUNNING_EXPERIMENTS.md) · [Data formats](convrml/README.md) ·
-[Model differences](archive/publication_support/docs/MODEL_COMPARISON.md) · [Reproducibility](reproducibility/README.md)
+Dependencies and packaging are defined in [pyproject.toml](pyproject.toml).
+Optional tools use `python -m pip install -e '.[dev]'` for Black or
+`python -m pip install -e '.[plot]'` for archived plotting scripts. Install both
+with `'.[dev,plot]'`. The constraints file records the tested numerical versions;
+it is not a second dependency list.
 
-## Read the code
+## Train and evaluate
 
-Start with one file in [models/](models/): `forward` defines the network,
-`loss` defines its training objective, and `bounds` produces the center/lower/upper
-images. Then read [dataset.py](dataset.py) to see how paired images reach the model.
-
-In [train.py](train.py), `train_one_epoch` contains the forward/backward loop;
-`run_training` handles setup, validation and checkpoints. The
-[calibration entry point](calibration.py) validates the request, loads frozen
-weights, then runs `calibrate_checkpoint` → `evaluate_test_set` → `save_results`.
-[Calibration algorithms](convrml/calibration.py) and
-[test metrics/exports](convrml/evaluation.py) live in separate modules;
-[checkpoints.py](convrml/checkpoints.py) handles saving, strict loading and resume.
-Recorded experiment settings stay in [configs/](configs/).
-See [tensor shapes and intensity conventions](models/README.md#tensor-and-intensity-conventions)
-and the [paper-to-code review](archive/publication_support/docs/MODEL_COMPARISON.md#paper-to-code-review)
-for the model interfaces and documented adaptations.
-The [backbone walkthrough](convrml/README.md#following-the-backbone) traces feature
-sizes; the [output-file guide](archive/publication_support/docs/RUNNING_EXPERIMENTS.md#outputs)
-explains which saved files to open.
-
-## Weights and evaluation
-
-```bash
-python -m convrml.download --dataset rml --method qutcc --epoch 50 --output weights/rml/qutcc
-```
-
-With prepared data at `/path/to/rml`, train or evaluate using:
+Prepare paired measurements and targets using the documented
+[data formats](convrml/README.md#reading-the-data) and
+[split IDs](reproducibility/README.md#dataset-splits). Image data are external;
+see [data availability](reproducibility/DATA.md).
 
 ```bash
 python train.py --dataset rml --method qutcc \
@@ -74,72 +41,74 @@ python train.py --dataset rml --method qutcc \
   --output runs/rml/qutcc --epochs 50 --device cuda
 
 python calibration.py --dataset rml --method qutcc \
-  --checkpoints weights/rml/qutcc/exp2__rml__qutcc__epoch_050.pt \
+  --checkpoints /path/to/checkpoint.pt \
   --manifest /path/to/rml/manifest.json --pairs /path/to/rml/pairs.npy \
   --calibration-manifest /path/to/rml/calibration/manifest.json \
   --calibration-pairs /path/to/rml/calibration/pairs.npy \
-  --calibration paper --output outputs/paper/rml/qutcc/epoch_050 --device cuda
+  --output outputs/rml/qutcc/epoch_050 --device cuda
 ```
 
-`--dataset` selects PLD or DLMD data handling and settings automatically. Each
-dataset has its own trained weights and calibration; shared code does not mean
-interchangeable weights. Historical checkpoint filenames/metadata retain their
-original IDs. The package commands `python -m convrml.train` and
-`python -m convrml.evaluate` remain equivalent to these entry points.
+For DLMD, supply its image-file manifest and omit the NumPy `--pairs` arguments.
+Models pad inputs internally to multiples of 32 and crop outputs to input size.
 
-The layout uses `models/`, `configs/`, `dataset.py`, `train.py`, and the renamed
-`calibration.py` entry point. The model/data organization follows
-[upstream ConvRML](https://github.com/lakabuli/ConvRML). Our recorded
-prepared-data formats, preprocessing and independent splits remain unchanged.
+Evaluation fits calibration on its separate split, then measures held-out test
+SSIM, PSNR, MAE, LPIPS-AlexNet, coverage, mean interval width, crossings and
+Pearson/Spearman correlations between uncertainty and absolute error. It exports
+per-image CSV, aggregate metrics and optional prediction/bound arrays.
+Raw and clipped metrics are separate; LPIPS uses clipped RGB. `--no-lpips` skips
+LPIPS for offline fixtures. LPIPS weights otherwise use the standard Torch cache.
 
-The [checkpoint index](reproducibility/checkpoints.json) identifies every saved
-five-epoch milestone, including five-/ten-member ensemble references, with file
-size and SHA-256. Downloads verify both before accepting a file. GitHub CLI
-access is needed for private release assets; public assets can download without it.
-Prepared image data are external; [data availability](reproducibility/DATA.md)
-links the original datasets and specifies the exact input formats and split IDs.
+The default calibration is RCPS-HB for the baselines and Algorithm 1 quantile
+search for QUTCC. `--calibration native` provides an uncalibrated control.
+Calibration does not force exact test coverage or make QUTCC outputs monotone.
+See [calibration details](archive/publication_support/docs/COVERAGE90.md).
 
-[Raw-input modifications](input_modifications/README.md) provides separate modules
-for Gaussian, Poisson, combined noise, exposure, dead pixels, fixed-pattern noise,
-Gaussian blur, resolution loss with factor 64, and JPEG compression. The preparation
-command creates separate MIRFLICKR measurement datasets while preserving the
-original targets and split identities. It does not submit model training.
-
-[Gaussian-only specialists](experiments/gaussian_specialist/README.md) provide a
-50-epoch controlled comparison with the generalized input-training runs.
-
-`python -m convrml.evaluate` loads frozen weights, fits on the separate calibration
-split and reports held-out SSIM, PSNR, MAE, LPIPS-AlexNet, coverage, width,
-crossings and Pearson/Spearman correlations of width with absolute error. It saves
-per-image CSV, dataset means/valid counts and optional reconstruction/bound arrays.
-LPIPS uses clipped RGB; the other metrics retain separate raw/clipped results.
-Pretrained LPIPS weights use the standard Torch cache; `--no-lpips` explicitly
-omits that metric for tiny/offline fixtures. Prediction and metric time are separate.
-[Calibration](archive/publication_support/docs/COVERAGE90.md) defaults to the paper
-procedures: RCPS-HB for Im2im, ensemble and MC dropout; Algorithm 1 calibrated
-quantiles for QUTCC. `--calibration native` is an uncalibrated control. Calibration
-does not force exact test coverage. Superseded empirical matching is archived.
-
-## Verification and attribution
+## Saved weights
 
 ```bash
-python -m pip install -e '.[dev]'
+python -m convrml.download --dataset rml --method qutcc --epoch 50 --output weights/rml/qutcc
+```
+
+The single [checkpoint index](convrml/checkpoint_index.json) records release URLs,
+sizes and SHA-256 hashes. Downloads verify files before accepting them. Private
+release assets require an authenticated GitHub CLI. Milestone availability and
+withdrawn artifacts are documented in [reproducibility/](reproducibility/).
+Legacy Im2im checkpoint names are translated during strict loading; stored
+weights are not rewritten.
+
+## Code map
+
+| Location | Purpose |
+| --- | --- |
+| [models/](models/) | Four model classes: architecture, training loss and prediction bounds |
+| [dataset.py](dataset.py) | PLD NumPy-cache and DLMD image-file loaders |
+| [train.py](train.py) | Training, validation, resume and checkpoints |
+| [calibration.py](calibration.py) | Frozen weights → calibration → test metrics → exports |
+| [convrml/](convrml/) | Shared backbone, FiLM, calibration algorithms, metrics and checkpoint utilities |
+| [configs/](configs/) | Recorded optimizer settings, seeds and dataset identities |
+| [input_modifications/](input_modifications/) | Measurement corruptions and dataset preparation, preserving targets |
+| [experiments/](experiments/) | Optional controlled training studies and cluster launchers |
+| [reproducibility/](reproducibility/) | Split IDs, environment and verification records |
+| [tests/](tests/) | CPU correctness and workflow checks |
+| [archive/](archive/) | Historical source, extended guides and optional tools |
+
+Start with a model's `forward`, `loss` and `bounds`, then follow the loader and
+root training/calibration scripts. The older `python -m convrml.train` and
+`python -m convrml.evaluate` commands remain small compatibility entry points.
+The main workflow does not require a cluster account or archived code.
+
+## Verification
+
+```bash
 python -m unittest discover -s tests -v
 ```
 
-Training and evaluation need no archived code or cluster configuration.
-[Release verification](reproducibility/verification.json) records the v0.1.0 checks;
-[model equivalence](reproducibility/model-equivalence.json)
-records unchanged original model predictions and gradients.
-[Cleanup verification](reproducibility/cleanup_verification.json) records the
-post-release archive move and unused-code removal checks.
+Tests use small CPU fixtures; they do not retrain the published benchmarks.
+[Recorded verification](reproducibility/README.md),
+[model details and adaptations](models/README.md), and the
+[extended running guide](archive/publication_support/docs/RUNNING_EXPERIMENTS.md)
+explain reproducibility and practical limits. Historical optimizer profiles differ
+between methods; report those differences alongside accuracy and runtime.
 
-[Citation](CITATION.cff) · [Upstream methods and credit](THIRD_PARTY.md) ·
-[License](LICENSE) · [Interactive results](https://shdakudow.github.io/ConvRML-Uncertainty-Demo/)
-
-Original run engines, cluster operations and historical source records remain
-in [archive/](archive/). Extended guides, plotting/provenance tools and inactive
-GitHub Actions configuration are in [publication support](archive/publication_support/).
-Existing checkpoint files remain unchanged. The loader translates legacy Im2im
-names to the common `backbone.*` namespace; new models need no dataset-specific
-naming option. See [checkpoint compatibility](models/README.md#im2im-checkpoint-names).
+[Citation](CITATION.cff) · [Attribution](THIRD_PARTY.md) · [License](LICENSE) ·
+[Interactive results](https://shdakudow.github.io/ConvRML-Uncertainty-Demo/)

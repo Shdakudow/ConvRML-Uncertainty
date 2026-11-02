@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Consolidate dependency versions, package discovery and formatting settings in
+  `pyproject.toml`; remove the two requirements wrappers and `setup.cfg`. Keep
+  one packaged checkpoint index and link to it from the reproducibility guide.
+  Shorten the root README. Numerical source, saved weights and settings are unchanged.
 - Rename the public `infer.py` entry point to `calibration.py`. Separate held-out
   metrics/exports into `convrml/evaluation.py`, group CLI options, and name request,
   checkpoint, calibration, and report steps explicitly. Update commands, package

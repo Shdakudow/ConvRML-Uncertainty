@@ -1,2 +1,0 @@
-# Install the release plus test/formatting dependencies.
--e .[plot,dev]
