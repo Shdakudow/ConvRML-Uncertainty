@@ -121,6 +121,33 @@ def evaluate_test_set(
     )
 
 
+def make_report(result, *, metadata, lpips_enabled):
+    """Combine measured scores with the workflow's provenance and timing records.
+
+    ``metadata`` supplies epoch, camera, method, request, calibration, provenance,
+    data identity, environment, source hash, hardware, timing and example count.
+    This only assembles JSON fields: it does not predict, fit or recompute metrics.
+    """
+    return dict(
+        metadata,
+        test_count=len(result["rows"]),
+        metrics=result["metrics"],
+        metric_valid_counts=result["valid_counts"],
+        metric_protocol=dict(
+            lpips=dict(
+                enabled=lpips_enabled,
+                backbone="alex",
+                inputs="clipped RGB [0,1]",
+                raw="unavailable: unbounded outputs outside supported intensity range",
+            ),
+            correlations="Per-image Pearson/Spearman: UB-LB versus absolute target-prediction error; flattened RGB; no smoothing/regions",
+            undefined="null; means exclude undefined images and record valid counts",
+        ),
+        timing={**metadata["timing"], **result["timing"]},
+        per_image=result["rows"],
+    )
+
+
 def save_results(output, report, examples):
     """Write the aggregate report, per-image CSV and optional example arrays."""
     write_json(output / "report.json", report)

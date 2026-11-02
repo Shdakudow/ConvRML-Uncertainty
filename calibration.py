@@ -17,7 +17,7 @@ import torch
 from convrml.calibration import CalibrationFailure, fit_calibration, apply_calibration
 from convrml.checkpoints import load_predictor
 from convrml.metrics import PerceptualMetric
-from convrml.evaluation import evaluate_test_set, save_results
+from convrml.evaluation import evaluate_test_set, make_report, save_results
 from convrml.protocol import (
     audit_manifest,
     autocast,
@@ -113,9 +113,29 @@ def arguments(argv=None):
     return args
 
 
-def split_ids(path, split):
+def manifest_ids(path):
+    """Read split membership without opening any measurement or target images."""
     value = json.loads(Path(path).read_text())
-    return [str(row["id"]) for row in value.get("roles", value)[split]]
+    roles = value.get("roles", value)
+    return {
+        role: [str(row["id"]) for row in roles[role]]
+        for role in ("train", "val", "test", "calibration")
+        if role in roles
+    }
+
+
+def load_calibration_split(args):
+    """Check disjoint IDs, then open only the calibration pairs."""
+    identity = audit_manifest(args.calibration_manifest, args.dataset, smoke=args.smoke)
+    calibration_ids = set(manifest_ids(args.calibration_manifest)["calibration"])
+    for role, ids in manifest_ids(args.manifest).items():
+        if role != "calibration" and calibration_ids.intersection(ids):
+            raise ValueError("Calibration IDs overlap another split")
+    calibration = dataset_for(
+        args.dataset, args.calibration_manifest, args.calibration_pairs, "calibration"
+    )
+    check_shape(calibration, args.dataset, smoke=args.smoke)
+    return calibration, identity
 
 
 def make_predictor(model, run, device):
@@ -125,13 +145,15 @@ def make_predictor(model, run, device):
     All methods share this interface despite their different forward() outputs.
     """
 
+    config = settings()
+
     def predict(measurement):
         with autocast(run, device):
             if run["method"] == "mc_dropout":
                 result = model.bounds(
                     measurement,
-                    samples=settings()["mc_samples"],
-                    alpha=settings()["alpha"],
+                    samples=config["mc_samples"],
+                    alpha=config["alpha"],
                 )
             else:
                 result = model.bounds(measurement)
@@ -153,24 +175,7 @@ def calibrate_checkpoint(
     started = time.monotonic()
     fitted, identity = {}, None
     if args.calibration != "native":
-        identity = audit_manifest(
-            args.calibration_manifest, args.dataset, smoke=args.smoke
-        )
-        calibration_ids = set(split_ids(args.calibration_manifest, "calibration"))
-        manifest = json.loads(args.manifest.read_text())
-        roles = manifest.get("roles", manifest)
-        for role in ("train", "val", "test"):
-            if role in roles and calibration_ids.intersection(
-                split_ids(args.manifest, role)
-            ):
-                raise ValueError("Calibration IDs overlap another split")
-        calibration = dataset_for(
-            args.dataset,
-            args.calibration_manifest,
-            args.calibration_pairs,
-            "calibration",
-        )
-        check_shape(calibration, args.dataset, smoke=args.smoke)
+        calibration, identity = load_calibration_split(args)
         try:
             fitted = fit_calibration(
                 calibration, predict, model, run, device, args.workers, output
@@ -231,66 +236,22 @@ def load_frozen_checkpoint(args, run, device, *, model_loader=None):
     return model, provenance, seed, load_seconds
 
 
-def make_request(args, run, device, provenance, seed):
+def make_request(args, device, provenance, seed):
     """Record the requested method, calibration mode, and inference settings."""
+    config = settings()
     return dict(
         experiment=args.experiment,
         dataset=args.dataset,
         method=args.method,
-        alpha=settings()["alpha"],
+        alpha=config["alpha"],
         calibration=args.calibration,
         seed=seed,
-        mc_samples=settings()["mc_samples"] if args.method == "mc_dropout" else None,
+        mc_samples=config["mc_samples"] if args.method == "mc_dropout" else None,
         ensemble_members=len(provenance) if args.method == "ensemble" else None,
         device=str(device),
         smoke=args.smoke,
         test_used_for_calibration=False,
         lpips=not args.no_lpips,
-    )
-
-
-def make_report(
-    args,
-    result,
-    *,
-    request,
-    fitted,
-    provenance,
-    data,
-    software,
-    source,
-    device,
-    timing,
-    lpips_enabled,
-):
-    """Assemble the exported metadata and measured scores without recomputing them."""
-    return dict(
-        epoch=provenance[0]["epoch"],
-        camera=args.dataset,
-        method=args.method,
-        request=request,
-        test_count=len(result["rows"]),
-        metrics=result["metrics"],
-        metric_valid_counts=result["valid_counts"],
-        metric_protocol=dict(
-            lpips=dict(
-                enabled=lpips_enabled,
-                backbone="alex",
-                inputs="clipped RGB [0,1]",
-                raw="unavailable: unbounded outputs outside supported intensity range",
-            ),
-            correlations="Per-image Pearson/Spearman: UB-LB versus absolute target-prediction error; flattened RGB; no smoothing/regions",
-            undefined="null; means exclude undefined images and record valid counts",
-        ),
-        calibration=fitted,
-        provenance=provenance,
-        data=data,
-        environment=software,
-        source_sha256=source,
-        hardware=hardware(device),
-        timing={**timing, **result["timing"]},
-        per_image=result["rows"],
-        example_count=args.examples,
     )
 
 
@@ -312,7 +273,7 @@ def _run_evaluation(args, *, model_loader=None):
     validate_request(args)
     source, software = source_fingerprint(), environment()
     data_identity = audit_manifest(args.manifest, args.dataset, smoke=args.smoke)
-    test_ids = split_ids(args.manifest, "test")
+    test_ids = manifest_ids(args.manifest)["test"]
     if args.examples > len(test_ids):
         raise ValueError("Requested examples exceed the held-out test set")
     device = torch.device(args.device)
@@ -332,7 +293,7 @@ def _run_evaluation(args, *, model_loader=None):
     perceptual = None if args.no_lpips else PerceptualMetric(device)
     lpips_load_seconds = time.monotonic() - started
     predict = make_predictor(model, run, device)
-    request = make_request(args, run, device, provenance, seed)
+    request = make_request(args, device, provenance, seed)
 
     # 2. Fit and save calibration before opening any held-out test pixels.
     fitted, calibration_identity, calibration_seconds = calibrate_checkpoint(
@@ -365,19 +326,24 @@ def _run_evaluation(args, *, model_loader=None):
 
     # 4. Assemble provenance and export scores, CSV rows, and optional examples.
     report = make_report(
-        args,
         result,
-        request=request,
-        fitted=fitted,
-        provenance=provenance,
-        data=dict(main=data_identity, calibration=calibration_identity),
-        software=software,
-        source=source,
-        device=device,
-        timing=dict(
-            load_seconds=load_seconds,
-            lpips_load_seconds=lpips_load_seconds,
-            calibration_seconds=calibration_seconds,
+        metadata=dict(
+            epoch=provenance[0]["epoch"],
+            camera=args.dataset,
+            method=args.method,
+            request=request,
+            calibration=fitted,
+            provenance=provenance,
+            data=dict(main=data_identity, calibration=calibration_identity),
+            environment=software,
+            source_sha256=source,
+            hardware=hardware(device),
+            timing=dict(
+                load_seconds=load_seconds,
+                lpips_load_seconds=lpips_load_seconds,
+                calibration_seconds=calibration_seconds,
+            ),
+            example_count=args.examples,
         ),
         lpips_enabled=perceptual is not None,
     )

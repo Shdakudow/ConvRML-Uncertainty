@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Simplify `calibration.py`: read split memberships together, isolate calibration
+  data checks, cache prediction settings, and assemble reports beside exports in
+  `convrml/evaluation.py`. Preserve CLI options, calibration formulas, metrics and
+  random-number behavior. Exact source hashes change; existing training resumes
+  should retain their original checkout under the unchanged strict source guard.
 - Consolidate dependency versions, package discovery and formatting settings in
   `pyproject.toml`; remove the two requirements wrappers and `setup.cfg`. Keep
   one packaged checkpoint index and link to it from the reproducibility guide.
