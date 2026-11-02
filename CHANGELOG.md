@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Rewrite `train.py` around the load/create/resume/train/validate/save workflow,
+  with explicit Adam/AdamW construction and an annotated gradient loop. Start the
+  optimizer at its first scheduled learning rate rather than setting a peak rate
+  that was immediately replaced before the first update. Group checkpoint/RNG
+  serialization in the existing checkpoint module. Preserve model updates,
+  recorded schedules, data ordering, seeds and checkpoint fields on CPU fixtures;
+  source-identity guards remain strict.
 - Simplify `calibration.py`: read split memberships together, isolate calibration
   data checks, cache prediction settings, and assemble reports beside exports in
   `convrml/evaluation.py`. Preserve CLI options, calibration formulas, metrics and

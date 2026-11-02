@@ -6,7 +6,7 @@ from pathlib import Path
 
 import torch
 
-from .protocol import make_model, profile, settings
+from .protocol import make_model, profile, settings, write_json
 
 
 def read_checkpoint(path):
@@ -187,6 +187,41 @@ def model_checkpoint(checkpoint):
         "environment",
     )
     return {key: checkpoint[key] for key in keys}
+
+
+def save_training_progress(
+    output, checkpoint, optimizer, device, quantile_rng, data_rng
+):
+    """Save recovery state each epoch, milestone weights, and readable history.
+
+    ``checkpoint`` supplies model weights, epoch/history, global step and run
+    identity. latest.pt also needs Adam moments and every RNG stream for exact
+    resume; milestone files retain only model/evaluation fields.
+    """
+    full = dict(
+        checkpoint,
+        optimizer=optimizer.state_dict(),
+        rng=torch.get_rng_state(),
+        cuda_rng=torch.cuda.get_rng_state_all() if device.type == "cuda" else [],
+        quantile_rng=quantile_rng.get_state(),
+        data_rng=data_rng.get_state(),
+    )
+    save_checkpoint(output / "latest.pt", full)
+    if checkpoint["epoch"] % settings()["checkpoint_interval"] == 0:
+        destination = output / "checkpoints" / f"epoch_{checkpoint['epoch']:03d}.pt"
+        if destination.exists():
+            raise FileExistsError(destination)
+        save_checkpoint(destination, model_checkpoint(full))
+    write_json(output / "history.json", checkpoint["history"])
+
+
+def restore_missing_milestone(output, checkpoint):
+    """Recover a milestone from latest.pt if interruption preceded its export."""
+    epoch = checkpoint["epoch"]
+    if epoch and epoch % settings()["checkpoint_interval"] == 0:
+        destination = output / "checkpoints" / f"epoch_{epoch:03d}.pt"
+        if not destination.exists():
+            save_checkpoint(destination, model_checkpoint(checkpoint))
 
 
 def load_predictor(paths, run, device, *, smoke=False, model_loader=None):

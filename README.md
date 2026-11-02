@@ -93,7 +93,9 @@ weights are not rewritten.
 | [archive/](archive/) | Historical source, extended guides and optional tools |
 
 Start with a model's `forward`, `loss` and `bounds`, then follow the loader and
-root training/calibration scripts. The older `python -m convrml.train` and
+root training/calibration scripts. In `train.py`, read `run_training` for the
+complete workflow, `train_one_epoch` for gradient updates, and `create_optimizer`
+for explicit Adam/AdamW selection. The older `python -m convrml.train` and
 `python -m convrml.evaluate` commands remain small compatibility entry points.
 The main workflow does not require a cluster account or archived code.
 

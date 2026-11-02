@@ -16,7 +16,7 @@ commands. Optional plotting, provenance tools and GitHub Actions live in
 | [../train.py](../train.py) / [../calibration.py](../calibration.py) | Training loop and calibration → test → export workflow |
 | [metrics.py](metrics.py) | SSIM, PSNR, MAE, LPIPS, coverage, width, crossings and uncertainty/error correlations |
 | [protocol.py](protocol.py) / [experiment_settings.json](../configs/experiment_settings.json) | Model/data selection, recorded settings, identity and resume checks |
-| [checkpoints.py](checkpoints.py) | Atomic saving, legacy Im2im name translation, strict loading, resume and ensemble assembly |
+| [checkpoints.py](checkpoints.py) | Training-state/milestone saving, legacy Im2im name translation, strict loading, resume and ensemble assembly |
 | [download.py](download.py) / [checkpoint_index.json](checkpoint_index.json) | Verified downloads of published checkpoint files |
 
 Training losses, including the pinball formula, are defined directly in each
