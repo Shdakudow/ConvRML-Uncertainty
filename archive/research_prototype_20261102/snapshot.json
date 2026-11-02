@@ -1,0 +1,32 @@
+{
+  "revision": "1da7ec3aa17f9030f4869ae3d5e62bb75c54c3d9",
+  "archive": "source_before_simplification.tar.gz",
+  "sha256": "3e2af92c045b1aeb2c67d094a19f8b6fa9ffbc17ce74657b12c94cd6dc51a6a5",
+  "files": 109,
+  "scope": "Tracked source outside archive, captured before simplification; includes original engines and tests",
+  "simplification_validation": {
+    "date": "2026-11-02",
+    "device": "CPU",
+    "unit_tests_passed": 60,
+    "isolated_original_vs_simplified_cases": 26,
+    "comparison": {
+      "training": "14 fresh/resumed fixture runs: exact model weights, Adam state, RNG streams, losses, validation scores, learning rates; includes four methods, two ensemble seeds, corruption adaptation, partial batches",
+      "calibration_and_inference": "8 paths: four methods with paper/native intervals; exact fits, raw/clipped metrics, per-image CSV, examples and RNG",
+      "online_training": "4 paths: Im2im/QUTCC with mixture/Gaussian-only inputs; exact model, Adam, augmentation/quantile RNG and losses"
+    },
+    "unchanged": [
+      "Four model definitions and losses",
+      "Backbone and FiLM",
+      "Main numerical profiles",
+      "Calibration algorithms and metrics",
+      "Input modifications"
+    ],
+    "intentional_changes": [
+      "Epoch-boundary-only recovery in standalone generalized trainer",
+      "Remove source/software gates, file locks, fixed benchmark-size gates and duplicate wrappers",
+      "Archive cluster orchestration, historical migrations and robustness demo publishing pipeline",
+      "Remove unused checkpoint-step and job-time fields from standalone study protocols"
+    ],
+    "limits": "Tiny CPU networks use real model loss methods. No full benchmark retraining or CUDA equality claim; no active deployment changed."
+  }
+}

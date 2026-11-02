@@ -28,7 +28,7 @@ SPLIT_ORDER = ("train", "val", "test", "calibration")
 
 
 class NumpyPairs(Dataset):
-    """PLD experiment: memory-mapped (N, 2, 3, 256, 256) uint8 cache.
+    """Memory-mapped (N, 2, 3, H, W) uint8 cache; prepared PLD uses 256x256.
 
     The manifest lists train/val/test IDs in their existing cache order, or lists a
     separate calibration split. Pass the calibration cache and its own manifest

@@ -1,17 +1,15 @@
-"""Train QUTCC/Im2im from scratch on online measurement modifications.
+"""Train Im2im or QUTCC on clean/corrupted measurements, with epoch-boundary resume.
 
-Run from a frozen repository snapshot. No modified datasets, calibration fitting,
-or test evaluation are created by this training entry point.
+The model/loss definitions are shared with root train.py. protocol.json records
+this study's input distribution and two-phase learning-rate schedule. Historical
+Slurm/requeue engines are preserved in archive/research_prototype_20261102/.
 """
 
 import argparse
 from collections import Counter
-import fcntl
-import hashlib
 import json
 import math
 from pathlib import Path
-import signal
 import sys
 import time
 
@@ -21,8 +19,8 @@ from torchmetrics.functional.image import structural_similarity_index_measure as
 
 REPOSITORY = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPOSITORY))
-
 from convrml.checkpoints import load_model_weights, save_checkpoint
+from convrml.protocol import audit_manifest, write_json
 from dataset import ImagePairs
 from input_modifications.gaussian import gaussian_noise
 from input_modifications.online import (
@@ -32,141 +30,8 @@ from input_modifications.online import (
 )
 from models import Im2im, QUTCC
 
-STOP = 0
 SETTINGS_PATH = Path(__file__).with_name("protocol.json")
 SETTINGS = json.loads(SETTINGS_PATH.read_text())
-
-
-def request_stop(signum, _frame):
-    """Ask the batch loop to checkpoint before exiting for Slurm requeue/termination."""
-    global STOP
-    STOP = 75 if signum == signal.SIGUSR1 else 1
-
-
-def write_json(path, value):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(".tmp")
-    temporary.write_text(json.dumps(value, indent=2, allow_nan=False) + "\n")
-    temporary.replace(path)
-
-
-def file_hash(path):
-    digest = hashlib.sha256()
-    with Path(path).open("rb") as stream:
-        for block in iter(lambda: stream.read(8 * 1024**2), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
-def source_hash():
-    """Identify the frozen engine, shared models, transforms and selected protocol."""
-    paths = [REPOSITORY / "dataset.py"]
-    for name in (
-        "convrml",
-        "models",
-        "input_modifications",
-        "experiments/generalized_inputs",
-        "experiments/gaussian_specialist",
-    ):
-        paths.extend((REPOSITORY / name).rglob("*.py"))
-    paths.append(SETTINGS_PATH)
-    digest = hashlib.sha256()
-    for path in sorted(paths):
-        digest.update(str(path.relative_to(REPOSITORY)).encode())
-        digest.update(path.read_bytes())
-    return digest.hexdigest()
-
-
-def audit_manifest(path):
-    if file_hash(path) != SETTINGS["manifest_sha256"]:
-        raise ValueError("The original MIRFLICKR split manifest changed.")
-    roles = json.loads(path.read_text())["roles"]
-    seen = set()
-    for role, count in SETTINGS["counts"].items():
-        ids = {str(row["id"]) for row in roles[role]}
-        if len(roles[role]) != count or len(ids) != count or seen.intersection(ids):
-            raise ValueError(f"Invalid count or overlapping IDs in {role}.")
-        seen.update(ids)
-
-
-def initialize_model(method):
-    """Create fresh random weights; both backbones use pretrained=False."""
-    torch.manual_seed(SETTINGS["seed"])
-    return QUTCC() if method == "qutcc" else Im2im()
-
-
-def weights_hash(model):
-    """Record the complete initial state so smoke and full runs can be compared."""
-    digest = hashlib.sha256()
-    for name, tensor in sorted(model.state_dict().items()):
-        digest.update(name.encode())
-        digest.update(str((tensor.dtype, tuple(tensor.shape))).encode())
-        digest.update(tensor.detach().cpu().contiguous().numpy().tobytes())
-    return digest.hexdigest()
-
-
-def prepare_initial_weights(
-    model, output, method, smoke, previous_config=None, initial_reference=None
-):
-    """Save fresh epoch-zero weights before smoke; replay them across CPU types."""
-    path = output / "initial_random.pt"
-    expected = dict(
-        epoch=0,
-        trained_steps=0,
-        pretrained=False,
-        method=method,
-        seed=SETTINGS["seed"],
-        protocol=(previous_config or SETTINGS)["protocol"],
-        source_sha256=(
-            previous_config["source_sha256"] if previous_config else source_hash()
-        ),
-    )
-    matched_hash = SETTINGS.get("matched_initial_weights_sha256", {}).get(method)
-    if matched_hash:
-        expected["matched_initial_weights_sha256"] = matched_hash
-    if smoke:
-        if path.exists():
-            raise FileExistsError("Fresh initialization already exists; use a new run.")
-        if matched_hash:
-            if initial_reference is None:
-                raise ValueError(
-                    "The matched experiment requires an untrained epoch-zero reference."
-                )
-            reference = torch.load(
-                initial_reference, map_location="cpu", weights_only=False
-            )
-            required = dict(
-                epoch=0,
-                trained_steps=0,
-                pretrained=False,
-                method=method,
-                seed=SETTINGS["seed"],
-            )
-            if any(reference.get(key) != value for key, value in required.items()):
-                raise ValueError(
-                    "The initialization reference must have zero trained steps."
-                )
-            load_model_weights(model, reference["model"])
-            del reference
-        digest = weights_hash(model)
-        if matched_hash and digest != matched_hash:
-            raise ValueError(
-                "The untrained reference does not match the comparison's initial weights."
-            )
-        save_checkpoint(
-            path, dict(**expected, model=model.state_dict(), weights_sha256=digest)
-        )
-        return digest
-    initial = torch.load(path, map_location="cpu", weights_only=False)
-    if any(initial.get(key) != value for key, value in expected.items()):
-        raise ValueError(
-            "Initial state must be this run's untrained epoch-zero weights."
-        )
-    load_model_weights(model, initial["model"])
-    digest = weights_hash(model)
-    if digest != initial["weights_sha256"] or (matched_hash and digest != matched_hash):
-        raise ValueError("Untrained epoch-zero weight hash mismatch.")
-    return digest
 
 
 def learning_rate(step, total_steps):
@@ -195,75 +60,6 @@ def learning_rate(step, total_steps):
     return SETTINGS["final_lr"] + (SETTINGS["peak_lr"] - SETTINGS["final_lr"]) * cosine
 
 
-def validate_epoch_extension(previous, current):
-    """Allow the reviewed epoch extensions while retaining training identity."""
-    allowed = {
-        "protocol",
-        "epochs",
-        "warmup_fraction",
-        "schedule",
-        "source_sha256",
-        "source_commit",
-        "epoch_extension",
-    }
-    if previous["epochs"] == 50 and current["epochs"] == 100:
-        allowed.update(
-            {"base_epochs", "continuation_initial_lr", "continuation_final_lr"}
-        )
-    changed = {
-        key
-        for key in previous.keys() | current.keys()
-        if previous.get(key) != current.get(key)
-    }
-    if changed - allowed:
-        raise ValueError(
-            f"Epoch extension changed training identity: {changed - allowed}"
-        )
-    if previous["epochs"] == 50 and current["epochs"] == 100:
-        if current["base_epochs"] != 50 or not (
-            0
-            < current["continuation_final_lr"]
-            <= current["continuation_initial_lr"]
-            < previous["peak_lr"]
-        ):
-            raise ValueError(
-                "The continuation must start after 50 at a lower peak rate."
-            )
-        if previous["warmup_fraction"] != current["warmup_fraction"]:
-            raise ValueError("The original 50-epoch schedule must remain unchanged.")
-    elif previous["epochs"] != 30 or current["epochs"] != 50:
-        raise ValueError(
-            "Only the requested 30-to-50 or 50-to-100 extensions are allowed."
-        )
-    elif not math.isclose(
-        previous["epochs"] * previous["warmup_fraction"],
-        current["epochs"] * current["warmup_fraction"],
-    ):
-        raise ValueError("Epoch extension must retain the original warmup duration.")
-    if (
-        previous["initialization"] != "fresh_random_no_pretrained_weights"
-        or previous["pretrained"]
-    ):
-        raise ValueError("Only the existing from-scratch runs can be extended.")
-
-
-def validate_after50_checkpoint(state, complete):
-    """Require every epoch-50 update and validation before phase two can start."""
-    expected_steps = 50 * math.ceil(
-        SETTINGS["counts"]["train"] / SETTINGS["effective_batch"]
-    )
-    if (
-        not complete.get("passed")
-        or complete.get("epochs") != 50
-        or state["epoch"] != 50
-        or state["next_epoch"] != 51
-        or state["offset"] != 0
-        or state["global_step"] != expected_steps
-        or [row["epoch"] for row in state["history"]] != list(range(1, 51))
-    ):
-        raise ValueError("Epochs 51-100 require a complete validated 50-epoch run.")
-
-
 class ValidationPanel(Dataset):
     """The same held-out scenes under every condition, with fixed random draws."""
 
@@ -290,17 +86,85 @@ class ValidationPanel(Dataset):
         return modified, target, condition_index
 
 
+def train_one_epoch(
+    model,
+    optimizer,
+    loader,
+    device,
+    augmentation_rng,
+    quantile_rng,
+    global_step,
+    total_steps,
+    smoke=False,
+):
+    """Change measurements only, accumulate one batch's gradients, then update Adam."""
+    model.train()
+    loss_sum = 0.0
+    image_count = 0
+    condition_counts = Counter()
+    for index, batch in enumerate(loader):
+        if smoke and index == 2:
+            break
+        measurement = batch[:, 0]
+        condition = SETTINGS.get("training_condition", "mixture")
+        if condition == "gaussian":
+            modified = gaussian_noise(
+                measurement,
+                sigma=SETTINGS["gaussian_sigma"],
+                generator=augmentation_rng,
+            )
+            labels = ["gaussian"] * len(batch)
+        elif condition == "mixture":
+            modified, labels = sample_training_modification(
+                measurement, generator=augmentation_rng
+            )
+        else:
+            raise ValueError(f"Unknown training condition: {condition}")
+        lr = learning_rate(global_step, total_steps)
+        for group in optimizer.param_groups:
+            group["lr"] = lr
+        optimizer.zero_grad(set_to_none=True)
+        batch_loss = 0.0
+        for sample_index in range(len(batch)):
+            y = modified[sample_index : sample_index + 1].to(device, non_blocking=True)
+            target = batch[sample_index : sample_index + 1, 1].to(
+                device, non_blocking=True
+            )
+            if isinstance(model, QUTCC):
+                loss = model.loss(y, target, generator=quantile_rng)
+            else:
+                loss = model.loss(y, target)
+            loss = loss / len(batch)
+            if not torch.isfinite(loss):
+                raise ValueError("Nonfinite training loss")
+            loss.backward()
+            batch_loss += float(loss.detach())
+        optimizer.step()
+        global_step += 1
+        loss_sum += batch_loss * len(batch)
+        image_count += len(batch)
+        condition_counts.update(labels)
+    return dict(
+        loss=loss_sum / image_count,
+        lr=lr,
+        global_step=global_step,
+        condition_counts=dict(condition_counts),
+    )
+
+
 @torch.inference_mode()
-def validate(model, panel):
-    """Evaluate the fixed validation panel, reporting each corruption separately."""
+def validate(model, panel, device, workers=2):
+    """Measure each condition on the same held-out scenes and fixed noise draws."""
     model.eval()
     totals = {name: Counter() for name in CONDITIONS}
-    loader = DataLoader(panel, batch_size=1, num_workers=2, pin_memory=True)
-    for measurement, target, condition in loader:
-        target = target.cuda(non_blocking=True)
-        prediction = model.center(measurement.cuda(non_blocking=True)).clamp(0, 1)
+    for measurement, target, condition in DataLoader(
+        panel, batch_size=1, num_workers=workers, pin_memory=True
+    ):
+        target = target.to(device, non_blocking=True)
+        prediction = model.center(measurement.to(device, non_blocking=True))
         if not torch.isfinite(prediction).all():
-            raise ValueError("Nonfinite validation prediction.")
+            raise ValueError("Nonfinite validation prediction")
+        prediction = prediction.clamp(0, 1)
         row = totals[CONDITIONS[condition.item()]]
         row["psnr"] += float(
             -10 * (prediction - target).square().mean().clamp_min(1e-12).log10()
@@ -324,480 +188,188 @@ def validate(model, panel):
     )
 
 
-def modify_training_measurements(measurement, generator):
-    """Select the protocol's input distribution; targets never enter this helper."""
-    condition = SETTINGS.get("training_condition", "mixture")
-    if condition == "mixture":
-        return sample_training_modification(measurement, generator=generator)
-    if condition == "gaussian":
-        modified = gaussian_noise(
-            measurement, sigma=SETTINGS["gaussian_sigma"], generator=generator
-        )
-        return modified, ["gaussian"] * len(measurement)
-    raise ValueError(f"Unsupported training condition: {condition}")
-
-
-def train_batch(
-    model, optimizer, batch, augmentation_rng, quantile_rng, *, check_gradients=False
-):
-    """Modify CPU measurements only, then accumulate an effective batch of four."""
-    modified, labels = modify_training_measurements(batch[:, 0], augmentation_rng)
-    optimizer.zero_grad(set_to_none=True)
-    batch_loss = 0.0
-    for index in range(len(batch)):
-        measurement = modified[index : index + 1].cuda(non_blocking=True)
-        target = batch[index : index + 1, 1].cuda(non_blocking=True)
-        loss = (
-            model.loss(measurement, target, generator=quantile_rng)
-            if isinstance(model, QUTCC)
-            else model.loss(measurement, target)
-        ) / len(batch)
-        if not torch.isfinite(loss):
-            raise ValueError("Nonfinite training loss.")
-        loss.backward()
-        batch_loss += float(loss.detach())
-    if check_gradients and not all(
-        parameter.grad is None or torch.isfinite(parameter.grad).all()
-        for parameter in model.parameters()
-    ):
-        raise ValueError("Nonfinite training gradients.")
-    optimizer.step()
-    return batch_loss, labels
-
-
-def run_smoke_test(
-    args,
-    model,
-    optimizer,
-    training_pairs,
-    panel,
-    training_metadata,
-    augmentation_rng,
-    quantile_rng,
-):
-    """Check finite gradients, real weight updates and validation before full training.
-
-    Uses a disposable smoke model; the production run later reloads the saved
-    epoch-zero weights. Timings estimate resources without changing the protocol.
-    """
-    model.train()
-    before = next(model.parameters()).detach().clone()
-    times, losses, conditions = [], [], Counter()
-    loader = DataLoader(
-        Subset(training_pairs, range(32)),
-        batch_size=SETTINGS["effective_batch"],
-        num_workers=2,
-    )
-    for batch in loader:
-        torch.cuda.synchronize()
-        started = time.monotonic()
-        batch_loss, labels = train_batch(
-            model,
-            optimizer,
-            batch,
-            augmentation_rng,
-            quantile_rng,
-            check_gradients=True,
-        )
-        torch.cuda.synchronize()
-        times.append(time.monotonic() - started)
-        losses.append(batch_loss)
-        conditions.update(labels)
-    assert not torch.equal(before, next(model.parameters()))
-    started = time.monotonic()
-    validation = validate(model, panel)
-    validation_seconds = time.monotonic() - started
-    seconds_per_step = sum(times[1:]) / len(times[1:])
-    estimated_epoch_seconds = seconds_per_step * math.ceil(
-        len(training_pairs) / SETTINGS["effective_batch"]
-    ) + validation_seconds / len(panel) * (
-        len(CONDITIONS) * SETTINGS["validation_per_condition"]
-    )
-    smoke = dict(
-        config=training_metadata,
-        passed=True,
-        losses=losses,
-        condition_counts=dict(conditions),
-        validation=validation,
-        seconds_per_step=seconds_per_step,
-        estimated_epoch_hours=estimated_epoch_seconds / 3600,
-        estimated_total_epoch_hours=SETTINGS["epochs"] * estimated_epoch_seconds / 3600,
-        gpu=torch.cuda.get_device_name(),
-        peak_memory_gib=torch.cuda.max_memory_allocated() / 1024**3,
-    )
-    write_json(args.output / "smoke.json", smoke)
-    print(json.dumps(smoke), flush=True)
-    return
-
-
-def run(args):
-    """Audit -> initialize -> smoke or restore -> train/validate -> checkpoint.
-
-    This CUDA engine is separate from the portable root trainer because it adds
-    online corruptions and exact mid-epoch recovery after cluster preemption.
-    offset counts consumed images; global_step counts Adam updates. Both the
-    augmentation RNG and QUTCC q RNG are checkpointed independently.
-    """
-    # 1. Verify the dataset and recover the run's original epoch-zero weights.
-    audit_manifest(args.manifest)
+def run_training(args):
+    """Load data, train/validate complete epochs and save standard recovery state."""
     torch.set_num_threads(2)
     torch.manual_seed(SETTINGS["seed"])
-    torch.cuda.manual_seed_all(SETTINGS["seed"])
-    model = initialize_model(args.method)
-    args.output.mkdir(parents=True, exist_ok=True)
-    previous_config = json.loads(args.extension.read_text()) if args.extension else None
-    initial_config = (
-        json.loads(args.initial_config.read_text())
-        if args.initial_config
-        else previous_config
+    output = args.output.resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    latest = output / "latest.pt"
+    if latest.exists() and not args.resume:
+        raise FileExistsError("Use --resume or a new output folder")
+    target_epoch = SETTINGS["epochs"] if args.epochs is None else args.epochs
+    if args.smoke:
+        target_epoch = 1
+    if not 1 <= target_epoch <= SETTINGS["epochs"] or args.workers < 0:
+        raise ValueError("Invalid epoch or worker count")
+    data = audit_manifest(args.manifest)
+    training = ImagePairs(args.manifest, "train")
+    validation = ImagePairs(args.manifest, "val")
+    panel = ValidationPanel(
+        validation, 2 if args.smoke else SETTINGS["validation_per_condition"]
     )
-    if (
-        previous_config
-        and previous_config["epochs"] == 50
-        and SETTINGS["epochs"] == 100
-        and not args.after50
+    model = QUTCC() if args.method == "qutcc" else Im2im()
+    if args.resume and args.initial_random_state:
+        raise ValueError("Choose --resume or --initial-random-state")
+    if SETTINGS.get("matched_initial_weights_sha256") and not (
+        args.resume or args.initial_random_state
     ):
-        raise ValueError(
-            "The 100-epoch continuation must wait for the completed epoch-50 run."
+        raise ValueError("Matched comparison requires --initial-random-state")
+    if args.initial_random_state and not args.resume:
+        initial = torch.load(
+            args.initial_random_state, map_location="cpu", weights_only=False
         )
-    if previous_config and (args.smoke or not (args.output / "latest.pt").exists()):
-        raise ValueError(
-            "An epoch extension requires the existing run's resume checkpoint."
+        if (
+            initial.get("epoch") != 0
+            or initial.get("trained_steps") != 0
+            or initial.get("method") != args.method
+            or initial.get("pretrained") is not False
+        ):
+            raise ValueError(
+                "Matched initialization requires untrained epoch-zero weights"
+            )
+        load_model_weights(model, initial["model"])
+    if not args.resume:
+        save_checkpoint(
+            output / "initial_random.pt",
+            dict(
+                epoch=0,
+                trained_steps=0,
+                pretrained=False,
+                method=args.method,
+                model=model.state_dict(),
+            ),
         )
-    initial_weights_sha256 = prepare_initial_weights(
-        model,
-        args.output,
-        args.method,
-        args.smoke,
-        initial_config,
-        initial_reference=args.initial_random_state,
-    )
-    model = model.cuda()
+    device = torch.device(args.device)
+    model = model.to(device)
     optimizer = torch.optim.Adam(
         model.parameters(), lr=SETTINGS["initial_lr"], betas=tuple(SETTINGS["betas"])
     )
     augmentation_rng = torch.Generator().manual_seed(SETTINGS["seed"] + 1000)
-    quantile_rng = torch.Generator(device="cuda").manual_seed(SETTINGS["seed"] + 2000)
-    training_pairs = ImagePairs(args.manifest, "train")
-    validation_pairs = ImagePairs(args.manifest, "val")
-    panel = ValidationPanel(
-        validation_pairs, 2 if args.smoke else SETTINGS["validation_per_condition"]
-    )
-    training_metadata = dict(
-        **SETTINGS,
-        method=args.method,
-        dataset=(
-            "raw_online_gaussian_sigma001"
-            if SETTINGS.get("training_condition") == "gaussian"
-            else "raw_online_ten_condition_mixture"
-        ),
-        pretrained=False,
-        initial_weights_sha256=initial_weights_sha256,
-        pretrained_checkpoint=None,
-        initial_state_file="initial_random.pt",
-        initial_trained_steps=0,
-        manifest_path=str(args.manifest),
-        source_sha256=source_hash(),
-        source_commit=(REPOSITORY / "source_commit.txt").read_text().strip(),
-        conditions=list(CONDITIONS),
-        conditioning="blind; method labels never enter model",
-        loss=(
-            "sampled uniform-q pinball"
-            if args.method == "qutcc"
-            else "center MSE + lower .05 pinball + upper .95 pinball"
-        ),
-        validation_indices=panel.indices,
-        test_used=False,
-        calibration_used=False,
-        environment=dict(torch=torch.__version__, cuda=torch.version.cuda),
-    )
-    if previous_config:
-        training_metadata["epoch_extension"] = dict(
-            previous_epochs=previous_config["epochs"],
-            previous_source_sha256=previous_config["source_sha256"],
-            previous_source_commit=previous_config["source_commit"],
-            previous_config_sha256=file_hash(args.extension),
-        )
-        validate_epoch_extension(previous_config, training_metadata)
-        if (
-            initial_config["initial_weights_sha256"]
-            != previous_config["initial_weights_sha256"]
-        ):
-            raise ValueError("Epoch-zero provenance changed across continuations.")
-    args.output.mkdir(parents=True, exist_ok=True)
-    # 2. A disposable smoke run must pass before production training can start.
-    if args.smoke:
-        return run_smoke_test(
-            args,
-            model,
-            optimizer,
-            training_pairs,
-            panel,
-            training_metadata,
-            augmentation_rng,
-            quantile_rng,
-        )
-
-    smoke = json.loads((args.output / "smoke.json").read_text())
-    verified_source = (
-        initial_config["source_sha256"]
-        if initial_config
-        else training_metadata["source_sha256"]
-    )
-    if not smoke["passed"] or smoke["config"]["source_sha256"] != verified_source:
-        raise ValueError("A passing smoke run with identical source is required.")
-    if smoke["config"]["initial_weights_sha256"] != initial_weights_sha256:
-        raise ValueError("Full run must start with the same fresh weights as smoke.")
-    # 3. Restore the exact image offset, optimizer moments and random streams.
-    latest = args.output / "latest.pt"
-    epoch, offset, global_step, loss_sum, loss_count = 1, 0, 0, 0.0, 0
-    history, condition_counts = [], Counter()
-    extension_applied = False
-    if latest.exists():
+    quantile_rng = torch.Generator(device=device).manual_seed(SETTINGS["seed"] + 2000)
+    config = dict(SETTINGS, method=args.method, dataset="raw_clean", member=None)
+    completed_epoch = global_step = 0
+    history = []
+    if args.resume:
         state = torch.load(latest, map_location="cpu", weights_only=False)
-        if state["config"] != training_metadata:
-            if not previous_config or state["config"] != previous_config:
-                raise ValueError("Resume configuration changed.")
-            validate_epoch_extension(state["config"], training_metadata)
-            original_warmup_steps = (
-                previous_config["epochs"]
-                * previous_config["warmup_fraction"]
-                * math.ceil(len(training_pairs) / SETTINGS["effective_batch"])
-            )
-            if args.after50:
-                complete = json.loads(
-                    (args.output / "COMPLETE_50epochs.json").read_text()
-                )
-                validate_after50_checkpoint(state, complete)
-            elif state["global_step"] >= original_warmup_steps:
-                raise ValueError(
-                    "This extension must happen during the unchanged warmup."
-                )
-            extension_applied = True
+        if (
+            state["config"] != config
+            or state["data"] != data
+            or state["smoke"] != args.smoke
+        ):
+            raise ValueError("Resume settings or dataset changed")
         load_model_weights(model, state["model"])
         optimizer.load_state_dict(state["optimizer"])
         augmentation_rng.set_state(state["augmentation_rng"])
         quantile_rng.set_state(state["quantile_rng"])
         torch.set_rng_state(state["cpu_rng"])
-        torch.cuda.set_rng_state(state["cuda_rng"])
-        epoch, offset, global_step, history, loss_sum, loss_count = [
-            state[key]
-            for key in (
-                "next_epoch",
-                "offset",
-                "global_step",
-                "history",
-                "loss_sum",
-                "loss_count",
-            )
-        ]
-        condition_counts = Counter(state["condition_counts"])
-        del state
-
-    def checkpoint():
-        """Save full recovery state; epoch counts only fully completed epochs."""
-        save_checkpoint(
-            latest,
-            dict(
-                config=training_metadata,
-                epoch=epoch - 1,
-                model=model.state_dict(),
-                optimizer=optimizer.state_dict(),
-                augmentation_rng=augmentation_rng.get_state(),
-                quantile_rng=quantile_rng.get_state(),
-                cpu_rng=torch.get_rng_state(),
-                cuda_rng=torch.cuda.get_rng_state(),
-                next_epoch=epoch,
-                offset=offset,
-                global_step=global_step,
-                history=history,
-                loss_sum=loss_sum,
-                loss_count=loss_count,
-                condition_counts=dict(condition_counts),
-            ),
+        if device.type == "cuda":
+            torch.cuda.set_rng_state(state["cuda_rng"])
+        completed_epoch, global_step, history = (
+            state["epoch"],
+            state["global_step"],
+            state["history"],
         )
-
-    def milestone(completed_epoch):
-        """Export completed-epoch weights without replacing an existing milestone."""
-        path = args.output / "checkpoints" / f"epoch_{completed_epoch:03d}.pt"
-        if not path.exists():
-            save_checkpoint(
-                path,
-                dict(
-                    config=training_metadata,
-                    epoch=completed_epoch,
-                    model=model.state_dict(),
-                    history=history,
-                ),
-            )
-
-    signal.signal(signal.SIGUSR1, request_stop)
-    signal.signal(signal.SIGTERM, request_stop)
-    write_json(args.output / "config.json", training_metadata)
-    if extension_applied:
-        checkpoint()
-        write_json(
-            args.output / "extension_applied.json",
-            dict(
-                previous_epochs=previous_config["epochs"],
-                epochs=SETTINGS["epochs"],
-                next_epoch=epoch,
-                offset=offset,
-                global_step=global_step,
-                initial_weights_sha256=initial_weights_sha256,
-                source_sha256=training_metadata["source_sha256"],
-            ),
-        )
-    if not latest.exists():
-        baseline = validate(model, panel)
-        write_json(args.output / "baseline_validation.json", baseline)
-        checkpoint()
-    if (
-        offset == 0
-        and epoch > 1
-        and (
-            (epoch - 1) % SETTINGS["milestone_every_epochs"] == 0
-            or epoch - 1 == SETTINGS["epochs"]
-        )
-    ):
-        milestone(epoch - 1)
-    # 4. Resume the saved permutation offset, learning rate and input mixture.
-    segment_started = time.monotonic()
-    while epoch <= SETTINGS["epochs"]:
+    if completed_epoch > target_epoch:
+        raise ValueError("Target precedes the saved epoch")
+    write_json(output / "config.json", dict(config=config, data=data, smoke=args.smoke))
+    total_steps = SETTINGS["epochs"] * math.ceil(
+        len(training) / SETTINGS["effective_batch"]
+    )
+    for epoch in range(completed_epoch + 1, target_epoch + 1):
         order = torch.randperm(
-            len(training_pairs),
+            len(training),
             generator=torch.Generator().manual_seed(SETTINGS["seed"] + epoch),
         ).tolist()
         loader = DataLoader(
-            Subset(training_pairs, order[offset:]),
+            Subset(training, order),
             batch_size=SETTINGS["effective_batch"],
-            num_workers=2,
+            num_workers=args.workers,
             pin_memory=True,
             generator=torch.Generator().manual_seed(SETTINGS["seed"] + epoch + 10000),
         )
-        model.train()
-        epoch_started = time.monotonic()
-        for batch in loader:
-            current_lr = learning_rate(
-                global_step,
-                SETTINGS["epochs"]
-                * math.ceil(len(training_pairs) / SETTINGS["effective_batch"]),
-            )
-            for group in optimizer.param_groups:
-                group["lr"] = current_lr
-            batch_loss, labels = train_batch(
-                model, optimizer, batch, augmentation_rng, quantile_rng
-            )
-            offset += len(batch)
-            global_step += 1
-            loss_sum += batch_loss * len(batch)
-            loss_count += len(batch)
-            condition_counts.update(labels)
-            if global_step == 1 or global_step % 25 == 0:
-                progress = dict(
-                    method=args.method,
-                    stage="training",
-                    epoch=epoch,
-                    epochs=SETTINGS["epochs"],
-                    processed=offset,
-                    total=len(training_pairs),
-                    global_step=global_step,
-                    loss=batch_loss,
-                    learning_rate=current_lr,
-                    condition_counts=dict(condition_counts),
-                    gpu=torch.cuda.get_device_name(),
-                )
-                write_json(args.output / "progress.json", progress)
-                print(json.dumps(progress), flush=True)
-            requeue = (
-                time.monotonic() - segment_started > SETTINGS["segment_hours"] * 3600
-            )
-            if global_step % SETTINGS["checkpoint_every_steps"] == 0 or STOP or requeue:
-                checkpoint()
-            if STOP or requeue:
-                raise SystemExit(STOP or 75)
-        # 5. Commit validation/history before moving to the next complete epoch.
-        validation = validate(model, panel)
-        row = dict(
-            epoch=epoch,
-            training_loss=loss_sum / loss_count,
-            learning_rate=optimizer.param_groups[0]["lr"],
-            condition_counts=dict(condition_counts),
-            validation=validation,
-            training_and_validation_seconds=time.monotonic() - epoch_started,
-            gpu=torch.cuda.get_device_name(),
+        started = time.monotonic()
+        stats = train_one_epoch(
+            model,
+            optimizer,
+            loader,
+            device,
+            augmentation_rng,
+            quantile_rng,
+            global_step,
+            total_steps,
+            args.smoke,
         )
-        history.append(row)
-        write_json(args.output / "history.json", history)
-        print(json.dumps(row), flush=True)
-        completed_epoch = epoch
-        epoch += 1
-        offset, loss_sum, loss_count = 0, 0.0, 0
-        condition_counts = Counter()
-        checkpoint()
+        global_step = stats["global_step"]
+        measured = validate(model, panel, device, args.workers)
+        history.append(
+            dict(
+                epoch=epoch,
+                training_loss=stats["loss"],
+                learning_rate=stats["lr"],
+                condition_counts=stats["condition_counts"],
+                validation=measured,
+                training_and_validation_seconds=time.monotonic() - started,
+            )
+        )
+        state = dict(
+            config=config,
+            data=data,
+            epoch=epoch,
+            model=model.state_dict(),
+            optimizer=optimizer.state_dict(),
+            global_step=global_step,
+            history=history,
+            augmentation_rng=augmentation_rng.get_state(),
+            quantile_rng=quantile_rng.get_state(),
+            cpu_rng=torch.get_rng_state(),
+            cuda_rng=torch.cuda.get_rng_state() if device.type == "cuda" else None,
+            smoke=args.smoke,
+        )
+        save_checkpoint(latest, state)
         if (
-            completed_epoch % SETTINGS["milestone_every_epochs"] == 0
-            or completed_epoch == SETTINGS["epochs"]
+            epoch % SETTINGS["milestone_every_epochs"] == 0
+            or epoch == SETTINGS["epochs"]
         ):
-            milestone(completed_epoch)
-        if STOP:
-            raise SystemExit(STOP)
-    write_json(
-        args.output / "COMPLETE.json",
-        dict(
-            passed=True,
-            epochs=SETTINGS["epochs"],
-            method=args.method,
-            final_validation=history[-1]["validation"],
-            training_only=True,
-            calibration_performed=False,
-            test_evaluated=False,
-        ),
-    )
+            save_checkpoint(
+                output / "checkpoints" / f"epoch_{epoch:03d}.pt",
+                dict(
+                    config=config,
+                    epoch=epoch,
+                    model=state["model"],
+                    history=history,
+                    smoke=args.smoke,
+                ),
+            )
+        write_json(output / "history.json", history)
+        print(
+            f"Epoch {epoch}/{target_epoch}: loss={stats['loss']:.6g}, validation PSNR={measured['macro_psnr']:.4f}",
+            flush=True,
+        )
+    return latest
 
 
-def main():
-    global SETTINGS_PATH
+def arguments(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--protocol",
-        type=Path,
-        default=SETTINGS_PATH,
-        help="Protocol JSON inside the frozen repository snapshot",
-    )
-    parser.add_argument(
-        "--initial-random-state",
-        type=Path,
-        help="Verified untrained epoch-zero reference for a matched comparison",
-    )
-    parser.add_argument("--method", choices=("qutcc", "im2im"), required=True)
+    parser.add_argument("--protocol", type=Path, default=SETTINGS_PATH)
+    parser.add_argument("--method", choices=["qutcc", "im2im"], required=True)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--initial-random-state", type=Path)
+    parser.add_argument(
+        "--epochs", type=int, help="Absolute stopping epoch; full schedule stays fixed."
+    )
+    parser.add_argument("--resume", action="store_true")
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument(
-        "--extension",
-        type=Path,
-        help="Original config.json recording the predecessor run for an epoch extension",
+        "--device", default="cuda" if torch.cuda.is_available() else "cpu"
     )
-    parser.add_argument(
-        "--initial-config",
-        type=Path,
-        help="Original epoch-zero provenance for a chained continuation",
-    )
-    parser.add_argument(
-        "--after50",
-        action="store_true",
-        help="Require a finished 50-epoch predecessor before continuing",
-    )
-    args = parser.parse_args()
-    SETTINGS_PATH = args.protocol.resolve()
-    SETTINGS.clear()
-    SETTINGS.update(json.loads(SETTINGS_PATH.read_text()))
-    args.output.mkdir(parents=True, exist_ok=True)
-    with (args.output / "run.lock").open("w") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        run(args)
+    parser.add_argument("--workers", type=int, default=2)
+    return parser.parse_args(argv)
 
 
 if __name__ == "__main__":
-    main()
+    args = arguments()
+    SETTINGS.clear()
+    SETTINGS.update(json.loads(args.protocol.read_text()))
+    run_training(args)

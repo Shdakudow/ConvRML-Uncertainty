@@ -10,6 +10,8 @@ from unittest.mock import patch
 import torch
 from torch.utils.data import Dataset
 
+from models import QUTCC, Im2im
+
 
 SOURCE = Path(__file__).resolve().parents[1] / "experiments/generalized_inputs/train.py"
 SPEC = importlib.util.spec_from_file_location("generalized_training", SOURCE)
@@ -40,75 +42,6 @@ class ToyPairs(Dataset):
 
 
 class GeneralizedTraining(unittest.TestCase):
-    def test_gaussian_specialist_modifies_every_input_without_changing_sources(self):
-        measurement = torch.full((16, 3, 64, 64), 0.5)
-        original = measurement.clone()
-        with patch.dict(
-            training.SETTINGS, training_condition="gaussian", gaussian_sigma=0.01
-        ):
-            with patch.object(
-                training,
-                "sample_training_modification",
-                side_effect=AssertionError("Mixture must not be sampled"),
-            ):
-                modified, labels = training.modify_training_measurements(
-                    measurement, torch.Generator().manual_seed(42)
-                )
-        self.assertEqual(labels, ["gaussian"] * len(measurement))
-        self.assertAlmostEqual(
-            float((modified - measurement).std()), 0.01, delta=0.0001
-        )
-        torch.testing.assert_close(measurement, original, rtol=0, atol=0)
-        self.assertTrue(
-            all(not torch.equal(a, b) for a, b in zip(modified, measurement))
-        )
-
-    def test_matched_initialization_accepts_only_verified_untrained_weights(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            initial = torch.nn.Linear(4, 3)
-            digest = training.weights_hash(initial)
-            state = dict(
-                epoch=0,
-                trained_steps=0,
-                pretrained=False,
-                method="qutcc",
-                seed=training.SETTINGS["seed"],
-                model=initial.state_dict(),
-            )
-            reference = root / "reference.pt"
-            torch.save(state, reference)
-            with patch.dict(
-                training.SETTINGS, matched_initial_weights_sha256={"qutcc": digest}
-            ):
-                model = torch.nn.Linear(4, 3)
-                actual = training.prepare_initial_weights(
-                    model, root / "good", "qutcc", True, initial_reference=reference
-                )
-                self.assertEqual(actual, digest)
-                self.assertTrue(torch.equal(model.weight, initial.weight))
-                state["trained_steps"] = 1
-                torch.save(state, reference)
-                with self.assertRaisesRegex(ValueError, "zero trained steps"):
-                    training.prepare_initial_weights(
-                        model,
-                        root / "trained",
-                        "qutcc",
-                        True,
-                        initial_reference=reference,
-                    )
-                state["trained_steps"] = 0
-                state["model"] = torch.nn.Linear(4, 3).state_dict()
-                torch.save(state, reference)
-                with self.assertRaisesRegex(ValueError, "does not match"):
-                    training.prepare_initial_weights(
-                        model,
-                        root / "wrong",
-                        "qutcc",
-                        True,
-                        initial_reference=reference,
-                    )
-
     def test_gaussian_protocol_matches_first_50_epoch_schedule_and_validation(self):
         gaussian = json.loads(
             SOURCE.parent.parent.joinpath(
@@ -127,46 +60,6 @@ class GeneralizedTraining(unittest.TestCase):
             for index in range(3, 6):  # Gaussian is condition 1 in both panels.
                 for actual, expected in zip(specialist[index][:2], baseline[index][:2]):
                     torch.testing.assert_close(actual, expected, rtol=0, atol=0)
-
-    def test_epoch_zero_state_replays_exactly_and_rejects_trained_initialization(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            output = Path(temporary)
-            fresh = torch.nn.Linear(4, 3)
-            expected = training.prepare_initial_weights(fresh, output, "qutcc", True)
-            recreated = torch.nn.Linear(4, 3)
-            self.assertNotEqual(expected, training.weights_hash(recreated))
-            actual = training.prepare_initial_weights(recreated, output, "qutcc", False)
-            self.assertEqual(expected, actual)
-            self.assertTrue(torch.equal(fresh.weight, recreated.weight))
-            with self.assertRaises(FileExistsError):
-                training.prepare_initial_weights(fresh, output, "qutcc", True)
-            path = output / "initial_random.pt"
-            state = torch.load(path, weights_only=False)
-            state["trained_steps"] = 1
-            torch.save(state, path)
-            with self.assertRaises(ValueError):
-                training.prepare_initial_weights(recreated, output, "qutcc", False)
-
-    def test_scratch_initialization_repeats_seed_and_has_no_parent_weights(self):
-        # Tiny constructors exercise the initialization path without allocating
-        # multiple ConvNeXt models on the CPU; the GPU smoke checks the real model.
-        for method, constructor in [("qutcc", "QUTCC"), ("im2im", "Im2im")]:
-            with patch.object(
-                training, constructor, side_effect=lambda: torch.nn.Linear(4, 3)
-            ):
-                first = training.initialize_model(method)
-                torch.manual_seed(999)
-                replay = training.initialize_model(method)
-            self.assertEqual(
-                training.weights_hash(first), training.weights_hash(replay)
-            )
-            self.assertTrue(torch.equal(first.weight, replay.weight))
-            self.assertEqual(
-                training.SETTINGS["initialization"],
-                "fresh_random_no_pretrained_weights",
-            )
-            self.assertNotIn("parent_epoch", training.SETTINGS)
-            self.assertNotIn("parent_sha256", training.SETTINGS)
 
     def test_scratch_schedule_warms_up_and_decays_without_segment_resets(self):
         total = 100 * 4500
@@ -200,60 +93,6 @@ class GeneralizedTraining(unittest.TestCase):
         self.assertAlmostEqual(training.learning_rate(75 * 4500, 100 * 4500), 5.5e-6)
         self.assertAlmostEqual(training.learning_rate(100 * 4500, 100 * 4500), 1e-6)
 
-    def test_continuation_rejects_incomplete_epoch_50(self):
-        state = dict(
-            epoch=50,
-            next_epoch=51,
-            offset=0,
-            global_step=225000,
-            history=[dict(epoch=i) for i in range(1, 51)],
-        )
-        complete = dict(passed=True, epochs=50)
-        training.validate_after50_checkpoint(state, complete)
-        for changed in [
-            dict(state, epoch=49),
-            dict(state, next_epoch=50),
-            dict(state, offset=4),
-            dict(state, global_step=224999),
-            dict(state, history=state["history"][:-1]),
-        ]:
-            with self.assertRaises(ValueError):
-                training.validate_after50_checkpoint(changed, complete)
-        with self.assertRaises(ValueError):
-            training.validate_after50_checkpoint(state, dict(passed=False, epochs=50))
-
-    def test_100_epoch_extension_rejects_higher_peak_and_changed_data(self):
-        previous = dict(phase_one_settings(), pretrained=False)
-        current = dict(training.SETTINGS, pretrained=False)
-        training.validate_epoch_extension(previous, current)
-        for changed in [
-            dict(current, continuation_initial_lr=1e-4),
-            dict(current, continuation_final_lr=0),
-            dict(current, seed=0),
-            dict(current, warmup_fraction=0.3),
-        ]:
-            with self.assertRaises(ValueError):
-                training.validate_epoch_extension(previous, changed)
-
-    def test_epoch_extension_rejects_other_training_identity_changes(self):
-        current = dict(phase_one_settings(), pretrained=False)
-        previous = dict(
-            current,
-            epochs=30,
-            warmup_fraction=0.3,
-            protocol="original30",
-            schedule="original",
-        )
-        training.validate_epoch_extension(previous, current)
-        for changed in [
-            dict(current, seed=123),
-            dict(current, manifest_sha256="different"),
-            dict(current, effective_batch=8),
-            dict(current, warmup_fraction=0.3),
-        ]:
-            with self.assertRaises(ValueError):
-                training.validate_epoch_extension(previous, changed)
-
     def test_validation_panel_is_fixed_balanced_and_preserves_original_targets(self):
         torch.set_num_threads(1)
         source = ToyPairs()
@@ -278,6 +117,154 @@ class GeneralizedTraining(unittest.TestCase):
                     measurement, original[source_index, 0], rtol=0, atol=0
                 )
         torch.testing.assert_close(source.pairs, original, rtol=0, atol=0)
+
+    def test_generalized_resume_replays_both_losses_and_input_noise(self):
+        # Real loss methods, with small networks in place of the ConvNeXt backbone.
+        class QuantileFixture(torch.nn.Module):
+            loss = QUTCC.loss
+
+            def __init__(self):
+                super().__init__()
+                self.weight = torch.nn.Parameter(torch.rand(()))
+
+            def forward(self, y, q=None):
+                if q is None:
+                    q = y.new_full((len(y),), 0.5)
+                return y * self.weight + (q[:, None, None, None] - 0.5) * 0.4
+
+            def center(self, y):
+                return self(y)
+
+        class FixedFixture(torch.nn.Module):
+            loss = Im2im.loss
+
+            def __init__(self):
+                super().__init__()
+                self.weight = torch.nn.Parameter(torch.rand(()))
+
+            def center(self, y):
+                return y * self.weight
+
+            def bounds(self, y):
+                center = self.center(y)
+                return center, center - 0.1, center + 0.1
+
+        protocol = phase_one_settings()
+        protocol.update(validation_per_condition=1, milestone_every_epochs=2)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest = root / "split.json"
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "roles": {
+                            "train": [{"id": f"train{i}"} for i in range(5)],
+                            "val": [{"id": f"val{i}"} for i in range(2)],
+                        }
+                    }
+                )
+            )
+            source = ToyPairs()
+            originals = source.pairs.clone()
+
+            def dataset(path, role):
+                return torch.utils.data.Subset(
+                    source, range(5) if role == "train" else range(5, 7)
+                )
+
+            for condition in ("mixture", "gaussian"):
+                protocol.update(training_condition=condition, gaussian_sigma=0.01)
+                for method in ("im2im", "qutcc"):
+
+                    def args(folder, epoch, resume=False):
+                        result = training.arguments(
+                            [
+                                "--method",
+                                method,
+                                "--manifest",
+                                str(manifest),
+                                "--output",
+                                str(root / f"{condition}_{method}_{folder}"),
+                                "--epochs",
+                                str(epoch),
+                                "--device",
+                                "cpu",
+                                "--workers",
+                                "0",
+                            ]
+                        )
+                        result.resume = resume
+                        return result
+
+                    with (
+                        patch.dict(training.SETTINGS, protocol, clear=True),
+                        patch.object(training, "ImagePairs", side_effect=dataset),
+                        patch.object(training, "QUTCC", QuantileFixture),
+                        patch.object(training, "Im2im", FixedFixture),
+                    ):
+                        direct = training.run_training(args("direct", 2))
+                        training.run_training(args("resumed", 1))
+                        resumed = training.run_training(args("resumed", 2, True))
+                        a = torch.load(direct, weights_only=False)
+                        b = torch.load(resumed, weights_only=False)
+                        for name in a["model"]:
+                            torch.testing.assert_close(
+                                a["model"][name], b["model"][name], rtol=0, atol=0
+                            )
+                        for name in ("augmentation_rng", "quantile_rng", "cpu_rng"):
+                            self.assertTrue(torch.equal(a[name], b[name]), name)
+                        self.assertEqual(a["global_step"], 4)
+                        self.assertEqual(
+                            a["optimizer"]["state"].keys(),
+                            b["optimizer"]["state"].keys(),
+                        )
+                        for index, moments in a["optimizer"]["state"].items():
+                            for name, value in moments.items():
+                                torch.testing.assert_close(
+                                    value,
+                                    b["optimizer"]["state"][index][name],
+                                    rtol=0,
+                                    atol=0,
+                                )
+                        for first, second in zip(a["history"], b["history"]):
+                            for name in (
+                                "training_loss",
+                                "learning_rate",
+                                "condition_counts",
+                                "validation",
+                            ):
+                                self.assertEqual(first[name], second[name])
+                        self.assertTrue(
+                            (direct.parent / "checkpoints/epoch_002.pt").exists()
+                        )
+                        initial = torch.load(
+                            direct.parent / "initial_random.pt", weights_only=False
+                        )
+                        self.assertEqual(initial["epoch"], 0)
+                        # A separate comparison can load exactly the same random weights.
+                        matched = args("matched", 1)
+                        matched.initial_random_state = (
+                            direct.parent / "initial_random.pt"
+                        )
+                        training.run_training(matched)
+                        replay = torch.load(
+                            matched.output / "initial_random.pt", weights_only=False
+                        )
+                        for name in initial["model"]:
+                            torch.testing.assert_close(
+                                replay["model"][name],
+                                initial["model"][name],
+                                rtol=0,
+                                atol=0,
+                            )
+                        initial["trained_steps"] = 1
+                        reference = root / "trained.pt"
+                        torch.save(initial, reference)
+                        invalid = args("invalid", 1)
+                        invalid.initial_random_state = reference
+                        with self.assertRaisesRegex(ValueError, "epoch-zero"):
+                            training.run_training(invalid)
+            torch.testing.assert_close(source.pairs, originals, rtol=0, atol=0)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,6 @@
 """Exercise portable training/resume, split isolation, checkpoints and evaluation."""
 
 import io
-import fcntl
 import json
 from pathlib import Path
 import tempfile
@@ -145,7 +144,7 @@ class PortableWorkflow(unittest.TestCase):
             epoch=50, seeds={}, file="fixture.pt", sha256="0" * 64
         )
 
-    def test_dataset_routes_commands_and_legacy_experiment_flags_still_work(self):
+    def test_dataset_selects_its_recorded_profile(self):
         for dataset, expected in (
             ("rml", 2),
             ("diffuser", 2),
@@ -168,10 +167,6 @@ class PortableWorkflow(unittest.TestCase):
             ):
                 args = module.arguments(common + extra)
                 self.assertEqual(args.experiment, expected)
-                legacy = module.arguments(
-                    common + extra + ["--experiment", str(expected)]
-                )
-                self.assertEqual(vars(args), vars(legacy))
                 wrong = 3 if expected == 2 else 2
                 with self.assertRaisesRegex(ValueError, "Dataset does not belong"):
                     protocol.profile(wrong, dataset, "qutcc")
@@ -285,20 +280,20 @@ class PortableWorkflow(unittest.TestCase):
                     ):
                         self.assertEqual(examples[name].shape, (1, 3, 16, 16))
 
-    def test_five_epoch_snapshot_recovers_without_retraining(self):
+    def test_five_epoch_snapshot_contains_weights_and_epoch(self):
         latest = train.run_training(
             self.training_args("milestones", 5), factory=self.factory
         )
-        snapshot = latest.parent / "checkpoints/epoch_005.pt"
-        snapshot.unlink()
-        train.run_training(
-            self.training_args("milestones", 5, True), factory=self.factory
+        snapshot, _ = checkpoints.read_checkpoint(
+            latest.parent / "checkpoints/epoch_005.pt"
         )
-        recovered, _ = checkpoints.read_checkpoint(snapshot)
         full, _ = checkpoints.read_checkpoint(latest)
         for key in full["model"]:
-            self.assertTrue(torch.equal(recovered["model"][key], full["model"][key]))
-        self.assertEqual(recovered["epoch"], 5)
+            torch.testing.assert_close(
+                snapshot["model"][key], full["model"][key], rtol=0, atol=0
+            )
+        self.assertEqual(snapshot["epoch"], 5)
+        self.assertNotIn("optimizer", snapshot)
 
     def test_baseline_resume_keeps_persistent_shuffle_and_dropout_rng(self):
         class TinyMC(TinyQ):
@@ -327,26 +322,17 @@ class PortableWorkflow(unittest.TestCase):
             [row["loss"] for row in a["history"]], [row["loss"] for row in b["history"]]
         )
 
-    def test_resume_refuses_changed_source_or_data(self):
+    def test_resume_refuses_changed_training_settings(self):
         latest = train.run_training(
             self.training_args("guarded", 1), factory=self.factory
         )
         checkpoint, _ = checkpoints.read_checkpoint(latest)
-        checkpoint["source_sha256"] = "changed"
-        train.save_checkpoint(latest, checkpoint)
-        with self.assertRaisesRegex(ValueError, "source changed"):
+        checkpoint["run"]["batch_size"] += 1
+        checkpoints.save_checkpoint(latest, checkpoint)
+        with self.assertRaisesRegex(ValueError, "settings or dataset changed"):
             train.run_training(
                 self.training_args("guarded", 2, True), factory=self.factory
             )
-
-    def test_source_fingerprint_is_stable_through_a_symlinked_checkout(self):
-        expected = protocol.source_fingerprint()
-        link = self.root / "linked_checkout"
-        link.symlink_to(
-            Path(protocol.__file__).resolve().parents[1], target_is_directory=True
-        )
-        with patch.object(protocol, "__file__", str(link / "convrml/protocol.py")):
-            self.assertEqual(protocol.source_fingerprint(), expected)
 
     def test_evaluation_fits_only_calibration_then_exports_exact_test_ids(self):
         args = self.evaluation_args()
@@ -428,7 +414,7 @@ class PortableWorkflow(unittest.TestCase):
     def test_checkpoint_identity_and_strict_keys_are_checked(self):
         run = protocol.profile(2, "rml", "qutcc")
         path = self.root / "weights.pt"
-        train.save_checkpoint(
+        checkpoints.save_checkpoint(
             path, dict(run=run, epoch=5, model=self.factory(run).state_dict())
         )
         model, info = checkpoints.load_model(
@@ -440,14 +426,6 @@ class PortableWorkflow(unittest.TestCase):
             checkpoints.load_model(
                 path, wrong, torch.device("cpu"), factory=self.factory
             )
-
-    def test_second_evaluation_writer_is_rejected_before_loading_weights(self):
-        args = self.evaluation_args("locked")
-        args.output.mkdir()
-        with (args.output / ".evaluation.lock").open("a") as lock:
-            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            with self.assertRaises(BlockingIOError):
-                evaluate.run_evaluation(args, model_loader=self.model_loader)
 
     def test_removed_calibration_modes_are_rejected_without_loading_weights(self):
         for mode in ("empirical", "reference"):
@@ -493,10 +471,13 @@ class PortableWorkflow(unittest.TestCase):
         self.assertIn("prediction_seconds_per_image", report["timing"])
         self.assertIn("metric_seconds", report["timing"])
 
-    def test_split_ids_dimensions_and_ensemble_seeds_are_checked(self):
-        self.config["datasets"]["rml"]["id_hashes"] = {"train": "wrong"}
-        with self.assertRaisesRegex(ValueError, "IDs/order"):
-            protocol.audit_manifest(self.root / "manifest.json", "rml")
+    def test_split_isolation_and_independent_ensemble_seeds(self):
+        path = self.root / "manifest.json"
+        manifest = json.loads(path.read_text())
+        manifest["test"][0]["id"] = manifest["train"][0]["id"]
+        path.write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(ValueError, "overlapping"):
+            protocol.audit_manifest(path)
         seeds = [
             protocol.profile(2, "rml", "ensemble", member)["seeds"]
             for member in range(5)

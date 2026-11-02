@@ -27,33 +27,6 @@ def sha256(path):
     return digest.hexdigest()
 
 
-def source_fingerprint():
-    """Hash active source/settings, including comments, to identify exact resume code."""
-    root = Path(__file__).resolve().parents[1]
-    files = sorted(
-        list((root / "convrml").glob("*.py"))
-        + list((root / "models").rglob("*.py"))
-        + [SETTINGS_PATH, root / "configs/__init__.py"]
-        + [root / name for name in ("dataset.py", "train.py", "calibration.py")]
-    )
-    digest = hashlib.sha256()
-    for path in files:
-        digest.update(str(path.relative_to(root)).encode())
-        digest.update(path.read_bytes())
-    return digest.hexdigest()
-
-
-def check_shape(dataset, dataset_name, *, smoke=False):
-    """Check benchmark dimensions, rather than restricting the model architecture.
-
-    A model can pad/crop other sizes. This check ensures a recorded experiment
-    uses its declared data preparation; --smoke permits smaller test fixtures.
-    """
-    expected = tuple(settings()["datasets"][dataset_name]["shape"])
-    if not smoke and tuple(dataset[0][0].shape) != expected:
-        raise ValueError("Image dimensions differ from the recorded experiment")
-
-
 def write_json(path, value):
     """Atomically replace complete JSON; reject NaN/Inf instead of hiding them."""
     path = Path(path)
@@ -157,11 +130,14 @@ def id_digest(ids):
     ).hexdigest()
 
 
-def audit_manifest(manifest, dataset, *, smoke=False):
-    """Validate IDs before loading pixels; count/hash checks may relax only in smoke mode."""
+def audit_manifest(manifest):
+    """Check nonempty, disjoint split IDs and record the supplied data identity.
+
+    Accept new datasets and image sizes. Published split counts/hashes remain
+    reference records, rather than restrictions on the research prototype.
+    """
     value = json.loads(Path(manifest).read_text())
     roles = value.get("roles", value)
-    expected = settings()["datasets"][dataset]
     identities, seen = {}, set()
     for role in ("train", "val", "test", "calibration"):
         if role not in roles:
@@ -170,17 +146,7 @@ def audit_manifest(manifest, dataset, *, smoke=False):
         if not ids or len(ids) != len(set(ids)) or seen.intersection(ids):
             raise ValueError("Empty, duplicated or overlapping split IDs")
         seen.update(ids)
-        digest = id_digest(ids)
-        if not smoke and len(ids) != expected["counts"][role]:
-            raise ValueError(
-                "Split count differs from the recorded experiment: " + role
-            )
-        known = expected.get("id_hashes", {}).get(role)
-        if not smoke and known and digest != known:
-            raise ValueError(
-                "Split IDs/order differ from the recorded experiment: " + role
-            )
-        identities[role] = dict(count=len(ids), ids_sha256=digest)
+        identities[role] = dict(count=len(ids), ids_sha256=id_digest(ids))
     if not identities:
         raise ValueError("Manifest has no recognized splits")
     return dict(manifest_sha256=sha256(manifest), splits=identities)
@@ -220,37 +186,3 @@ def center(model, method, y):
     if method == "mc_dropout":
         return model(y)
     return model.center(y)
-
-
-def environment():
-    """Return software versions stored with training and evaluation artifacts."""
-    from importlib.metadata import version
-    import platform
-    from . import __version__
-
-    return dict(
-        package=__version__,
-        python=platform.python_version(),
-        torch=torch.__version__,
-        torchvision=version("torchvision"),
-        timm=version("timm"),
-        numpy=version("numpy"),
-        Pillow=version("Pillow"),
-        torchmetrics=version("torchmetrics"),
-        scipy=version("scipy"),
-        cuda=torch.version.cuda,
-    )
-
-
-def hardware(device):
-    """Record the actual accelerator label alongside timings and device settings."""
-    import platform
-
-    return dict(
-        device=str(device),
-        accelerator=(
-            torch.cuda.get_device_name(device)
-            if device.type == "cuda"
-            else platform.machine()
-        ),
-    )

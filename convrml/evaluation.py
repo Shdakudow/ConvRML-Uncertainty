@@ -128,7 +128,7 @@ def make_report(result, *, metadata, lpips_enabled):
     """Combine measured scores with the workflow's provenance and timing records.
 
     ``metadata`` supplies epoch, camera, method, request, calibration, provenance,
-    data identity, environment, source hash, hardware, timing and example count.
+    data identity, timing and example count.
     This only assembles JSON fields: it does not predict, fit or recompute metrics.
     """
     return dict(

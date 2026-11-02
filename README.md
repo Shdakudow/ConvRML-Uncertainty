@@ -5,10 +5,10 @@ backbone: **Im2im, deep ensemble, MC dropout and QUTCC**.
 The models are defined once in [models/](models/). Dataset selection changes the
 loader and recorded training settings; each dataset has its own trained weights.
 
-| Dataset | `--dataset` | Available comparisons | Prepared RGB size |
-| --- | --- | --- | --- |
-| [Parallel Lensless Dataset (PLD)](https://lakabuli.github.io/ConvRML/) | `rml`, `diffuser` | All four methods | 256 × 256 |
-| [DiffuserCam Lensless Mirflickr (DLMD)](https://waller-lab.github.io/LenslessLearning/dataset.html) | `raw_clean`, `raw_corrupted` | Im2im and QUTCC | 270 × 480 |
+| Dataset                                                                                             | `--dataset`                  | Available comparisons | Prepared RGB size |
+| --------------------------------------------------------------------------------------------------- | ---------------------------- | --------------------- | ----------------- |
+| [Parallel Lensless Dataset (PLD)](https://lakabuli.github.io/ConvRML/)                              | `rml`, `diffuser`            | All four methods      | 256 × 256         |
+| [DiffuserCam Lensless Mirflickr (DLMD)](https://waller-lab.github.io/LenslessLearning/dataset.html) | `raw_clean`, `raw_corrupted` | Im2im and QUTCC       | 270 × 480         |
 
 ## Install
 
@@ -78,26 +78,35 @@ weights are not rewritten.
 
 ## Code map
 
-| Location | Purpose |
-| --- | --- |
-| [models/](models/) | Four model classes: architecture, training loss and prediction bounds |
-| [dataset.py](dataset.py) | PLD NumPy-cache and DLMD image-file loaders |
-| [train.py](train.py) | Training, validation, resume and checkpoints |
-| [calibration.py](calibration.py) | Frozen weights → calibration → test metrics → exports |
-| [convrml/](convrml/) | Shared backbone, FiLM, calibration algorithms, metrics and checkpoint utilities |
-| [configs/](configs/) | Recorded optimizer settings, seeds and dataset identities |
-| [input_modifications/](input_modifications/) | Measurement corruptions and dataset preparation, preserving targets |
-| [experiments/](experiments/) | Optional controlled training studies and cluster launchers |
-| [reproducibility/](reproducibility/) | Split IDs, environment and verification records |
-| [tests/](tests/) | CPU correctness and workflow checks |
-| [archive/](archive/) | Historical source, extended guides and optional tools |
+| Location                                     | Purpose                                                                         |
+| -------------------------------------------- | ------------------------------------------------------------------------------- |
+| [models/](models/)                           | Four model classes: architecture, training loss and prediction bounds           |
+| [dataset.py](dataset.py)                     | PLD NumPy-cache and DLMD image-file loaders                                     |
+| [train.py](train.py)                         | Training, validation, resume and checkpoints                                    |
+| [calibration.py](calibration.py)             | Frozen weights → calibration → test metrics → exports                           |
+| [convrml/](convrml/)                         | Shared backbone, FiLM, calibration algorithms, metrics and checkpoint utilities |
+| [configs/](configs/)                         | Recorded optimizer settings, seeds and dataset identities                       |
+| [input_modifications/](input_modifications/) | Measurement corruptions and dataset preparation, preserving targets             |
+| [experiments/](experiments/)                 | Optional online-corruption and Gaussian-only training studies                   |
+| [reproducibility/](reproducibility/)         | Split IDs, environment and verification records                                 |
+| [tests/](tests/)                             | CPU correctness and workflow checks                                             |
+| [archive/](archive/)                         | Historical source, extended guides and optional tools                           |
 
 Start with a model's `forward`, `loss` and `bounds`, then follow the loader and
 root training/calibration scripts. In `train.py`, read `run_training` for the
-complete workflow, `train_one_epoch` for gradient updates, and `create_optimizer`
-for explicit Adam/AdamW selection. The older `python -m convrml.train` and
-`python -m convrml.evaluate` commands remain small compatibility entry points.
-The main workflow does not require a cluster account or archived code.
+complete workflow and explicit Adam/AdamW selection, `train_one_epoch` for
+gradient updates, and `validate` for held-out reconstruction scores.
+Training saves `latest.pt` after each complete epoch, model weights every five
+epochs, and `history.json`. Resume with the same command plus `--resume` and a
+higher `--epochs` stopping point. The full learning-rate horizon stays fixed.
+New datasets may use different split counts and RGB dimensions; paired shapes
+and disjoint split IDs are still required. Use a separate output folder per run.
+
+The main workflow does not require a cluster account or archived code. Optional
+Slurm automation, exact mid-epoch recovery and historical resume migrations are
+preserved in the [pre-simplification snapshot](archive/research_prototype_20261102/).
+Use that source for existing deployment checkpoints; the current scripts support
+ordinary epoch-boundary resume and do not enforce source/software fingerprints.
 To follow one result from inputs to saved files, see the
 [experiment trace](convrml/README.md#tracing-one-experiment). Optional studies have
 a separate [entry-point map](experiments/README.md); they share the model classes

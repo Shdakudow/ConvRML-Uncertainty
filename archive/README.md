@@ -11,11 +11,12 @@ loading in [dataset.py](../dataset.py) and shared runtime/layers in [convrml/](.
 [reproduction/](reproduction/) preserves the historical numbered-experiment engines
 and their original import layout, apart from the concise model interface.
 
-| Item | Contents |
-| --- | --- |
-| [history_20261022.tar.gz](history_20261022.tar.gz) | Earlier experiments, stopped clean continuation, obsolete job records, scheduler/recovery utilities and superseded instructions |
-| [index.json](index.json) | Every bundled path, size and SHA-256 |
-| [provenance/](provenance/) | Original captured source, source-layout maps and numerical equivalence report |
+| Item                                                         | Contents                                                                                                                        |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| [research_prototype_20261102/](research_prototype_20261102/) | Complete pre-simplification source, deployment engines and tests                                                                |
+| [history_20261022.tar.gz](history_20261022.tar.gz)           | Earlier experiments, stopped clean continuation, obsolete job records, scheduler/recovery utilities and superseded instructions |
+| [index.json](index.json)                                     | Every bundled path, size and SHA-256                                                                                            |
+| [provenance/](provenance/)                                   | Original captured source, source-layout maps and numerical equivalence report                                                   |
 
 Historical files were removed from the active tree after their exact contents
 were verified in this bundle. Checkpoints, datasets and the remote cluster were

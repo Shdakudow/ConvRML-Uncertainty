@@ -1,4 +1,4 @@
-"""Save, resume and load checkpoints with strict experiment identity checks."""
+"""Save weights, resume complete epochs, and load the selected model strictly."""
 
 import hashlib
 from collections import OrderedDict
@@ -66,31 +66,13 @@ def identity(checkpoint):
 
 
 def validate_identity(checkpoint, run, *, smoke=False):
-    """Match method/dataset/member, accepted protocol and historical data hashes.
-
-    ``run`` comes from protocol.profile. Inference accepts verified legacy weights;
-    exact optimizer/RNG resume has additional source/environment checks below.
-    """
+    """Reject a checkpoint for the wrong method, dataset or ensemble member."""
     info = identity(checkpoint)
     for key in ("method", "dataset", "member"):
         if info[key] != run[key]:
             raise ValueError(f"Checkpoint {key} does not match this evaluation")
-    protocols = settings()["checkpoint_protocols"][run["family"]] + [run["schema"]]
-    if info["protocol"] not in protocols:
-        raise ValueError("Checkpoint belongs to a different training protocol")
-    if info["protocol"] != run["schema"]:
-        meta = checkpoint.get("config") or checkpoint
-        expected = settings()["datasets"][run["dataset"]]["source_manifest_hashes"]
-        stored = set(meta.get("dataset_identity", {}).values())
-        if run["family"] == "baseline":
-            expected = expected[:1]
-            stored.add(meta.get("manifest_sha256"))
-        if not set(expected) <= stored:
-            raise ValueError(
-                "Checkpoint training data identity differs from the recorded benchmark"
-            )
     if info["smoke"] and not smoke:
-        raise ValueError("A smoke checkpoint cannot be presented as a full experiment")
+        raise ValueError("Use --smoke to evaluate a smoke checkpoint")
     return info
 
 
@@ -147,21 +129,10 @@ def save_checkpoint(path, value):
 def resume_training(
     path, model, optimizer, expected, *, device, quantile_rng, data_rng
 ):
-    """Validate a full training checkpoint, then restore optimizer and RNG states."""
+    """Restore ordinary epoch-boundary state after checking settings and split IDs."""
     checkpoint, _ = read_checkpoint(path)
-    if checkpoint.get("schema") != expected["run"]["schema"]:
-        raise ValueError("Historical optimizer/RNG states require the original engine")
     if any(checkpoint[key] != expected[key] for key in ("run", "data", "smoke")):
-        raise ValueError("Resume configuration or dataset identity changed")
-    if any(checkpoint[key] != expected[key] for key in ("device", "workers")):
-        raise ValueError("Exact portable resume retains device and worker settings")
-    if checkpoint["source_sha256"] != expected["source_sha256"]:
-        raise ValueError(
-            "Portable training source changed; use its original release to resume"
-        )
-    if checkpoint["environment"] != expected["environment"]:
-        raise ValueError("Portable resume requires the same recorded software versions")
-
+        raise ValueError("Resume settings or dataset changed")
     load_model_weights(model, checkpoint["model"])
     optimizer.load_state_dict(checkpoint["optimizer"])
     torch.set_rng_state(checkpoint["rng"])
@@ -200,7 +171,7 @@ def model_checkpoint(checkpoint):
         "source_sha256",
         "environment",
     )
-    return {key: checkpoint[key] for key in keys}
+    return {key: checkpoint[key] for key in keys if key in checkpoint}
 
 
 def save_training_progress(
@@ -227,15 +198,6 @@ def save_training_progress(
             raise FileExistsError(destination)
         save_checkpoint(destination, model_checkpoint(full))
     write_json(output / "history.json", checkpoint["history"])
-
-
-def restore_missing_milestone(output, checkpoint):
-    """Recover a milestone from latest.pt if interruption preceded its export."""
-    epoch = checkpoint["epoch"]
-    if epoch and epoch % settings()["checkpoint_interval"] == 0:
-        destination = output / "checkpoints" / f"epoch_{epoch:03d}.pt"
-        if not destination.exists():
-            save_checkpoint(destination, model_checkpoint(checkpoint))
 
 
 def load_predictor(paths, run, device, *, smoke=False, model_loader=None):

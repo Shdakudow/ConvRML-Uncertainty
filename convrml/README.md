@@ -4,45 +4,43 @@ Every Python module here is used by the public models or the train/evaluate/down
 commands. Optional plotting, provenance tools and GitHub Actions live in
 [archive/publication_support/](../archive/publication_support/).
 
-| File | Purpose |
-| --- | --- |
-| [backbone.py](backbone.py) | ConvNeXtV2-Base encoder, FPN decoder, RGB residual head |
-| [film.py](film.py) | Quantile modulation at 36 encoder + 12 decoder normalization sites |
-| [quantile_embedding.py](quantile_embedding.py) | Sinusoidal scalar-q embedding |
-| [intervals.py](intervals.py) | Native Gaussian-moment bounds before calibration |
-| [calibration.py](calibration.py) | Baseline RCPS-HB scales and QUTCC Algorithm 1 calibrated quantiles |
-| [evaluation.py](evaluation.py) | Held-out test loop, metrics, report assembly, CSV and example exports |
-| [dataset.py](../dataset.py) | PLD NumPy-cache and DLMD RGB paired-file datasets |
-| [../train.py](../train.py) / [../calibration.py](../calibration.py) | Training loop and calibration → test → export workflow |
-| [metrics.py](metrics.py) | SSIM, PSNR, MAE, LPIPS, coverage, width, crossings and uncertainty/error correlations |
-| [protocol.py](protocol.py) / [experiment_settings.json](../configs/experiment_settings.json) | Model/data selection, recorded settings, identity and resume checks |
-| [checkpoints.py](checkpoints.py) | Training-state/milestone saving, legacy Im2im name translation, strict loading, resume and ensemble assembly |
-| [download.py](download.py) / [checkpoint_index.json](checkpoint_index.json) | Verified downloads of published checkpoint files |
+| File                                                                                         | Purpose                                                                                                      |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| [backbone.py](backbone.py)                                                                   | ConvNeXtV2-Base encoder, FPN decoder, RGB residual head                                                      |
+| [film.py](film.py)                                                                           | Quantile modulation at 36 encoder + 12 decoder normalization sites                                           |
+| [quantile_embedding.py](quantile_embedding.py)                                               | Sinusoidal scalar-q embedding                                                                                |
+| [intervals.py](intervals.py)                                                                 | Native Gaussian-moment bounds before calibration                                                             |
+| [calibration.py](calibration.py)                                                             | Baseline RCPS-HB scales and QUTCC Algorithm 1 calibrated quantiles                                           |
+| [evaluation.py](evaluation.py)                                                               | Held-out test loop, metrics, report assembly, CSV and example exports                                        |
+| [dataset.py](../dataset.py)                                                                  | PLD NumPy-cache and DLMD RGB paired-file datasets                                                            |
+| [../train.py](../train.py) / [../calibration.py](../calibration.py)                          | Training loop and calibration → test → export workflow                                                       |
+| [metrics.py](metrics.py)                                                                     | SSIM, PSNR, MAE, LPIPS, coverage, width, crossings and uncertainty/error correlations                        |
+| [protocol.py](protocol.py) / [experiment_settings.json](../configs/experiment_settings.json) | Model/data selection, recorded settings, identity and resume checks                                          |
+| [checkpoints.py](checkpoints.py)                                                             | Training-state/milestone saving, legacy Im2im name translation, strict loading, resume and ensemble assembly |
+| [download.py](download.py) / [checkpoint_index.json](checkpoint_index.json)                  | Verified downloads of published checkpoint files                                                             |
 
 Training losses, including the pinball formula, are defined directly in each
 [Im2im/QUTCC model file](../models/). PLD and DLMD use the same Im2im and QUTCC
 classes; there are no dataset-specific copies of these losses or architectures.
-The small `convrml/train.py` and `convrml/evaluate.py` modules forward the older
-package commands to the root scripts; the workflows are implemented once.
+Use the root `train.py` and `calibration.py` commands; each workflow has one entry point.
 
 ## Tracing one experiment
 
-| Step | Follow this code | What to inspect |
-| --- | --- | --- |
-| Recorded settings | `protocol.profile` → `configs/experiment_settings.json` | Optimizer, schedule, precision, batch/microbatch sizes and four seed streams |
-| Image pairs | `protocol.dataset_for` → `dataset.py` | Manifest IDs/order, measurement/target paths, uint8 / 255 conversion |
-| Learned mapping | `protocol.make_model` → `models/` → `backbone.py` | `forward`, `loss`, and `bounds`; q conditioning is in `film.py` |
-| Weight updates | Root `train.py`: `run_training` → `train_one_epoch` | Learning rate, loss, backward, accumulation and Adam/AdamW step |
-| Saved training state | `checkpoints.save_training_progress` | `latest.pt` has optimizer/RNG state; milestone files retain model/data identity |
-| Interval fitting | Root `calibration.py` → `calibration.fit_calibration` | RCPS tail scales or QUTCC q inputs, fitted on calibration pairs only |
-| Held-out scores | `evaluation.evaluate_test_set` → `metrics.py` | `report.json`, `per_image.csv`, optional `examples.npz`; raw/clipped views stay separate |
+| Step                 | Follow this code                                        | What to inspect                                                                          |
+| -------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Recorded settings    | `protocol.profile` → `configs/experiment_settings.json` | Optimizer, schedule, precision, batch/microbatch sizes and four seed streams             |
+| Image pairs          | `protocol.dataset_for` → `dataset.py`                   | Manifest IDs/order, measurement/target paths, uint8 / 255 conversion                     |
+| Learned mapping      | `protocol.make_model` → `models/` → `backbone.py`       | `forward`, `loss`, and `bounds`; q conditioning is in `film.py`                          |
+| Weight updates       | Root `train.py`: `run_training` → `train_one_epoch`     | Learning rate, loss, backward, accumulation and Adam/AdamW step                          |
+| Saved training state | `checkpoints.save_training_progress`                    | `latest.pt` has optimizer/RNG state; milestone files retain model/data identity          |
+| Interval fitting     | Root `calibration.py` → `calibration.fit_calibration`   | RCPS tail scales or QUTCC q inputs, fitted on calibration pairs only                     |
+| Held-out scores      | `evaluation.evaluate_test_set` → `metrics.py`           | `report.json`, `per_image.csv`, optional `examples.npz`; raw/clipped views stay separate |
 
-`run` and `config` are ordinary dictionaries of recorded settings, not trainer
-objects. `source_sha256` identifies source bytes, including comments. Manifest
-hashes identify saved split files; checkpoint hashes identify saved weight bytes.
-Together with software versions and seeds, these let a result be traced to its
-inputs and implementation. Exact-resume guards deliberately require the original
-source/environment; a readability edit does not rewrite historical run records.
+`run` and `config` are ordinary dictionaries of recorded settings. Resume checks
+that those settings and the manifest identity still match, then restores weights,
+Adam moments and random-generator states. Checkpoint hashes identify loaded files.
+The current code saves complete epochs; historical source/software guards and
+mid-epoch recovery are in the [snapshot](../archive/research_prototype_20261102/).
 
 For online corruptions, `input_modifications/presets.py` holds the parameter
 table and `online.apply_condition` applies one named condition. Dataset preparation
@@ -91,7 +89,11 @@ then test. The separate calibration cache has only calibration pairs. Manifests
 retain the existing image IDs and order:
 
 ```json
-{"train": [{"id": "scene_a"}], "val": [{"id": "scene_b"}], "test": [{"id": "scene_c"}]}
+{
+  "train": [{ "id": "scene_a" }],
+  "val": [{ "id": "scene_b" }],
+  "test": [{ "id": "scene_c" }]
+}
 ```
 
 ## DiffuserCam Lensless Mirflickr Dataset (DLMD): image-file manifest
@@ -104,16 +106,26 @@ train = ImagePairs("split.json", "train")
 ```json
 {
   "roles": {
-    "train": [{
-      "id": "scene_a",
-      "measurement": {"path": "measurements/scene_a.png"},
-      "target": {"path": "targets/scene_a.png"}
-    }],
-    "val": [], "test": [], "calibration": []
+    "train": [
+      {
+        "id": "scene_a",
+        "measurement": { "path": "measurements/scene_a.png" },
+        "target": { "path": "targets/scene_a.png" }
+      }
+    ],
+    "val": [
+      {
+        "id": "scene_b",
+        "measurement": { "path": "measurements/scene_b.png" },
+        "target": { "path": "targets/scene_b.png" }
+      }
+    ]
   }
 }
 ```
 
+List the other roles (`test`, `calibration`) with the same row structure, or omit
+them when not needed. Included splits must be nonempty with disjoint IDs.
 Paths are relative to the manifest or absolute. Measurements and targets must
 have matching RGB dimensions, normally 270×480. The model pads and crops;
 the loader leaves dimensions intact. Prepared clean and fixed-corruption

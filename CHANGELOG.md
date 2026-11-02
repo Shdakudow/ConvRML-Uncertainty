@@ -1,5 +1,16 @@
 # Changes
 
+## 2026-11-02 — Minimal research workflow
+
+- Reduce root training to setup/epoch/validation functions and calibration to one
+  ordered workflow. Keep models, losses and numerical profiles unchanged.
+- Retain split isolation, finite checks, strict tensor loading and complete-epoch
+  resume; remove source/software gates, directory locks and fixed benchmark-size gates.
+- Simplify the shared online-corruption trainer; archive Slurm launchers,
+  migrations, demo publishing utilities and redundant package entry points.
+- Preserve the complete preceding source and its tests in
+  `archive/research_prototype_20261102/`.
+
 ## Unreleased
 
 - Improve active-code readability and traceability: name decoder/moment/correlation

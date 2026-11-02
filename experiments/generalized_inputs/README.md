@@ -1,125 +1,45 @@
-# Generalized input training: 50 epochs, then a lower-rate phase to 100
+# Generalized input training
 
-One QUTCC and one Im2im start from **fresh random weights, with no pretrained or
-clean-checkpoint weights**, with a **100-epoch total budget**. The active jobs
-finish their existing 50 epochs before the second phase starts. Each epoch visits the original 17,999
-training pairs once. The [online sampler](../../input_modifications/online.py)
-chooses clean or one of nine modifications with 10% probability each per image.
-Global exposure splits its share between gains 0.50 and 1.50. All other strengths
-remain at the reviewed settings, including resolution factor 64 and JPEG 50.
-Targets stay original, and no modified image datasets are saved.
-
-The [Gaussian-only specialist experiment](../gaussian_specialist/README.md) reuses
-this engine with its own protocol JSON, 50 epochs, and matched untrained weights.
-`--protocol` selects that configuration; it leaves existing frozen runs unchanged.
-
-The models are blind: modification labels are logged but never supplied to the
-network. Both architectures retain their existing losses. Fresh Adam moments,
-effective batch four, microbatch one, and float32 are recorded in
-[protocol.json](protocol.json). The scratch-training schedule linearly warms up
-from 1e-5 to 1e-4 during the first nine epochs, then decays by cosine toward
-1e-9 at epoch 50. The nine-epoch warmup preserves the schedule already used by
-the initial 30-epoch run. Epochs 51–100 begin a separate low-rate cosine phase,
-from **1e-5 to 1e-6**, without warmup or optimizer reset. Its starting rate is
-one-tenth of the original 1e-4 peak, and deliberately higher than the near-zero
-rate at the end of phase one. This preserves all rates used in epochs 1–50.
-
-A fixed panel of 100 validation scenes is evaluated under all ten conditions
-at initialization and after every epoch (1,000 predictions per validation).
-The scene indices and per-condition random draws stay fixed across epochs and
-models. This is a validation panel, not the full 2,000-scene validation split.
-Per-condition PSNR, SSIM, MAE, and training condition counts are logged. Calibration
-and test images are not loaded. Interval calibration is a separate post-training
-step; clean calibration parameters are not claimed to calibrate the new models.
-
-`submit.py` creates a short GPU smoke job for each method, then one dependent
-100-epoch job. Before any smoke updates, freshly randomized weights are saved as
-`initial_random.pt` with epoch 0, zero trained steps, and `pretrained=False`.
-Smoke updates are discarded; actual training loads only that run's untrained
-epoch-zero state and verifies the complete weight hash. This keeps initialization
-identical across CPU types. There is no argument for loading an external trained
-checkpoint. Recovery loads only the matching scratch run's own resume state.
-`run.sbatch` requests a checkpoint before allocation expiry and requeues
-the same job. Cancellation does not requeue it. Full resume state includes Adam,
-augmentation/quantile RNGs, epoch permutation offset, and accumulated epoch counts.
-Full recovery state is checkpointed every 500 steps and at epoch boundaries.
-The current default retains compact model weights every ten epochs, including
-epochs 30, 50, and 100, and always at the final epoch. Already-running jobs keep
-their original frozen five-epoch snapshot setting; recovery checkpoints remain
-frequent in both cases.
-
-Use a frozen copy of the repository containing `source_commit.txt`:
+Im2im and QUTCC start from random weights and reuse the shared model losses.
+Each epoch visits the training pairs once. The online sampler chooses clean or
+one of nine modifications with 10% probability each per image. Exposure uses
+0.5 or 1.5 with equal probability within its share. Targets stay unchanged;
+modified datasets are not stored. See [input modifications](../../input_modifications/README.md).
 
 ```bash
-python experiments/generalized_inputs/submit.py \
-  --run-root /path/to/new/generalized-input-run \
-  --project /home/jy2228/ConvRML
+python experiments/generalized_inputs/train.py \
+  --method qutcc --manifest /path/to/split.json \
+  --output runs/generalized/qutcc --epochs 50 --device cuda
 ```
 
-Outputs include `jobs.json`, GPU logs, and `results/{qutcc,im2im}/` containing
-configuration, smoke checks, baseline validation, progress, history, resume state,
-ten-epoch model checkpoints, and `COMPLETE.json` after all 100 epochs finish.
+Repeat with `--method im2im` and a separate output directory. The default
+[protocol](protocol.json) specifies Adam, effective batch 4, one-image
+microbatches and FP32. Its full horizon is 100 epochs:
 
-## Submission scripts
+- Epochs 1–9: linear warmup from 1e-5 to 1e-4.
+- Epochs 10–50: cosine decay toward 1e-9.
+- Epochs 51–100: a separate cosine phase from 1e-5 to 1e-6, preserving Adam moments.
 
-`submit.py` handles a new scratch run: it checks the manifest hash and snapshot
-files, then submits one smoke job and one dependent training job per model.
-`schedule_after50.py` queues continuations of an existing run after checking both
-predecessor IDs and matching the model/data/modification source files.
-Both use `slurm.py` for command construction, a shared submission lock, and atomic
-job records. Epoch labels for fresh runs come from `protocol.json`.
+`--epochs 50` stops at 50 without changing the schedule. Continue by using the
+same command with `--epochs 100 --resume`. Resume checks settings/split identity
+and restores optimizer and augmentation/quantile RNG state after the last
+complete epoch. Interrupted partial epochs are repeated.
 
-If submission stops partway through, rerun the same command from the same frozen
-snapshot. Matching recorded jobs are reused and only missing jobs are submitted.
-Changed commands are rejected. Continuation records are merged into `jobs.json`
-without discarding predecessor records. Existing failed jobs remain recorded;
-their recovery is managed separately in Slurm. Record the frozen checkout's
-revision in `source_commit.txt` before submitting (for a checkout, use
-`git rev-parse HEAD > source_commit.txt`).
+After each epoch, the same 100 validation scenes are tested under all ten
+conditions (1,000 predictions). Scene selection and noise draws are fixed.
+Logs include per-condition PSNR, SSIM, MAE and training condition counts.
+Calibration and test pairs are not opened by this trainer.
 
-## Automatic continuation after epoch 50
+Outputs: `config.json`, `initial_random.pt` (untrained weights), `history.json`,
+`latest.pt` (full epoch recovery), and `checkpoints/epoch_*.pt` every ten epochs.
+`--smoke` performs at most two training batches and one small validation panel;
+use a separate output directory for smoke checks.
 
-For the active runs, use `schedule_after50.py --run-root /path/to/existing/run`.
-It submits one dependent GPU job per model with `afterok` on that model's current
-50-epoch job. Current jobs and their sources stay untouched. The continuation
-also verifies the successful completion marker, epoch 50 checkpoint, next epoch
-51, zero sample offset, all 225,000 optimizer steps, and all 50 validation records.
-It cannot begin the new phase early.
+Read `run_training` for setup, epochs and saving; `train_one_epoch` for input
+modification, loss and Adam; `ValidationPanel`/`validate` for held-out metrics.
 
-The wrapper `continue_after50.py` archives the original configuration, full
-checkpoint, and completion marker. Model weights, Adam moments, random-generator
-states, sample position, and training history are restored. The epoch-zero
-provenance still points to the original scratch initialization. Pretrained clean
-weights are never introduced. `COMPLETE_50epochs.json` remains available while
-the new phase runs; `COMPLETE.json` is written for epoch 100 at final completion.
-The wrapper replaces itself with the trainer so checkpoint/requeue signals reach
-the same child PID used by Slurm.
-
-The [queued 100-epoch plan](../../reproducibility/generalized_inputs_100epochs_after50_20261031.json)
-records the dependency job IDs, learning rates, and verification checks. The
-continuations wait for their respective models to finish epoch 50 successfully.
-
-## Historical 30-to-50 extension
-
-The existing scratch runs continue from their own full checkpoints, preserving
-weights, Adam moments, RNG states, sample offsets, counts, and history. They do not
-restart or load trained clean-model weights. Stop the old jobs gracefully, then
-run `submit_extension.py --run-root /path/to/existing/run` from the archived 50-epoch
-source snapshot. It archives each original config and checkpoint before submitting
-the continuations. That historical utility is separate from the new after-50 scheduler.
-Model, dataset, loss, and input-modification code must match
-the original snapshot. The explicit config transition permits only the epoch
-budget, schedule, protocol version, and source provenance to change. The runner
-checks that the handoff occurs during the original warmup and saves
-`extension_applied.json` with its preserved step and offset.
-
-The [50-epoch continuation record](../../reproducibility/generalized_inputs_50epochs_extension_20261031.json)
-records both handoff positions, replacement job IDs, and verified 50-epoch progress.
-
-The earlier [fine-tuning launch](../../reproducibility/generalized_inputs_30epochs_launch_20261031.json)
-was cancelled because training must start from scratch. Its outputs must not be
-used to initialize this run. New scratch runs use a separate experiment directory.
-
-The [current scratch launch](../../reproducibility/generalized_inputs_scratch30_launch_20261031.json)
-records the corrected source and job IDs. Passing smoke checks or submitting
-jobs does not mean the training budget has finished.
+Historical launchers, mid-epoch recovery, extension migrations and exact frozen
+sources are in the [snapshot](../../archive/research_prototype_20261102/).
+Resume existing cluster deployments with their original engine. Published launch
+records in `reproducibility/` describe those frozen runs, rather than new runs
+of the simplified trainer.
