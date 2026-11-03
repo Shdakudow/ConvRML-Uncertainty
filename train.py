@@ -1,16 +1,18 @@
 """Train, validate and save one of the four reconstruction/uncertainty models.
 
-Run run_training for the complete workflow; train_one_epoch shows each update.
+Read run_training for the workflow, setup_training for initialization, and
+train_batch for one optimizer update. Profiles remain JSON-compatible dictionaries.
 Losses live in models/. Calibration and final test evaluation are separate.
 """
 
 import argparse
+from dataclasses import dataclass
 import math
 from pathlib import Path
 import time
 
 import torch
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader, Dataset, Subset
 
 from convrml.checkpoints import (
     resume_training,
@@ -65,8 +67,64 @@ def arguments(argv=None):
     return args
 
 
+@dataclass
+class TrainingState:
+    """Live training objects and progress; checkpoint serialization stays explicit."""
+
+    model: torch.nn.Module
+    optimizer: torch.optim.Optimizer
+    device: torch.device
+    config: dict
+    training: Dataset
+    validation: Dataset
+    output: Path
+    identity: dict
+    quantile_rng: torch.Generator
+    data_rng: torch.Generator
+    schedule_steps: int
+    completed_epoch: int
+    global_step: int
+    history: list
+    parent: object
+
+
 def run_training(args, *, factory=None):
-    """Load pairs -> create Adam/model -> train/validate epochs -> save state."""
+    """Set up a run, then train, validate and save each completed epoch."""
+    config, target_epoch = training_config(args)
+    state = setup_training(args, config, target_epoch, factory=factory)
+    for epoch in range(state.completed_epoch + 1, target_epoch + 1):
+        loader = create_train_loader(state, epoch, args.workers)
+        stats = train_one_epoch(
+            state.model,
+            state.optimizer,
+            loader,
+            run=config,
+            device=state.device,
+            quantile_rng=state.quantile_rng,
+            global_step=state.global_step,
+            schedule_steps=state.schedule_steps,
+            smoke=args.smoke,
+        )
+        state.global_step = stats["global_step"]
+        measured = validate(
+            state.model,
+            args.method,
+            state.validation,
+            config,
+            state.device,
+            args.workers,
+            args.smoke,
+        )
+        save_epoch(state, epoch, stats, measured)
+        print(
+            f"Epoch {epoch}/{target_epoch}: loss={stats['loss']:.6g}, validation SSIM={measured['ssim']:.5f}",
+            flush=True,
+        )
+    return state.output / "latest.pt"
+
+
+def training_config(args):
+    """Validate the requested stopping point without changing the LR horizon."""
     config = profile(args.experiment, args.dataset, args.method, args.member)
     target_epoch = args.epochs if args.epochs is not None else config["epochs"]
     if args.smoke:
@@ -80,6 +138,24 @@ def run_training(args, *, factory=None):
     if config["family"] != "adaptation" and args.initialize:
         raise ValueError("Clean comparisons start from scratch")
 
+    return config, target_epoch
+
+
+def create_optimizer(model, config, schedule_steps):
+    """Use the profile's optimizer and the first scheduled learning rate."""
+    optimizers = {"Adam": torch.optim.Adam, "AdamW": torch.optim.AdamW}
+    if config["optimizer"] not in optimizers:
+        raise ValueError("Expected Adam or AdamW")
+    return optimizers[config["optimizer"]](
+        model.parameters(),
+        lr=learning_rate(0, schedule_steps, config),
+        betas=tuple(config["betas"]),
+        weight_decay=config["weight_decay"],
+    )
+
+
+def setup_training(args, config, target_epoch, *, factory=None):
+    """Open the fixed splits, create seeded objects, and restore state if requested."""
     # Load only train/validation; calibration and test pairs are not used here.
     data = audit_manifest(args.manifest)
     if not {"train", "val"} <= data["splits"].keys():
@@ -93,25 +169,14 @@ def run_training(args, *, factory=None):
     if latest.exists() and not args.resume:
         raise FileExistsError("Use --resume or a new output folder")
 
+    # make_model also seeds itself for standalone evaluation. Seed here as well
+    # so injected factories follow the same initialization contract.
+    torch.manual_seed(config["seeds"]["initialization"])
     model = (factory or make_model)(config).to(device)
-    schedule_steps = config["epochs"] * math.ceil(len(training) / config["batch_size"])
-    initial_lr = learning_rate(0, schedule_steps, config)
-    if config["optimizer"] == "Adam":
-        optimizer = torch.optim.Adam(
-            model.parameters(),
-            lr=initial_lr,
-            betas=tuple(config["betas"]),
-            weight_decay=config["weight_decay"],
-        )
-    elif config["optimizer"] == "AdamW":
-        optimizer = torch.optim.AdamW(
-            model.parameters(),
-            lr=initial_lr,
-            betas=tuple(config["betas"]),
-            weight_decay=config["weight_decay"],
-        )
-    else:
-        raise ValueError("Expected Adam or AdamW")
+    steps_per_epoch = math.ceil(len(training) / config["batch_size"])
+    schedule_steps = config["epochs"] * steps_per_epoch
+    optimizer = create_optimizer(model, config, schedule_steps)
+    # Reset the training stream after initialization, preserving dropout draws.
     torch.manual_seed(config["seeds"]["training"])
     quantile_rng = torch.Generator(device=device).manual_seed(
         config["seeds"]["quantile"]
@@ -146,69 +211,80 @@ def run_training(args, *, factory=None):
         raise ValueError("Target precedes the saved epoch")
     write_json(output / "config.json", dict(identity, parent=parent))
 
-    for epoch in range(completed_epoch + 1, target_epoch + 1):
-        # Retain each profile's recorded data order and ensemble member seed.
-        if config["shuffle"] == "per_epoch_permutation":
-            seed = config["seeds"]["data"] + epoch
-            order = torch.randperm(
-                len(training), generator=torch.Generator().manual_seed(seed)
-            ).tolist()
-            loader = DataLoader(
-                Subset(training, order),
-                batch_size=config["batch_size"],
-                num_workers=args.workers,
-                generator=torch.Generator().manual_seed(seed + 10000),
-            )
-        else:
-            loader = DataLoader(
-                training,
-                batch_size=config["batch_size"],
-                shuffle=True,
-                generator=data_rng,
-                num_workers=args.workers,
-            )
-        stats = train_one_epoch(
-            model,
-            optimizer,
-            loader,
-            run=config,
-            device=device,
-            quantile_rng=quantile_rng,
-            global_step=global_step,
-            schedule_steps=schedule_steps,
-            smoke=args.smoke,
+    return TrainingState(
+        model=model,
+        optimizer=optimizer,
+        device=device,
+        config=config,
+        training=training,
+        validation=validation,
+        output=output,
+        identity=identity,
+        quantile_rng=quantile_rng,
+        data_rng=data_rng,
+        schedule_steps=schedule_steps,
+        completed_epoch=completed_epoch,
+        global_step=global_step,
+        history=history,
+        parent=parent,
+    )
+
+
+def create_train_loader(state, epoch, workers):
+    """Preserve the profile's epoch permutation or persistent shuffle stream."""
+    config = state.config
+    if config["shuffle"] == "per_epoch_permutation":
+        seed = config["seeds"]["data"] + epoch
+        order = torch.randperm(
+            len(state.training), generator=torch.Generator().manual_seed(seed)
+        ).tolist()
+        return DataLoader(
+            Subset(state.training, order),
+            batch_size=config["batch_size"],
+            num_workers=workers,
+            generator=torch.Generator().manual_seed(seed + 10000),
         )
-        global_step = stats["global_step"]
-        measured = validate(
-            model, args.method, validation, config, device, args.workers, args.smoke
-        )
-        seconds = time.monotonic() - stats["started"]
-        history.append(
-            dict(
-                epoch=epoch,
-                loss=stats["loss"],
-                lr=stats["lr"],
-                seconds=seconds,
-                training_seconds=stats["training_seconds"],
-                validation_seconds=seconds - stats["training_seconds"],
-                validation=measured,
-            )
-        )
-        state = dict(
-            identity,
-            schema=config["schema"],
-            model=model.state_dict(),
+    return DataLoader(
+        state.training,
+        batch_size=config["batch_size"],
+        shuffle=True,
+        generator=state.data_rng,
+        num_workers=workers,
+    )
+
+
+def save_epoch(state, epoch, stats, measured):
+    """Record validation/timing and save recovery state plus scheduled milestones."""
+    seconds = time.monotonic() - stats["started"]
+    state.history.append(
+        dict(
             epoch=epoch,
-            history=history,
-            parent=parent,
-            global_step=global_step,
+            loss=stats["loss"],
+            lr=stats["lr"],
+            seconds=seconds,
+            training_seconds=stats["training_seconds"],
+            validation_seconds=seconds - stats["training_seconds"],
+            validation=measured,
         )
-        save_training_progress(output, state, optimizer, device, quantile_rng, data_rng)
-        print(
-            f"Epoch {epoch}/{target_epoch}: loss={stats['loss']:.6g}, validation SSIM={measured['ssim']:.5f}",
-            flush=True,
-        )
-    return latest
+    )
+    checkpoint = dict(
+        state.identity,
+        schema=state.config["schema"],
+        model=state.model.state_dict(),
+        epoch=epoch,
+        history=state.history,
+        parent=state.parent,
+        global_step=state.global_step,
+    )
+    save_training_progress(
+        state.output,
+        checkpoint,
+        state.optimizer,
+        state.device,
+        state.quantile_rng,
+        state.data_rng,
+    )
+    state.completed_epoch = epoch
 
 
 def train_one_epoch(
@@ -237,34 +313,16 @@ def train_one_epoch(
         if smoke and batch_index == 2:
             break
 
-        # Set this update's learning rate and clear the preceding gradients.
-        optimizer.zero_grad(set_to_none=True)
-        current_lr = learning_rate(global_step, schedule_steps, run)
-        for parameter_group in optimizer.param_groups:
-            parameter_group["lr"] = current_lr
-
-        # Compute gradients. Weighting keeps a short final microbatch correct.
-        batch_loss = 0.0
-        for microbatch in batch.split(run["microbatch"]):
-            measurement = microbatch[:, 0].to(device)
-            target = microbatch[:, 1].to(device)
-            with autocast(run, device):
-                if run["method"] == "qutcc":
-                    loss = model.loss(measurement, target, generator=quantile_rng)
-                else:
-                    loss = model.loss(measurement, target)
-                loss = loss * len(microbatch) / len(batch)
-            if not torch.isfinite(loss):
-                raise ValueError("Nonfinite training loss")
-            loss.backward()
-            batch_loss += float(loss.detach())
-
-        # Limit gradient norm only for profiles that specify it, then learn.
-        if run["gradient_clip"] is not None:
-            torch.nn.utils.clip_grad_norm_(
-                model.parameters(), run["gradient_clip"], error_if_nonfinite=True
-            )
-        optimizer.step()
+        batch_loss, current_lr = train_batch(
+            model,
+            optimizer,
+            batch,
+            run=run,
+            device=device,
+            quantile_rng=quantile_rng,
+            global_step=global_step,
+            schedule_steps=schedule_steps,
+        )
         global_step += 1
         total_loss += batch_loss * len(batch)
         image_count += len(batch)
@@ -276,6 +334,53 @@ def train_one_epoch(
         training_seconds=time.monotonic() - started,
         started=started,
     )
+
+
+def training_loss(model, measurement, target, run, quantile_rng):
+    """Only QUTCC consumes the dedicated random-quantile stream."""
+    if run["method"] == "qutcc":
+        return model.loss(measurement, target, generator=quantile_rng)
+    return model.loss(measurement, target)
+
+
+def train_batch(
+    model,
+    optimizer,
+    batch,
+    *,
+    run,
+    device,
+    quantile_rng,
+    global_step,
+    schedule_steps,
+):
+    """Take one optimizer step, weighting microbatches by their image counts."""
+    # Set this update's learning rate and clear the preceding gradients.
+    optimizer.zero_grad(set_to_none=True)
+    current_lr = learning_rate(global_step, schedule_steps, run)
+    for parameter_group in optimizer.param_groups:
+        parameter_group["lr"] = current_lr
+
+    # Compute gradients. Weighting keeps a short final microbatch correct.
+    batch_loss = 0.0
+    for microbatch in batch.split(run["microbatch"]):
+        measurement = microbatch[:, 0].to(device)
+        target = microbatch[:, 1].to(device)
+        with autocast(run, device):
+            loss = training_loss(model, measurement, target, run, quantile_rng)
+            loss = loss * len(microbatch) / len(batch)
+        if not torch.isfinite(loss):
+            raise ValueError("Nonfinite training loss")
+        loss.backward()
+        batch_loss += float(loss.detach())
+
+    # Limit gradient norm only for profiles that specify it, then learn.
+    if run["gradient_clip"] is not None:
+        torch.nn.utils.clip_grad_norm_(
+            model.parameters(), run["gradient_clip"], error_if_nonfinite=True
+        )
+    optimizer.step()
+    return batch_loss, current_lr
 
 
 @torch.inference_mode()

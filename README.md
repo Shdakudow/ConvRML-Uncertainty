@@ -94,8 +94,19 @@ weights are not rewritten.
 
 Start with a model's `forward`, `loss` and `bounds`, then follow the loader and
 root training/calibration scripts. In `train.py`, read `run_training` for the
-complete workflow and explicit Adam/AdamW selection, `train_one_epoch` for
-gradient updates, and `validate` for held-out reconstruction scores.
+complete workflow. `setup_training` creates the model and restores checkpoints;
+`create_optimizer` and `create_train_loader` preserve the profile settings.
+`train_one_epoch` collects statistics, while `train_batch` performs one update
+with correctly weighted microbatches. `validate` measures held-out reconstruction
+scores, and `save_epoch` records progress. A typed `TrainingState` groups live
+objects; experiment profiles remain dictionaries matching saved JSON/checkpoints.
+
+Initialization uses `seeds.initialization` before constructing the model, including
+custom factories. The separate `seeds.training` stream is reset afterwards for
+training randomness; shuffle and random quantiles have their own generators.
+The production model factory already seeded initialization before this refactor,
+so this clarification preserves its behavior. Exact CPU resume tests do not
+imply deterministic execution on every GPU/backend.
 Training saves `latest.pt` after each complete epoch, model weights every five
 epochs, and `history.json`. Resume with the same command plus `--resume` and a
 higher `--epochs` stopping point. The full learning-rate horizon stays fixed.

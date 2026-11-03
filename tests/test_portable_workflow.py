@@ -190,6 +190,23 @@ class PortableWorkflow(unittest.TestCase):
         )
         self.assertEqual(a["global_step"], b["global_step"])
 
+    def test_custom_factory_initialization_ignores_ambient_rng(self):
+        # Factories need not seed themselves: setup owns that contract.
+        paths = []
+        for ambient_seed in (19, 82):
+            torch.manual_seed(ambient_seed)
+            paths.append(
+                train.run_training(
+                    self.training_args(f"seed_{ambient_seed}", 1),
+                    factory=lambda run: TinyQ(),
+                )
+            )
+        first, _ = checkpoints.read_checkpoint(paths[0])
+        second, _ = checkpoints.read_checkpoint(paths[1])
+        for key in first["model"]:
+            self.assertTrue(torch.equal(first["model"][key], second["model"][key]))
+        self.assertEqual(first["history"][0]["loss"], second["history"][0]["loss"])
+
     def test_dlmd_image_files_train_load_calibrate_and_export_both_methods(self):
         """Exercise the paired-file workflow with tiny models and real loss methods."""
 
