@@ -28,3 +28,34 @@ A specialist receives roughly ten times as many Gaussian examples as the mixture
 at the same epoch count; report that exposure difference when comparing scores.
 Historical launchers and stronger deployment identity checks are preserved in
 [the snapshot](../../archive/research_prototype_20261102/).
+
+## Calibration and testing
+
+`evaluate.py` loads the completed epoch-50 specialist with frozen weights. It
+fits a nominal 90% interval on all 3,000 Gaussian-corrupted calibration scenes,
+then evaluates the separate 2,000 Gaussian-corrupted test scenes. Gaussian
+noise has SD 0.01; per-scene seeds match the original Exp 4 comparison exactly.
+
+```bash
+python experiments/gaussian_specialist/evaluate.py \
+  --method qutcc \
+  --comparison-source /path/to/frozen/experiment4/source \
+  --training-root /path/to/gaussian-specialists \
+  --manifest /path/to/split.json \
+  --output evaluations/gaussian/qutcc
+```
+
+The frozen comparison source supplies the original deterministic inputs and
+empirical calibration functions. Its Python files are hashed in `request.json`.
+This is the demo's empirical coverage matching procedure, not an RCPS
+certificate. QUTCC calibration failures remain explicitly recorded; the
+evaluator never labels an unattainable target as successful calibration.
+
+`report.json` includes PSNR, SSIM, MAE, interval coverage/width/crossing, and
+uncertainty-versus-error Pearson/Spearman correlations. A spatial overlap score
+measures how often the most uncertain 10% of pixels are also among the largest
+10% reconstruction errors; independent selections have an expected overlap of
+10%. `examples/` contains the first 50 scenes in manifest order, showing original
+input, noisy input, target, reconstruction, uncertainty and absolute error.
+Heatmaps use the same fixed [0,1] intensity-width scale. Reports retain raw and
+clipped metrics separately. Calibration is committed before test images open.
