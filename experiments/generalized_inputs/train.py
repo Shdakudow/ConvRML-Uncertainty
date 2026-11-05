@@ -86,6 +86,28 @@ class ValidationPanel(Dataset):
         return modified, target, condition_index
 
 
+def modify_training_batch(measurement, condition, generator):
+    """Apply the chosen family independently per image, or sample the mixture."""
+    if condition == "mixture":
+        return sample_training_modification(measurement, generator=generator)
+    if condition == "gaussian":
+        # Preserve the original Gaussian specialist's random-number stream.
+        modified = gaussian_noise(
+            measurement, sigma=SETTINGS["gaussian_sigma"], generator=generator
+        )
+    elif condition in CONDITIONS:
+        # Exposure gains and sensor masks/patterns must not be shared by a batch.
+        modified = torch.cat(
+            [
+                apply_condition(image.unsqueeze(0), condition, generator)
+                for image in measurement
+            ]
+        )
+    else:
+        raise ValueError(f"Unknown training condition: {condition}")
+    return modified, [condition] * len(measurement)
+
+
 def train_one_epoch(
     model,
     optimizer,
@@ -107,19 +129,9 @@ def train_one_epoch(
             break
         measurement = batch[:, 0]
         condition = SETTINGS.get("training_condition", "mixture")
-        if condition == "gaussian":
-            modified = gaussian_noise(
-                measurement,
-                sigma=SETTINGS["gaussian_sigma"],
-                generator=augmentation_rng,
-            )
-            labels = ["gaussian"] * len(batch)
-        elif condition == "mixture":
-            modified, labels = sample_training_modification(
-                measurement, generator=augmentation_rng
-            )
-        else:
-            raise ValueError(f"Unknown training condition: {condition}")
+        modified, labels = modify_training_batch(
+            measurement, condition, augmentation_rng
+        )
         lr = learning_rate(global_step, total_steps)
         for group in optimizer.param_groups:
             group["lr"] = lr

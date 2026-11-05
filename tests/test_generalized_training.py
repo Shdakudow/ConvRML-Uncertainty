@@ -172,7 +172,13 @@ class GeneralizedTraining(unittest.TestCase):
                     source, range(5) if role == "train" else range(5, 7)
                 )
 
-            for condition in ("mixture", "gaussian"):
+            for condition in (
+                "mixture",
+                "gaussian",
+                "poisson",
+                "exposure",
+                "dead_pixels",
+            ):
                 protocol.update(training_condition=condition, gaussian_sigma=0.01)
                 for method in ("im2im", "qutcc"):
 
