@@ -1,12 +1,14 @@
 """Check specialist distributions, per-image randomness, and replayable inputs."""
 
 import unittest
-from unittest.mock import patch
+from pathlib import Path
 
 import torch
+import models
 
 from experiments.generalized_inputs import train
 from experiments.specialists.protocol import SPECIALISTS, make_protocol
+from experiments.specialists.run import REPOSITORY, source_identity
 from input_modifications.presets import PRESETS
 
 
@@ -70,6 +72,15 @@ class SpecialistInputs(unittest.TestCase):
     def test_unknown_family_is_rejected(self):
         with self.assertRaises(ValueError):
             self.modify("unknown")
+
+    def test_source_identity_resolves_the_real_model_package(self):
+        identity = source_identity("test")
+        model_entry = str(Path(models.__file__).relative_to(REPOSITORY))
+        self.assertIn(model_entry, identity["files"])
+        for name in ("models/qutcc.py", "models/im2im.py", "convrml/backbone.py"):
+            self.assertIn(name, identity["files"])
+            self.assertEqual(len(identity["files"][name]), 64)
+        self.assertEqual(len(identity["dataset_sha256"]), 64)
 
 
 if __name__ == "__main__":

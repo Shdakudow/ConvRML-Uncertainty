@@ -33,6 +33,27 @@ def immutable_json(path, value):
     write_json(path, value)
 
 
+def source_identity(commit):
+    """Hash the active model package and trainer, including this launcher."""
+    return dict(
+        commit=commit,
+        files={
+            str(path.relative_to(REPOSITORY)): sha256(path)
+            for folder in (
+                "models",
+                "convrml",
+                "input_modifications",
+                "experiments/generalized_inputs",
+                "experiments/specialists",
+            )
+            for path in sorted((REPOSITORY / folder).rglob("*.py"))
+        },
+        dataset_sha256=sha256(REPOSITORY / "dataset.py"),
+        torch=torch.__version__,
+        cuda=torch.version.cuda,
+    )
+
+
 def main(args):
     settings = make_protocol(args.condition)
     if sha256(args.manifest) != settings["manifest_sha256"]:
@@ -48,23 +69,7 @@ def main(args):
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     immutable_json(output / "protocol.json", settings)
     commit_path = REPOSITORY / "source_commit.txt"
-    source = dict(
-        commit=commit_path.read_text().strip(),
-        files={
-            str(path.relative_to(REPOSITORY)): sha256(path)
-            for folder in (
-                "convrml",
-                "input_modifications",
-                "experiments/generalized_inputs",
-                "experiments/specialists",
-            )
-            for path in sorted((REPOSITORY / folder).rglob("*.py"))
-        },
-        models_sha256=sha256(REPOSITORY / "models.py"),
-        dataset_sha256=sha256(REPOSITORY / "dataset.py"),
-        torch=torch.__version__,
-        cuda=torch.version.cuda,
-    )
+    source = source_identity(commit_path.read_text().strip())
     immutable_json(output / "source.json", source)
     latest = output / "latest.pt"
     initial_path = args.initial_root / args.method / "initial_random.pt"
