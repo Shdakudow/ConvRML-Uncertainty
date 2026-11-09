@@ -8,14 +8,15 @@ from pathlib import Path
 
 import torch
 
-from dataset import ImagePairs, NumpyPairs
+from dataset import ImagePairs, NumpyPairs, read_split_file
 
 SETTINGS_PATH = Path(__file__).resolve().parents[1] / "configs/experiment_settings.json"
 
 
 def settings():
     """Read recorded settings as a fresh dictionary, without changing the JSON file."""
-    return json.loads(SETTINGS_PATH.read_text())
+    with SETTINGS_PATH.open(encoding="utf-8") as file:
+        return json.load(file)
 
 
 def sha256(path):
@@ -49,12 +50,10 @@ def profile(experiment, dataset, method, member=None):
         raise ValueError("Dataset does not belong to the requested experiment")
     if method not in config["methods"][f"experiment{experiment}"]:
         raise ValueError("Method is not part of this experiment")
-    is_ensemble = method == "ensemble"
-    has_member_index = member is not None
-    if is_ensemble != has_member_index:
-        raise ValueError(
-            "Ensemble training/loading requires a member index; other models do not"
-        )
+    if method == "ensemble" and member is None:
+        raise ValueError("Choose --member 0..9 for ensemble training/loading")
+    if method != "ensemble" and member is not None:
+        raise ValueError("Only ensemble models use --member")
     if member is not None and member not in range(10):
         raise ValueError("Ensemble member index must be 0..9")
     # Select a recorded optimizer profile, not a different model architecture.
@@ -136,13 +135,12 @@ def audit_manifest(manifest):
     Accept new datasets and image sizes. Published split counts/hashes remain
     reference records, rather than restrictions on the research prototype.
     """
-    value = json.loads(Path(manifest).read_text())
-    roles = value.get("roles", value)
+    splits = read_split_file(manifest)
     identities, seen = {}, set()
     for role in ("train", "val", "test", "calibration"):
-        if role not in roles:
+        if role not in splits:
             continue
-        ids = [str(row["id"]) for row in roles[role]]
+        ids = [str(row["id"]) for row in splits[role]]
         if not ids or len(ids) != len(set(ids)) or seen.intersection(ids):
             raise ValueError("Empty, duplicated or overlapping split IDs")
         seen.update(ids)
@@ -154,11 +152,9 @@ def audit_manifest(manifest):
 
 def autocast(run, device):
     """Use the recorded BF16 context, or preserve normal FP32 computation."""
-    return (
-        torch.autocast(device.type, dtype=torch.bfloat16)
-        if run["precision"] == "bfloat16"
-        else nullcontext()
-    )
+    if run["precision"] == "bfloat16":
+        return torch.autocast(device.type, dtype=torch.bfloat16)
+    return nullcontext()
 
 
 def learning_rate(step, total_steps, run):
@@ -166,12 +162,19 @@ def learning_rate(step, total_steps, run):
     peak = run["peak_lr"]
     if run["schedule"] == "constant":
         return peak
-    progress, initial_lr = step / total_steps, peak / 10
-    if progress <= 0.3:
-        return initial_lr + progress / 0.3 * (peak - initial_lr)
-    minimum = initial_lr / 1e4
-    cosine = math.cos(math.pi * (progress - 0.3) / 0.7)
-    return minimum + (peak - minimum) / 2 * (cosine + 1)
+    # The saved profile warms up for 30% of all optimizer updates, then decays
+    # over the remaining 70%. --epochs changes when to stop, not this horizon.
+    progress = step / total_steps
+    initial_lr = peak / 10
+    warmup_fraction = 0.3
+    if progress <= warmup_fraction:
+        return initial_lr + progress / warmup_fraction * (peak - initial_lr)
+
+    minimum_lr = initial_lr / 1e4
+    # Keep the recorded operation order for numerical parity with saved runs.
+    cosine_angle = math.pi * (progress - warmup_fraction) / 0.7
+    cosine = math.cos(cosine_angle)
+    return minimum_lr + (peak - minimum_lr) / 2 * (cosine + 1)
 
 
 def center(model, method, y):

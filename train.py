@@ -43,7 +43,12 @@ def arguments(argv=None):
     parser.add_argument("--dataset", choices=list(datasets), required=True)
     parser.add_argument("--method", choices=methods, required=True)
     parser.add_argument("--member", type=int, help="Ensemble member index, 0-9.")
-    parser.add_argument("--manifest", type=Path, required=True, help="Train/val JSON.")
+    parser.add_argument(
+        "--manifest",
+        type=Path,
+        required=True,
+        help="JSON file listing train/val image IDs and, for DLMD, image paths.",
+    )
     parser.add_argument("--pairs", type=Path, help="PLD NumPy cache; omit for DLMD.")
     parser.add_argument("--output", type=Path, required=True, help="Run output folder.")
 
@@ -106,7 +111,7 @@ def run_training(args, *, factory=None):
             smoke=args.smoke,
         )
         state.global_step = stats["global_step"]
-        measured = validate(
+        validation_metrics = validate(
             state.model,
             args.method,
             state.validation,
@@ -115,9 +120,9 @@ def run_training(args, *, factory=None):
             args.workers,
             args.smoke,
         )
-        save_epoch(state, epoch, stats, measured)
+        save_epoch(state, epoch, stats, validation_metrics)
         print(
-            f"Epoch {epoch}/{target_epoch}: loss={stats['loss']:.6g}, validation SSIM={measured['ssim']:.5f}",
+            f"Epoch {epoch}/{target_epoch}: loss={stats['loss']:.6g}, validation SSIM={validation_metrics['ssim']:.5f}",
             flush=True,
         )
     return state.output / "latest.pt"
@@ -157,8 +162,10 @@ def create_optimizer(model, config, schedule_steps):
 def setup_training(args, config, target_epoch, *, factory=None):
     """Open the fixed splits, create seeded objects, and restore state if requested."""
     # Load only train/validation; calibration and test pairs are not used here.
-    data = audit_manifest(args.manifest)
-    if not {"train", "val"} <= data["splits"].keys():
+    # The split file lists image identities/paths; the datasets load pixels.
+    # Keep the leakage check separate from image loading.
+    data_identity = audit_manifest(args.manifest)
+    if not {"train", "val"} <= data_identity["splits"].keys():
         raise ValueError("Training requires train and val splits")
     training = dataset_for(args.dataset, args.manifest, args.pairs, "train")
     validation = dataset_for(args.dataset, args.manifest, args.pairs, "val")
@@ -184,7 +191,7 @@ def setup_training(args, config, target_epoch, *, factory=None):
     data_rng = torch.Generator().manual_seed(config["seeds"]["data"])
     identity = dict(
         run=config,
-        data=data,
+        data=data_identity,
         smoke=args.smoke,
         device=str(device),
         workers=args.workers,
@@ -253,7 +260,7 @@ def create_train_loader(state, epoch, workers):
     )
 
 
-def save_epoch(state, epoch, stats, measured):
+def save_epoch(state, epoch, stats, validation_metrics):
     """Record validation/timing and save recovery state plus scheduled milestones."""
     seconds = time.monotonic() - stats["started"]
     state.history.append(
@@ -264,7 +271,7 @@ def save_epoch(state, epoch, stats, measured):
             seconds=seconds,
             training_seconds=stats["training_seconds"],
             validation_seconds=seconds - stats["training_seconds"],
-            validation=measured,
+            validation=validation_metrics,
         )
     )
     checkpoint = dict(

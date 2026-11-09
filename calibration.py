@@ -12,6 +12,8 @@ import time
 
 import torch
 
+from dataset import read_split_file
+
 from convrml.calibration import CalibrationFailure, fit_calibration, apply_calibration
 from convrml.checkpoints import load_predictor
 from convrml.evaluation import evaluate_test_set, make_report, save_results
@@ -154,11 +156,10 @@ def run_evaluation(args, *, model_loader=None):
             "calibration",
         )
         calibration_ids = set(calibration.ids)
-        value = json.loads(args.manifest.read_text())
-        roles = value.get("roles", value)
+        splits = read_split_file(args.manifest)
         for role in ("train", "val", "test"):
             if calibration_ids.intersection(
-                str(row["id"]) for row in roles.get(role, [])
+                str(row["id"]) for row in splits.get(role, [])
             ):
                 raise ValueError("Calibration IDs overlap another split")
         try:

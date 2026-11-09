@@ -1,4 +1,4 @@
-"""Portable paired-image loaders with the original ordering and normalization.
+"""Standard PyTorch datasets for paired measurements and ground-truth images.
 
 Both datasets return (2, 3, H, W): measurement first, ground truth second.
 Uint8 RGB values are converted to float32 and divided by 255. Neither loader
@@ -24,7 +24,32 @@ from PIL import Image
 import torch
 from torch.utils.data import Dataset
 
+# NumPy caches concatenate splits in this order, regardless of JSON key order.
 SPLIT_ORDER = ("train", "val", "test", "calibration")
+
+
+def read_split_file(path):
+    """Read the saved train/val/test/calibration image lists.
+
+    A manifest is simply a JSON file listing which images belong to each split.
+    It does not contain pixels, choose a random split, or transform images.
+
+    PLD cache format:
+        {"train": [{"id": "scene_a"}], "val": [{"id": "scene_b"}]}
+
+    MIRFLICKR image-file format:
+        {"roles": {"train": [{"id": "scene_a",
+          "measurement": {"path": "measurements/a.png"},
+          "target": {"path": "targets/a.png"}}]}}
+
+    Return the same split-name -> image-list dictionary for either format.
+    Keep image order unchanged: it also specifies row order in a NumPy cache.
+    """
+    with open(path, encoding="utf-8") as file:
+        image_lists = json.load(file)
+    if "roles" in image_lists:
+        image_lists = image_lists["roles"]
+    return image_lists
 
 
 class NumpyPairs(Dataset):
@@ -43,25 +68,25 @@ class NumpyPairs(Dataset):
             manifest_path: JSON mapping split names to ordered rows with IDs.
             split: "train", "val", "test", or "calibration".
         """
-        manifest = json.loads(Path(manifest_path).read_text())
-        available_splits = [name for name in SPLIT_ORDER if name in manifest]
+        splits = read_split_file(manifest_path)
+        available_splits = [name for name in SPLIT_ORDER if name in splits]
         if split not in available_splits:
             raise ValueError("Requested split is absent from the manifest")
 
-        self.rows = manifest[split]
+        self.rows = splits[split]
         self.ids = tuple(str(row["id"]) for row in self.rows)
 
         # The cache concatenates splits in SPLIT_ORDER. Locate this split's start.
         split_position = available_splits.index(split)
         preceding_splits = available_splits[:split_position]
-        self.start = sum(len(manifest[name]) for name in preceding_splits)
+        self.start = sum(len(splits[name]) for name in preceding_splits)
 
         # Memory mapping reads requested pairs without loading the whole cache.
         self.array = np.load(pairs_path, mmap_mode="r")
         if self.array.ndim != 5 or self.array.shape[1:3] != (2, 3):
             raise ValueError("Expected (N, 2, 3, H, W) measurement/target pairs")
 
-        expected_pair_count = sum(len(manifest[name]) for name in available_splits)
+        expected_pair_count = sum(len(splits[name]) for name in available_splits)
         if self.array.dtype != np.uint8 or len(self.array) != expected_pair_count:
             raise ValueError(
                 "Cache dtype/count does not match the uint8 split manifest"
@@ -101,21 +126,26 @@ class ImagePairs(Dataset):
             split: An existing split name, such as "train" or "val".
         """
         self.manifest_path = Path(manifest_path).resolve()
-        manifest = json.loads(self.manifest_path.read_text())
-        self.rows = manifest["roles"][split]
+        splits = read_split_file(self.manifest_path)
+        self.rows = splits[split]
         self.ids = tuple(str(row["id"]) for row in self.rows)
+
+        # Resolve filenames once. __getitem__ only opens and normalizes pixels.
+        # Joining an absolute path leaves it absolute; relative paths are based
+        # on the split file's folder, not the shell's working directory.
+        folder = self.manifest_path.parent
+        self.measurement_paths = [
+            folder / row["measurement"]["path"] for row in self.rows
+        ]
+        self.target_paths = [folder / row["target"]["path"] for row in self.rows]
 
     def __len__(self):
         """Return the number of pairs in the selected split."""
         return len(self.rows)
 
     def _load_image(self, image_path):
-        """Load one RGB image as float32 [C,H,W], resolving relative paths."""
-        path = Path(image_path)
-        if not path.is_absolute():
-            path = self.manifest_path.parent / path
-
-        with Image.open(path) as image:
+        """Read 8-bit RGB pixels and return float32 [C,H,W] in [0,1]."""
+        with Image.open(image_path) as image:
             pixels = np.asarray(image.convert("RGB")).copy()
 
         # Pillow uses [H,W,C]; the model expects [C,H,W] with values in [0,1].
@@ -124,9 +154,8 @@ class ImagePairs(Dataset):
 
     def __getitem__(self, index):
         """Return [measurement, target] as float32 (2,3,H,W) in [0,1]."""
-        row = self.rows[index]
-        measurement = self._load_image(row["measurement"]["path"])
-        target = self._load_image(row["target"]["path"])
+        measurement = self._load_image(self.measurement_paths[index])
+        target = self._load_image(self.target_paths[index])
 
         if measurement.shape != target.shape:
             raise ValueError("Measurement and target must have matching RGB dimensions")

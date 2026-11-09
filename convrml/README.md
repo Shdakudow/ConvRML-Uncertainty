@@ -24,6 +24,44 @@ Training losses, including the pinball formula, are defined directly in each
 classes; there are no dataset-specific copies of these losses or architectures.
 Use the root `train.py` and `calibration.py` commands; each workflow has one entry point.
 
+## Read it as a PyTorch experiment
+
+Start with [dataset.py](../dataset.py), then a model in [models/](../models/),
+then `train_batch` in [train.py](../train.py). These are the data, prediction/loss,
+and optimizer update. Configuration and checkpoint bookkeeping can wait.
+
+A **manifest** is only a saved list of images. `read_split_file` uses ordinary
+`json.load` and returns a dictionary such as `splits["train"]`. The MIRFLICKR
+files wrap that dictionary in a `roles` key; the reader removes that wrapper.
+It never makes a new random split. Keeping these saved lists prevents accidental
+changes to which scenes are used for training, calibration and testing.
+
+```python
+from torch.utils.data import DataLoader
+from dataset import ImagePairs
+
+# JSON lists paired filenames; ImagePairs opens the actual images lazily.
+training = ImagePairs("split.json", "train")
+loader = DataLoader(training, batch_size=4, shuffle=True)
+pairs = next(iter(loader))                # [B, 2, 3, H, W]
+measurement = pairs[:, 0]                 # [B, 3, H, W]
+ground_truth = pairs[:, 1]                # [B, 3, H, W]
+```
+
+This snippet illustrates the data API, not the full reproducible training command:
+`train.py` additionally sets the recorded seeds and shuffle policy. The loader
+converts prepared uint8 images to float32 by dividing by 255; it does not resize
+or corrupt them. Image paths are resolved once when constructing the dataset.
+For PLD, `NumpyPairs(pairs_path, manifest_path, "train")` returns the same tensors
+from a memory-mapped NumPy array instead of opening image files.
+
+The training update is conventional PyTorch: clear gradients, predict and compute
+`model.loss(measurement, ground_truth)`, call `loss.backward()`, then
+`optimizer.step()`. QUTCC additionally receives its seeded quantile generator.
+Microbatching performs several weighted backward calls before one optimizer step
+to fit the effective batch in GPU memory. Validation uses `model.eval()` and does
+not update weights. Calibration is a separate program using separate scenes.
+
 ## Tracing one experiment
 
 | Step                 | Follow this code                                        | What to inspect                                                                          |
