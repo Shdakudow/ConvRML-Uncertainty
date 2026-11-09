@@ -79,5 +79,7 @@ preserved. Earlier equivalence records describe their dated source snapshots.
 
 The [pre-simplification source](../archive/research_prototype_20261102/) retains
 source/version enforcement, Slurm automation and historical migration code.
-The simpler trainers support complete-epoch resume; the generalized trainer
-uses a new recovery layout. Use original frozen engines for existing deployments.
+The baseline trainer supports complete-epoch resume. Generalized and specialist
+trainers and their launch records have moved to
+[ConvRML-Generalized-Specialists](https://github.com/Shdakudow/ConvRML-Generalized-Specialists).
+Use original frozen engines for existing deployments.

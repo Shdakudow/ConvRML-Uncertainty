@@ -1,17 +1,10 @@
-# Optional training studies
+# Generalized and specialist studies moved
 
-Root `train.py` and `calibration.py` provide the four-model comparison.
-These studies reuse the same model classes and paired-image loader.
+The generalized-input and corruption-specialist experiments now live in
+[ConvRML-Generalized-Specialists](https://github.com/Shdakudow/ConvRML-Generalized-Specialists).
+That repository contains training, calibration, study protocols, tests and an
+independent snapshot of the shared model code.
 
-| Study                                                 | Entry point                                 | Training measurements                               |
-| ----------------------------------------------------- | ------------------------------------------- | --------------------------------------------------- |
-| [Generalized inputs](generalized_inputs/README.md)    | `generalized_inputs/train.py`               | A clean/noise/corruption mixture, sampled per image |
-| [Gaussian specialists](gaussian_specialist/README.md) | The same trainer with its `--protocol` JSON | Gaussian noise only                                 |
-
-Both keep targets unchanged and evaluate a fixed validation panel. Calibration
-and test evaluation remain separate. The saved protocol controls the learning
-rate and checkpoint interval; `--epochs` only sets where to stop this invocation.
-
-Historical job launchers, checkpoint migrations and the robustness demo export
-pipeline are preserved in the [source snapshot](../archive/research_prototype_20261102/).
-Existing cluster jobs and demo publishing use their frozen deployed copies.
+This repository retains the four-model baseline workflow in `train.py` and
+`calibration.py`. Historical archived source remains for reproducibility.
+Existing cluster jobs, checkpoints and the demo have not been moved or changed.
