@@ -147,11 +147,12 @@ def training_config(args):
 
 
 def create_optimizer(model, config, schedule_steps):
-    """Use the profile's optimizer and the first scheduled learning rate."""
-    optimizers = {"Adam": torch.optim.Adam, "AdamW": torch.optim.AdamW}
-    if config["optimizer"] not in optimizers:
-        raise ValueError("Expected Adam or AdamW")
-    return optimizers[config["optimizer"]](
+    """Use AdamW for new runs, with explicit profile hyperparameters."""
+    if config["optimizer"] != "AdamW":
+        raise ValueError(
+            "New runs use AdamW; resume historical Adam runs with their original code"
+        )
+    return torch.optim.AdamW(
         model.parameters(),
         lr=learning_rate(0, schedule_steps, config),
         betas=tuple(config["betas"]),

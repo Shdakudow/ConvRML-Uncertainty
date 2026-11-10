@@ -85,6 +85,24 @@ class PortableWorkflow(unittest.TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
+    def test_new_profiles_use_adamw_with_explicit_decay(self):
+        for dataset, data in self.config["datasets"].items():
+            experiment = data["experiment"]
+            for method in self.config["methods"][f"experiment{experiment}"]:
+                member = 0 if method == "ensemble" else None
+                config = protocol.profile(experiment, dataset, method, member)
+                optimizer = train.create_optimizer(TinyQ(), config, 100)
+                self.assertIsInstance(optimizer, torch.optim.AdamW)
+                self.assertEqual(
+                    optimizer.param_groups[0]["weight_decay"], config["weight_decay"]
+                )
+                self.assertEqual(
+                    optimizer.param_groups[0]["betas"], tuple(config["betas"])
+                )
+        historical = dict(config, optimizer="Adam")
+        with self.assertRaisesRegex(ValueError, "historical Adam"):
+            train.create_optimizer(TinyQ(), historical, 100)
+
     def training_args(self, output, epoch, resume=False):
         values = [
             "--dataset",

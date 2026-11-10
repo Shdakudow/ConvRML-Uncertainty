@@ -39,7 +39,10 @@ per camera. DLMD has 17,999 / 2,000 / 2,000 / 3,000 pairs. These are our saved
 splits, not the upstream repository's default split configuration.
 
 Historical optimization differs: PLD Im2im/ensemble/MC use BF16 AdamW, while
-QUTCC and clean DLMD Im2im use FP32 Adam. Those profiles are retained. DLMD
+QUTCC and clean DLMD Im2im use FP32 Adam. New runs now use AdamW for all methods. Existing betas, weight decay, precision
+and learning-rate schedules are retained; former Adam profiles have zero weight
+decay. Historical checkpoints still record their original optimizer. Resume old
+Adam runs with their original source; this trainer rejects a changed run profile. DLMD
 fixed-corruption adaptation starts from its matching clean epoch-30 weights.
 Each dataset needs its own weights and calibration even though its model code
 is shared. Existing DLMD comparisons have Im2im/QUTCC checkpoints only.

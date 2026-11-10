@@ -69,7 +69,7 @@ not update weights. Calibration is a separate program using separate scenes.
 | Recorded settings    | `protocol.profile` → `configs/experiment_settings.json` | Optimizer, schedule, precision, batch/microbatch sizes and four seed streams             |
 | Image pairs          | `protocol.dataset_for` → `dataset.py`                   | Manifest IDs/order, measurement/target paths, uint8 / 255 conversion                     |
 | Learned mapping      | `protocol.make_model` → `models/` → `backbone.py`       | `forward`, `loss`, and `bounds`; q conditioning is in `film.py`                          |
-| Weight updates       | Root `train.py`: `run_training` → `train_one_epoch`     | Learning rate, loss, backward, accumulation and Adam/AdamW step                          |
+| Weight updates       | Root `train.py`: `run_training` → `train_one_epoch`     | Learning rate, loss, backward, accumulation and AdamW step                          |
 | Saved training state | `checkpoints.save_training_progress`                    | `latest.pt` has optimizer/RNG state; milestone files retain model/data identity          |
 | Interval fitting     | Root `calibration.py` → `calibration.fit_calibration`   | RCPS tail scales or QUTCC q inputs, fitted on calibration pairs only                     |
 | Held-out scores      | `evaluation.evaluate_test_set` → `metrics.py`           | `report.json`, `per_image.csv`, optional `examples.npz`; raw/clipped views stay separate |
