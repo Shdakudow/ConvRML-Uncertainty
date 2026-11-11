@@ -9,7 +9,7 @@ import numpy as np
 
 from convrml import protocol
 from evaluation import download
-from evaluation.calibration import (
+from convrml.calibration import (
     paper_quantiles,
     risk_threshold,
     rcps_scales,

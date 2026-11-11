@@ -8,7 +8,7 @@ import numpy as np
 import torch
 
 from evaluation import run as evaluate
-from evaluation import calibration
+from convrml import calibration
 from archive.publication_support.calibration_legacy import (
     reference_calibration as original,
 )

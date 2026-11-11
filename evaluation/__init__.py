@@ -1,1 +1,1 @@
-"""Calibration, held-out evaluation, metrics and published weight downloads."""
+"""Evaluation workflow, metrics, reports and published weight downloads."""

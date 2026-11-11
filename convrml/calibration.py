@@ -16,7 +16,7 @@ from torch.utils.data import DataLoader
 from scipy.special import xlogy
 from scipy.stats import binom
 
-from convrml.protocol import settings
+from .protocol import settings
 
 
 class CalibrationFailure(ValueError):

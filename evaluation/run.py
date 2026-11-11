@@ -14,7 +14,7 @@ import torch
 
 from dataset import read_split_file
 
-from evaluation.calibration import CalibrationFailure, fit_calibration, apply_calibration
+from convrml.calibration import CalibrationFailure, fit_calibration, apply_calibration
 from convrml.checkpoints import load_predictor
 from evaluation.reporting import evaluate_test_set, make_report, save_results
 from evaluation.metrics import PerceptualMetric
