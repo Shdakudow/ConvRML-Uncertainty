@@ -84,7 +84,7 @@ class PairedData(unittest.TestCase):
         from collections import OrderedDict
         from convrml.backbone import ConvNeXtFPN
         from convrml.checkpoints import load_model, load_model_weights
-        from convrml.protocol import profile
+        from training import profile
         from models.im2im import Im2im
 
         class TinyBackbone(ConvNeXtFPN):

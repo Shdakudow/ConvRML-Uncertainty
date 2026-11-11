@@ -20,17 +20,16 @@ from convrml.checkpoints import (
     save_training_progress,
 )
 from evaluation.metrics import reconstruction_metrics
-from training import train_one_epoch
-from convrml.protocol import (
-    audit_manifest,
+from dataset import audit_manifest, dataset_for
+from models import center, make_model
+from convrml.checkpoints import write_json
+from training import (
+    train_one_epoch,
     autocast,
-    center,
-    dataset_for,
     learning_rate,
-    make_model,
     profile,
     settings,
-    write_json,
+    create_optimizer,
 )
 
 
@@ -145,20 +144,6 @@ def training_config(args):
         raise ValueError("Clean comparisons start from scratch")
 
     return config, target_epoch
-
-
-def create_optimizer(model, config, schedule_steps):
-    """Use AdamW for new runs, with explicit profile hyperparameters."""
-    if config["optimizer"] != "AdamW":
-        raise ValueError(
-            "New runs use AdamW; resume historical Adam runs with their original code"
-        )
-    return torch.optim.AdamW(
-        model.parameters(),
-        lr=learning_rate(0, schedule_steps, config),
-        betas=tuple(config["betas"]),
-        weight_decay=config["weight_decay"],
-    )
 
 
 def setup_training(args, config, target_epoch, *, factory=None):

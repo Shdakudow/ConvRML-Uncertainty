@@ -12,9 +12,11 @@ from PIL import Image
 import torch
 from torch import nn
 
-import train_setup
+import train
 from evaluation import run as evaluate
-from convrml import checkpoints, protocol
+from convrml import checkpoints
+import training
+from dataset import audit_manifest
 from evaluation import download
 from models.qutcc import pinball
 from models import Im2im, QUTCC
@@ -76,13 +78,13 @@ class PortableWorkflow(unittest.TestCase):
         (self.root / "calibration.json").write_text(
             json.dumps({"calibration": [dict(id=f"cal{i}") for i in range(128)]})
         )
-        self.config = protocol.settings()
+        self.config = training.settings()
         self.config["datasets"]["rml"].update(
             counts=dict(train=4, val=2, test=2, calibration=128),
             shape=[3, 16, 16],
             id_hashes={},
         )
-        patcher = patch.object(protocol, "settings", return_value=self.config)
+        patcher = patch.object(training, "settings", return_value=self.config)
         patcher.start()
         self.addCleanup(patcher.stop)
 
@@ -91,8 +93,8 @@ class PortableWorkflow(unittest.TestCase):
             experiment = data["experiment"]
             for method in self.config["methods"][f"experiment{experiment}"]:
                 member = 0 if method == "ensemble" else None
-                config = protocol.profile(experiment, dataset, method, member)
-                optimizer = train_setup.create_optimizer(TinyQ(), config, 100)
+                config = training.profile(experiment, dataset, method, member)
+                optimizer = train.create_optimizer(TinyQ(), config, 100)
                 self.assertIsInstance(optimizer, torch.optim.AdamW)
                 self.assertEqual(
                     optimizer.param_groups[0]["weight_decay"], config["weight_decay"]
@@ -102,7 +104,7 @@ class PortableWorkflow(unittest.TestCase):
                 )
         historical = dict(config, optimizer="Adam")
         with self.assertRaisesRegex(ValueError, "historical Adam"):
-            train_setup.create_optimizer(TinyQ(), historical, 100)
+            train.create_optimizer(TinyQ(), historical, 100)
 
     def training_args(self, output, epoch, resume=False):
         values = [
@@ -123,7 +125,7 @@ class PortableWorkflow(unittest.TestCase):
             "--device",
             "cpu",
         ]
-        return train_setup.arguments(values + (["--resume"] if resume else []))
+        return train.arguments(values + (["--resume"] if resume else []))
 
     def factory(self, run):
         torch.manual_seed(run["seeds"]["initialization"])
@@ -181,17 +183,17 @@ class PortableWorkflow(unittest.TestCase):
                 "unused",
             ]
             for module, extra in (
-                (train_setup, []),
+                (train, []),
                 (evaluate, ["--checkpoints", "weights.pt"]),
             ):
                 args = module.arguments(common + extra)
                 self.assertEqual(args.experiment, expected)
                 wrong = 3 if expected == 2 else 2
                 with self.assertRaisesRegex(ValueError, "Dataset does not belong"):
-                    protocol.profile(wrong, dataset, "qutcc")
+                    training.profile(wrong, dataset, "qutcc")
 
     def test_dataset_hashes_are_not_written_or_required_for_resume(self):
-        path = train_setup.run_training(
+        path = train.run_training(
             self.training_args("old_hashes", 1), factory=self.factory
         )
         saved = torch.load(path, weights_only=False)
@@ -201,23 +203,23 @@ class PortableWorkflow(unittest.TestCase):
             split["ids_sha256"] = "historical optional fingerprint"
         saved["data"]["manifest_sha256"] = "historical optional fingerprint"
         torch.save(saved, path)
-        train_setup.run_training(
+        train.run_training(
             self.training_args("old_hashes", 2, True), factory=self.factory
         )
         saved = torch.load(path, weights_only=False)
         saved["data"]["splits"]["train"]["count"] += 1
         torch.save(saved, path)
         with self.assertRaisesRegex(ValueError, "split counts changed"):
-            train_setup.run_training(
+            train.run_training(
                 self.training_args("old_hashes", 2, True), factory=self.factory
             )
 
     def test_resume_matches_uninterrupted_parameters_rng_and_loss(self):
-        direct = train_setup.run_training(
+        direct = train.run_training(
             self.training_args("direct", 2), factory=self.factory
         )
-        train_setup.run_training(self.training_args("resumed", 1), factory=self.factory)
-        resumed = train_setup.run_training(
+        train.run_training(self.training_args("resumed", 1), factory=self.factory)
+        resumed = train.run_training(
             self.training_args("resumed", 2, True), factory=self.factory
         )
         a, _ = checkpoints.read_checkpoint(direct)
@@ -237,7 +239,7 @@ class PortableWorkflow(unittest.TestCase):
         for ambient_seed in (19, 82):
             torch.manual_seed(ambient_seed)
             paths.append(
-                train_setup.run_training(
+                train.run_training(
                     self.training_args(f"seed_{ambient_seed}", 1),
                     factory=lambda run: TinyQ(),
                 )
@@ -312,7 +314,7 @@ class PortableWorkflow(unittest.TestCase):
                 args = self.training_args(f"raw_{method}", 2)
                 args.dataset, args.experiment, args.method = "raw_clean", 3, method
                 args.manifest, args.pairs = manifest, None
-                checkpoint = train_setup.run_training(args, factory=factory)
+                checkpoint = train.run_training(args, factory=factory)
                 args = self.evaluation_args(f"raw_{method}_test", method)
                 args.dataset, args.experiment = "raw_clean", 3
                 args.manifest = args.calibration_manifest = manifest
@@ -339,7 +341,7 @@ class PortableWorkflow(unittest.TestCase):
                         self.assertEqual(examples[name].shape, (1, 3, 16, 16))
 
     def test_five_epoch_snapshot_contains_weights_and_epoch(self):
-        latest = train_setup.run_training(
+        latest = train.run_training(
             self.training_args("milestones", 5), factory=self.factory
         )
         snapshot, _ = checkpoints.read_checkpoint(
@@ -367,9 +369,9 @@ class PortableWorkflow(unittest.TestCase):
             result.method = "mc_dropout"
             return result
 
-        direct = train_setup.run_training(args("mc_direct", 2), factory=factory)
-        train_setup.run_training(args("mc_resumed", 1), factory=factory)
-        resumed = train_setup.run_training(args("mc_resumed", 2, True), factory=factory)
+        direct = train.run_training(args("mc_direct", 2), factory=factory)
+        train.run_training(args("mc_resumed", 1), factory=factory)
+        resumed = train.run_training(args("mc_resumed", 2, True), factory=factory)
         a, _ = checkpoints.read_checkpoint(direct)
         b, _ = checkpoints.read_checkpoint(resumed)
         for key in a["model"]:
@@ -381,14 +383,14 @@ class PortableWorkflow(unittest.TestCase):
         )
 
     def test_resume_refuses_changed_training_settings(self):
-        latest = train_setup.run_training(
+        latest = train.run_training(
             self.training_args("guarded", 1), factory=self.factory
         )
         checkpoint, _ = checkpoints.read_checkpoint(latest)
         checkpoint["run"]["batch_size"] += 1
         checkpoints.save_checkpoint(latest, checkpoint)
         with self.assertRaisesRegex(ValueError, "settings or dataset changed"):
-            train_setup.run_training(
+            train.run_training(
                 self.training_args("guarded", 2, True), factory=self.factory
             )
 
@@ -470,7 +472,7 @@ class PortableWorkflow(unittest.TestCase):
         self.assertFalse((args.output / "report.json").exists())
 
     def test_checkpoint_identity_and_strict_keys_are_checked(self):
-        run = protocol.profile(2, "rml", "qutcc")
+        run = training.profile(2, "rml", "qutcc")
         path = self.root / "weights.pt"
         checkpoints.save_checkpoint(
             path, dict(run=run, epoch=5, model=self.factory(run).state_dict())
@@ -478,7 +480,7 @@ class PortableWorkflow(unittest.TestCase):
         model, info = checkpoints.load_model(
             path, run, torch.device("cpu"), factory=self.factory
         )
-        self.assertEqual(info["sha256"], protocol.sha256(path))
+        self.assertEqual(info["sha256"], checkpoints.sha256(path))
         wrong = dict(run, method="im2im")
         with self.assertRaisesRegex(ValueError, "method"):
             checkpoints.load_model(
@@ -535,9 +537,9 @@ class PortableWorkflow(unittest.TestCase):
         manifest["test"][0]["id"] = manifest["train"][0]["id"]
         path.write_text(json.dumps(manifest))
         with self.assertRaisesRegex(ValueError, "overlapping"):
-            protocol.audit_manifest(path)
+            audit_manifest(path)
         seeds = [
-            protocol.profile(2, "rml", "ensemble", member)["seeds"]
+            training.profile(2, "rml", "ensemble", member)["seeds"]
             for member in range(5)
         ]
         self.assertEqual(len({s["initialization"] for s in seeds}), 5)
@@ -550,7 +552,7 @@ class PortableWorkflow(unittest.TestCase):
         entry = dict(
             name="download.pt",
             size=len(body),
-            sha256=protocol.sha256(source),
+            sha256=checkpoints.sha256(source),
             url="https://example.invalid/file",
             release="fixture",
         )

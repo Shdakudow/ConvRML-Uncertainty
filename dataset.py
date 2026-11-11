@@ -161,3 +161,33 @@ class ImagePairs(Dataset):
             raise ValueError("Measurement and target must have matching RGB dimensions")
 
         return torch.stack((measurement, target))
+
+
+def dataset_for(dataset, manifest, pairs, split):
+    """Choose the loader; split is train/val/test/calibration, never a new partition."""
+    from training import settings
+
+    if settings()["datasets"][dataset]["loader"] == "numpy":
+        if pairs is None:
+            raise ValueError("PLD experiment requires --pairs for its NumPy cache")
+        return NumpyPairs(pairs, manifest, split)
+    if pairs is not None:
+        raise ValueError("DLMD experiment reads paired image paths, not a NumPy cache")
+    return ImagePairs(manifest, split)
+
+
+def audit_manifest(manifest):
+    """Reject empty/overlapping image lists and return split counts. No hashing."""
+    splits = read_split_file(manifest)
+    counts, seen = {}, set()
+    for role in ("train", "val", "test", "calibration"):
+        if role not in splits:
+            continue
+        ids = [str(row["id"]) for row in splits[role]]
+        if not ids or len(ids) != len(set(ids)) or seen.intersection(ids):
+            raise ValueError("Empty, duplicated or overlapping split IDs")
+        seen.update(ids)
+        counts[role] = dict(count=len(ids))
+    if not counts:
+        raise ValueError("Manifest has no recognized splits")
+    return dict(splits=counts)

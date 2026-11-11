@@ -18,14 +18,9 @@ from convrml.calibration import CalibrationFailure, fit_calibration, apply_calib
 from convrml.checkpoints import load_predictor
 from evaluation.reporting import evaluate_test_set, make_report, save_results
 from evaluation.metrics import PerceptualMetric
-from convrml.protocol import (
-    audit_manifest,
-    autocast,
-    dataset_for,
-    profile,
-    settings,
-    write_json,
-)
+from dataset import audit_manifest, dataset_for
+from training import autocast, profile, settings
+from convrml.checkpoints import write_json
 
 
 def arguments(argv=None):

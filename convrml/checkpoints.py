@@ -1,12 +1,32 @@
 """Save weights, resume complete epochs, and load the selected model strictly."""
 
 import hashlib
+import json
 from collections import OrderedDict
 from pathlib import Path
 
 import torch
 
-from .protocol import make_model, profile, settings, write_json
+from models import make_model
+from training import profile, settings
+
+
+def sha256(path):
+    """Hash file bytes in chunks, without retaining a checkpoint in memory."""
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for block in iter(lambda: stream.read(8 * 1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def write_json(path, value):
+    """Atomically replace complete JSON; reject NaN/Inf instead of hiding them."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(json.dumps(value, indent=2, allow_nan=False) + "\n")
+    temporary.replace(path)
 
 
 def read_checkpoint(path):

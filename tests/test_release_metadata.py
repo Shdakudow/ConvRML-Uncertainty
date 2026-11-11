@@ -7,7 +7,6 @@ import unittest
 
 import numpy as np
 
-from convrml import protocol
 from evaluation import download
 from convrml.calibration import (
     paper_quantiles,

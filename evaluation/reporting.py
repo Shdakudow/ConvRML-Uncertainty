@@ -13,7 +13,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from .metrics import finite_mean, interval_metrics
-from convrml.protocol import write_json
+from convrml.checkpoints import write_json
 
 
 def summarize_metrics(rows):

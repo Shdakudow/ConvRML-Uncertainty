@@ -70,10 +70,10 @@ Models pad 270×480 internally to 288×480 and crop every output back.
 ## Train and resume
 
 ```bash
-python train_setup.py --dataset rml --method qutcc \
+python train.py --dataset rml --method qutcc \
   --manifest "$CONVRML_DATA/rml/manifest.json" --pairs "$CONVRML_DATA/rml/pairs.npy" \
   --output runs/rml/qutcc --epochs 5 --device cuda
-python train_setup.py --dataset rml --method qutcc \
+python train.py --dataset rml --method qutcc \
   --manifest "$CONVRML_DATA/rml/manifest.json" --pairs "$CONVRML_DATA/rml/pairs.npy" \
   --output runs/rml/qutcc --epochs 10 --resume --device cuda
 ```

@@ -19,20 +19,24 @@ show previously trained experiments; changing this code does not retrain those m
 
 | Location | What it does |
 | --- | --- |
-| [train_setup.py](train_setup.py) | Arguments, setup, epoch coordination, validation and saving |
+| [train.py](train.py) | Arguments, setup, epoch coordination, validation and saving |
 | [config.json](config.json) | Defaults for datasets, optimizers, schedules, seeds and calibration |
 | [dataset.py](dataset.py) | Load paired measurements and ground truths |
 | [models/](models/) | Four model definitions, their losses and prediction methods |
 | [convrml/backbone.py](convrml/backbone.py) | Shared ConvNeXt/FPN architecture |
 | [convrml/film.py](convrml/film.py) | QUTCC feature modulation by quantile embeddings |
-| [training.py](training.py) | Batch/epoch loops, backward pass and optimizer updates |
+| [training.py](training.py) | Settings/profile loading, AdamW, learning-rate schedule and batch/epoch updates |
 | [convrml/calibration.py](convrml/calibration.py) | Baseline RCPS and QUTCC quantile calibration algorithms |
 | [evaluation/](evaluation/) | Evaluation entry point, metrics, reports and downloads |
 | [tests/](tests/) | Small automated correctness checks; not the image test dataset |
 | [archive/](archive/) | Historical code, split records, environments and checkpoint catalog |
 
 Start with a model's `forward`, `loss` and `bounds`, then `train_batch` in
-`training.py`. The main workflow is `run_training` in `train_setup.py`.
+`training.py`. The main workflow is `run_training` in `train.py`.
+The training workflow has only two Python files: `train.py` coordinates it and
+`training.py` implements optimization. Edit numerical settings in `config.json`.
+Model construction lives in `models/__init__.py`; loader selection and split
+checks live in `dataset.py`. There is no separate `protocol.py` layer.
 Loss formulas live in model classes; the shared loop calls `model.loss(...)`.
 Only QUTCC uses the optional quantile generator passed to that method.
 
@@ -59,7 +63,7 @@ remaining dependencies:
 
 ```bash
 python -m pip install timm==1.0.22 numpy Pillow torchmetrics==1.8.2 scipy
-python train_setup.py --help
+python train.py --help
 python -m evaluation.run --help
 ```
 
@@ -107,7 +111,7 @@ across datasets; each dataset requires its own trained weights.
 ## Train
 
 ```bash
-python train_setup.py --dataset rml --method qutcc \
+python train.py --dataset rml --method qutcc \
   --manifest data/rml/manifest.json --pairs data/rml/pairs.npy \
   --output runs/rml/qutcc --epochs 50 --device cuda
 ```
