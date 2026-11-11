@@ -1,7 +1,7 @@
 # ConvRML-Uncertainty
 
 Four methods for lensless image reconstruction and uncertainty: **Im2im, QUTCC,
-deep ensemble, and MC dropout**, sharing a ConvNeXtV2/FPN backbone.
+deep ensemble, and MC dropout**, sharing a ConvNeXtV2/FNN backbone.
 
 Generalized-input and corruption-specialist studies are maintained separately in
 [ConvRML-Generalized-Specialists](https://github.com/Shdakudow/ConvRML-Generalized-Specialists).
@@ -16,7 +16,7 @@ show previously trained experiments; changing this code does not retrain those m
 | [config.json](config.json) | Defaults for datasets, optimizers, schedules, seeds and calibration |
 | [dataset.py](dataset.py) | Load paired measurements and ground truths |
 | [models/](models/) | Four model definitions, their losses and prediction methods |
-| [convrml/backbone.py](convrml/backbone.py) | Shared ConvNeXt/FPN architecture |
+| [convrml/backbone.py](convrml/backbone.py) | Shared ConvNeXt/FNN architecture |
 | [convrml/film.py](convrml/film.py) | QUTCC feature modulation by quantile embeddings |
 | [convrml/training.py](convrml/training.py) | Batch/epoch loops, backward pass and optimizer updates |
 | [convrml/calibration.py](convrml/calibration.py) | Baseline RCPS and QUTCC quantile calibration algorithms |

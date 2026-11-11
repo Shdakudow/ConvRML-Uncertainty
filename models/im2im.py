@@ -11,7 +11,7 @@ translates historical ``base.*`` and ``net.*`` names before strict weight loadin
 import torch
 from torch import nn
 
-from convrml.backbone import ConvNeXtFPN
+from convrml.backbone import ConvNeXtFNN
 
 
 def pinball(prediction, target, q):
@@ -28,7 +28,7 @@ def pinball(prediction, target, q):
 class Im2im(nn.Module):
     def __init__(self):
         super().__init__()
-        self.backbone = ConvNeXtFPN(output_heads=3)
+        self.backbone = ConvNeXtFNN(output_heads=3)
 
     def forward(self, y):
         """Return lower/center/upper RGB heads as (N,3,3,H,W) in one pass."""

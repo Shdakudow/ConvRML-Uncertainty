@@ -16,7 +16,7 @@ import torch
 from torch import nn
 from timm.models.convnext import ConvNeXtBlock
 
-from convrml.backbone import ConvNeXtFPN
+from convrml.backbone import ConvNeXtFNN
 from convrml.intervals import gaussian_interval_from_mean_variance
 
 
@@ -35,7 +35,7 @@ def dropout_inference(model):
             module.training = was_training
 
 
-class MCDropout(ConvNeXtFPN):
+class MCDropout(ConvNeXtFNN):
     """Elementwise dropout in all 36 encoder blocks and 12 decoder conv stages."""
 
     def __init__(self, p=0.05):

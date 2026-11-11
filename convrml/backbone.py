@@ -1,4 +1,4 @@
-"""Shared ConvNeXtV2-Base encoder and feature-pyramid (FPN) residual decoder.
+"""Shared ConvNeXtV2-Base encoder and feedforward neural network (FNN) residual decoder.
 
 Measurements enter as RGB (N,3,H,W) in [0,1]. Model forwards replicate-pad
 right/bottom to multiples of 32, then crop outputs to H/W. The encoder extracts
@@ -30,7 +30,7 @@ class Refine(nn.Module):
         return self.layers(x)
 
 
-class ConvNeXtFPN(nn.Module):
+class ConvNeXtFNN(nn.Module):
     """Common encoder/decoder with one or more RGB residual output heads.
 
     Output shape is (N,3*output_heads,H,W). Im2im requests three RGB heads;
@@ -76,7 +76,7 @@ class ConvNeXtFPN(nn.Module):
 
         This internal method expects stride-aligned input from a model forward.
         Encoder stages have 128/256/512/1024 channels at 1/4,1/8,1/16,1/32 size.
-        FPN merges coarse features with finer ones, then up1 doubles resolution.
+        FNN merges coarse features with finer ones, then up1 doubles resolution.
         """
         encoder_features = self.encoder((x - self.mean) / self.std)
         decoder_features = self.refine[3](self.lateral[3](encoder_features[3]))

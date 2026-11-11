@@ -1,6 +1,6 @@
-"""QUTCC-style scale/shift after normalization in ConvNeXt and its FPN.
+"""QUTCC-style scale/shift after normalization in ConvNeXt and its FNN.
 
-The backbone is ConvNeXtV2-Base/FPN. Hooks modulate the internal
+The backbone is ConvNeXtV2-Base/FNN. Hooks modulate the internal
 residual branch (not the completed residual block). Sequential forwards only.
 """
 

@@ -82,12 +82,12 @@ class PairedData(unittest.TestCase):
 
     def test_im2im_has_one_namespace_and_loads_legacy_keys_for_both_datasets(self):
         from collections import OrderedDict
-        from convrml.backbone import ConvNeXtFPN
+        from convrml.backbone import ConvNeXtFNN
         from convrml.checkpoints import load_model, load_model_weights
         from convrml.protocol import profile
         from models.im2im import Im2im
 
-        class TinyBackbone(ConvNeXtFPN):
+        class TinyBackbone(ConvNeXtFNN):
             def __init__(self, *, output_heads=1):
                 torch.nn.Module.__init__(self)
                 self.output_heads = output_heads
@@ -98,7 +98,7 @@ class PairedData(unittest.TestCase):
                 return y
 
         with (
-            patch("models.im2im.ConvNeXtFPN", TinyBackbone),
+            patch("models.im2im.ConvNeXtFNN", TinyBackbone),
             tempfile.TemporaryDirectory() as directory,
         ):
             reference = Im2im()
@@ -154,9 +154,9 @@ class PairedData(unittest.TestCase):
                 load_model_weights(Im2im(), wrong_shape)
 
     def test_backbone_pads_rectangles_and_crops_without_breaking_gradients(self):
-        from convrml.backbone import ConvNeXtFPN
+        from convrml.backbone import ConvNeXtFNN
 
-        class SpatialBackbone(ConvNeXtFPN):
+        class SpatialBackbone(ConvNeXtFNN):
             def __init__(self):
                 torch.nn.Module.__init__(self)
                 self.output_heads = 1

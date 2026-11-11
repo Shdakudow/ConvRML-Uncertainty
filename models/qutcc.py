@@ -1,4 +1,4 @@
-"""QUTCC on the ConvNeXt/FPN backbone, shared by PLD and DLMD.
+"""QUTCC on the ConvNeXt/FNN backbone, shared by PLD and DLMD.
 
 The model accepts RGB (N,3,H,W); image loading and normalization are separate.
 Existing PLD runs use 256x256 and DLMD runs use 270x480, both divided by 255.
@@ -13,7 +13,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from convrml.backbone import ConvNeXtFPN
+from convrml.backbone import ConvNeXtFNN
 from convrml.film import FiLMBackbone
 
 
@@ -30,7 +30,7 @@ def pinball(prediction, target, q):
 class QUTCC(nn.Module):
     def __init__(self):
         super().__init__()
-        self.net = FiLMBackbone(ConvNeXtFPN())
+        self.net = FiLMBackbone(ConvNeXtFNN())
 
     def forward(self, y, q=None):
         """Map y (N,3,H,W), q (N,) in [0,1] to an unbounded RGB quantile image.
