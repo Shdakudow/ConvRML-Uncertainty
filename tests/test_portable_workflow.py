@@ -12,7 +12,7 @@ from PIL import Image
 import torch
 from torch import nn
 
-import train
+import train_setup
 import calibration as evaluate
 from convrml import checkpoints, download, protocol
 from models.qutcc import pinball
@@ -91,7 +91,7 @@ class PortableWorkflow(unittest.TestCase):
             for method in self.config["methods"][f"experiment{experiment}"]:
                 member = 0 if method == "ensemble" else None
                 config = protocol.profile(experiment, dataset, method, member)
-                optimizer = train.create_optimizer(TinyQ(), config, 100)
+                optimizer = train_setup.create_optimizer(TinyQ(), config, 100)
                 self.assertIsInstance(optimizer, torch.optim.AdamW)
                 self.assertEqual(
                     optimizer.param_groups[0]["weight_decay"], config["weight_decay"]
@@ -101,7 +101,7 @@ class PortableWorkflow(unittest.TestCase):
                 )
         historical = dict(config, optimizer="Adam")
         with self.assertRaisesRegex(ValueError, "historical Adam"):
-            train.create_optimizer(TinyQ(), historical, 100)
+            train_setup.create_optimizer(TinyQ(), historical, 100)
 
     def training_args(self, output, epoch, resume=False):
         values = [
@@ -122,7 +122,7 @@ class PortableWorkflow(unittest.TestCase):
             "--device",
             "cpu",
         ]
-        return train.arguments(values + (["--resume"] if resume else []))
+        return train_setup.arguments(values + (["--resume"] if resume else []))
 
     def factory(self, run):
         torch.manual_seed(run["seeds"]["initialization"])
@@ -180,7 +180,7 @@ class PortableWorkflow(unittest.TestCase):
                 "unused",
             ]
             for module, extra in (
-                (train, []),
+                (train_setup, []),
                 (evaluate, ["--checkpoints", "weights.pt"]),
             ):
                 args = module.arguments(common + extra)
@@ -190,7 +190,7 @@ class PortableWorkflow(unittest.TestCase):
                     protocol.profile(wrong, dataset, "qutcc")
 
     def test_dataset_hashes_are_not_written_or_required_for_resume(self):
-        path = train.run_training(
+        path = train_setup.run_training(
             self.training_args("old_hashes", 1), factory=self.factory
         )
         saved = torch.load(path, weights_only=False)
@@ -200,23 +200,23 @@ class PortableWorkflow(unittest.TestCase):
             split["ids_sha256"] = "historical optional fingerprint"
         saved["data"]["manifest_sha256"] = "historical optional fingerprint"
         torch.save(saved, path)
-        train.run_training(
+        train_setup.run_training(
             self.training_args("old_hashes", 2, True), factory=self.factory
         )
         saved = torch.load(path, weights_only=False)
         saved["data"]["splits"]["train"]["count"] += 1
         torch.save(saved, path)
         with self.assertRaisesRegex(ValueError, "split counts changed"):
-            train.run_training(
+            train_setup.run_training(
                 self.training_args("old_hashes", 2, True), factory=self.factory
             )
 
     def test_resume_matches_uninterrupted_parameters_rng_and_loss(self):
-        direct = train.run_training(
+        direct = train_setup.run_training(
             self.training_args("direct", 2), factory=self.factory
         )
-        train.run_training(self.training_args("resumed", 1), factory=self.factory)
-        resumed = train.run_training(
+        train_setup.run_training(self.training_args("resumed", 1), factory=self.factory)
+        resumed = train_setup.run_training(
             self.training_args("resumed", 2, True), factory=self.factory
         )
         a, _ = checkpoints.read_checkpoint(direct)
@@ -236,7 +236,7 @@ class PortableWorkflow(unittest.TestCase):
         for ambient_seed in (19, 82):
             torch.manual_seed(ambient_seed)
             paths.append(
-                train.run_training(
+                train_setup.run_training(
                     self.training_args(f"seed_{ambient_seed}", 1),
                     factory=lambda run: TinyQ(),
                 )
@@ -311,7 +311,7 @@ class PortableWorkflow(unittest.TestCase):
                 args = self.training_args(f"raw_{method}", 2)
                 args.dataset, args.experiment, args.method = "raw_clean", 3, method
                 args.manifest, args.pairs = manifest, None
-                checkpoint = train.run_training(args, factory=factory)
+                checkpoint = train_setup.run_training(args, factory=factory)
                 args = self.evaluation_args(f"raw_{method}_test", method)
                 args.dataset, args.experiment = "raw_clean", 3
                 args.manifest = args.calibration_manifest = manifest
@@ -338,7 +338,7 @@ class PortableWorkflow(unittest.TestCase):
                         self.assertEqual(examples[name].shape, (1, 3, 16, 16))
 
     def test_five_epoch_snapshot_contains_weights_and_epoch(self):
-        latest = train.run_training(
+        latest = train_setup.run_training(
             self.training_args("milestones", 5), factory=self.factory
         )
         snapshot, _ = checkpoints.read_checkpoint(
@@ -366,9 +366,9 @@ class PortableWorkflow(unittest.TestCase):
             result.method = "mc_dropout"
             return result
 
-        direct = train.run_training(args("mc_direct", 2), factory=factory)
-        train.run_training(args("mc_resumed", 1), factory=factory)
-        resumed = train.run_training(args("mc_resumed", 2, True), factory=factory)
+        direct = train_setup.run_training(args("mc_direct", 2), factory=factory)
+        train_setup.run_training(args("mc_resumed", 1), factory=factory)
+        resumed = train_setup.run_training(args("mc_resumed", 2, True), factory=factory)
         a, _ = checkpoints.read_checkpoint(direct)
         b, _ = checkpoints.read_checkpoint(resumed)
         for key in a["model"]:
@@ -380,14 +380,14 @@ class PortableWorkflow(unittest.TestCase):
         )
 
     def test_resume_refuses_changed_training_settings(self):
-        latest = train.run_training(
+        latest = train_setup.run_training(
             self.training_args("guarded", 1), factory=self.factory
         )
         checkpoint, _ = checkpoints.read_checkpoint(latest)
         checkpoint["run"]["batch_size"] += 1
         checkpoints.save_checkpoint(latest, checkpoint)
         with self.assertRaisesRegex(ValueError, "settings or dataset changed"):
-            train.run_training(
+            train_setup.run_training(
                 self.training_args("guarded", 2, True), factory=self.factory
             )
 

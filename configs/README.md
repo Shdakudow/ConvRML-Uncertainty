@@ -8,7 +8,7 @@ profiles, optimizer/schedule settings, seeds, split counts and ordered-ID hashes
 | Parallel Lensless Dataset (PLD, ConvRML 100k) | `rml`, `diffuser` | Im2im, ensemble, MC dropout, QUTCC |
 | DiffuserCam Lensless Mirflickr Dataset (DLMD) | `raw_clean`, `raw_corrupted` | Im2im, QUTCC |
 
-`python train.py --dataset ...` and `python calibration.py --dataset ...` select these
+`python train_setup.py --dataset ...` and `python calibration.py --dataset ...` select these
 profiles automatically. Prepared data paths are command arguments; no cluster
 path is built into these settings. The original numeric IDs remain in metadata
 for compatibility with saved checkpoints.
