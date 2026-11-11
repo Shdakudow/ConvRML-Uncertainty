@@ -1,6 +1,6 @@
 # Train and evaluate
 
-Commands run from a clone after `python -m pip install -e . -c reproducibility/constraints-tested.txt`. They do not submit
+Commands run from a clone after `python -m pip install -e . -c archive/reproducibility/constraints-tested.txt`. They do not submit
 cluster jobs. Full training requires suitable compute; CPU unit tests use small
 synthetic paired fixtures. The portable CLI supports Linux/macOS.
 
@@ -12,7 +12,7 @@ Set a path to your prepared data:
 export CONVRML_DATA=/path/to/prepared-data
 ```
 
-[Data availability and layout](../../../reproducibility/DATA.md) defines the two loaders.
+[Data availability and layout](../../reproducibility/DATA.md) defines the two loaders.
 Use the saved split IDs/order; training never uses calibration or test targets.
 Formal runs validate the recorded counts and ordered-ID hashes. `--smoke` permits
 explicitly labelled small fixtures and is not a full-dataset experiment.
@@ -157,5 +157,5 @@ in `learning_curves.csv`. It reads completed five-epoch reports; missing or
 undefined values are gaps. Existing reports require evaluation to populate new
 metrics; the plotter does not fabricate them or rerun inference.
 
-[Settings and seeds](../../../configs/experiment_settings.json) ·
+[Settings and seeds](../../../config.json) ·
 [Metrics](METHODS_AND_METRICS.md) · [Calibration](COVERAGE90.md)

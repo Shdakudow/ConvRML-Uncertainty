@@ -28,8 +28,8 @@ prepared-data/
   raw_corrupted/   split.json, fixed corrupted measurements and unchanged targets
 ```
 
-[Loader schemas](../convrml/README.md) document every field; implementations are
-in [dataset.py](../dataset.py). NumPy caches are
+[Loader schemas](../../convrml/README.md) document every field; implementations are
+in [dataset.py](../../dataset.py). NumPy caches are
 uint8 `(N,2,3,256,256)` in train/validation/test order, with a separate calibration
 cache. Image manifests contain paired RGB paths and separate roles. Both loaders
 return float32 RGB divided by 255; raw input files here are **prepared RGB images**,
@@ -38,7 +38,7 @@ registration, crop and intensity preprocessing used to create those pairs.
 
 Relative image paths resolve against the manifest directory. Absolute paths are
 also accepted for existing datasets. Targets and ordered IDs must remain unchanged
-for fixed-corruption data. The [published split indexes](splits/) let you verify
+for fixed-corruption data. The [published split indexes](splits) let you verify
 membership/order without transferring images; they are not paired-path manifests.
 Formal training/evaluation checks the recorded counts and ID hashes. Small
 synthetic fixtures are allowed only with an explicitly marked smoke run or in tests.

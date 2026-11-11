@@ -12,5 +12,5 @@ online mixture/Gaussian-only workflows, including Adam and RNG states.
 Full benchmark training and CUDA equality across hardware are outside this
 suite. The pre-simplification tests for source/version enforcement, Slurm
 submission and historical migrations remain with their
-[original source snapshot](../archive/research_prototype_20261102/).
+[original source snapshot](../archive/research_prototype_20261102).
 Existing verification records describe their recorded revision, not later edits.

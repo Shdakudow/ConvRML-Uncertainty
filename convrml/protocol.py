@@ -10,7 +10,7 @@ import torch
 
 from dataset import ImagePairs, NumpyPairs, read_split_file
 
-SETTINGS_PATH = Path(__file__).resolve().parents[1] / "configs/experiment_settings.json"
+SETTINGS_PATH = Path(__file__).resolve().parents[1] / "config.json"
 
 
 def settings():

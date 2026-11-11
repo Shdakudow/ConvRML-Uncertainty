@@ -1,6 +1,9 @@
-# Recorded experiment settings
+# Configuration guide before consolidation
 
-[experiment_settings.json](experiment_settings.json) contains the preserved model
+Historical guide retained for reference. New runs read the root
+[config.json](../../config.json); counts and hashes below describe past datasets.
+
+[experiment_settings.json](../../config.json) contains the preserved model
 profiles, optimizer/schedule settings, seeds, split counts and ordered-ID hashes.
 
 | Dataset | Command selector | Models |
@@ -28,7 +31,7 @@ for compatibility with saved checkpoints.
 throughout the code. The profile names `baseline`, `paper` and `adaptation`
 identify saved optimizer settings; they are not separate network architectures.
 
-The model definitions are shared in [models/](../models/). PLD uses
+The model definitions are shared in [models/](../../models). PLD uses
 `dataset.NumpyPairs` at RGB 256×256; DLMD uses `dataset.ImagePairs` at RGB 270×480.
 Both return float32 measurement/target pairs after uint8 / 255 conversion.
 Model padding/cropping handles the rectangular dimensions. Data loading, image

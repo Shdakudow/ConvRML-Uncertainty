@@ -2,7 +2,7 @@
 
 Every Python module here is used by the public models or the train/evaluate/download
 commands. Optional plotting, provenance tools and GitHub Actions live in
-[archive/publication_support/](../archive/publication_support/).
+[archive/publication_support/](../archive/publication_support).
 
 | File                                                                                         | Purpose                                                                                                      |
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
@@ -15,18 +15,18 @@ commands. Optional plotting, provenance tools and GitHub Actions live in
 | [dataset.py](../dataset.py)                                                                  | PLD NumPy-cache and DLMD RGB paired-file datasets                                                            |
 | [../train_setup.py](../train_setup.py) / [evaluation/run.py](../evaluation/run.py)                          | Training loop and calibration → test → export workflow                                                       |
 | [metrics.py](../evaluation/metrics.py)                                                                     | SSIM, PSNR, MAE, LPIPS, coverage, width, crossings and uncertainty/error correlations                        |
-| [protocol.py](protocol.py) / [experiment_settings.json](../configs/experiment_settings.json) | Model/data selection, recorded settings, identity and resume checks                                          |
+| [protocol.py](protocol.py) / [config.json](../config.json) | Model/data selection, recorded settings, identity and resume checks                                          |
 | [checkpoints.py](checkpoints.py)                                                             | Training-state/milestone saving, legacy Im2im name translation, strict loading, resume and ensemble assembly |
 | [download.py](../evaluation/download.py) / [checkpoint_index.json](../archive/checkpoints/checkpoint_index.json)                  | Verified downloads of published checkpoint files                                                             |
 
 Training losses, including the pinball formula, are defined directly in each
-[Im2im/QUTCC model file](../models/). PLD and DLMD use the same Im2im and QUTCC
+[Im2im/QUTCC model file](../models). PLD and DLMD use the same Im2im and QUTCC
 classes; there are no dataset-specific copies of these losses or architectures.
 Use the root `train_setup.py` and `python -m evaluation.run` commands; each workflow has one entry point.
 
 ## Read it as a PyTorch experiment
 
-Start with [dataset.py](../dataset.py), then a model in [models/](../models/),
+Start with [dataset.py](../dataset.py), then a model in [models/](../models),
 then `train_batch` in [training.py](training.py). These are the data, prediction/loss,
 and optimizer update. Configuration and checkpoint bookkeeping can wait.
 
@@ -66,7 +66,7 @@ not update weights. Calibration is a separate program using separate scenes.
 
 | Step                 | Follow this code                                        | What to inspect                                                                          |
 | -------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Recorded settings    | `protocol.profile` → `configs/experiment_settings.json` | Optimizer, schedule, precision, batch/microbatch sizes and four seed streams             |
+| Recorded settings    | `protocol.profile` → `config.json` | Optimizer, schedule, precision, batch/microbatch sizes and four seed streams             |
 | Image pairs          | `protocol.dataset_for` → `dataset.py`                   | Manifest IDs/order, measurement/target paths, uint8 / 255 conversion                     |
 | Learned mapping      | `protocol.make_model` → `models/` → `backbone.py`       | `forward`, `loss`, and `bounds`; q conditioning is in `film.py`                          |
 | Weight updates       | `train_setup.py`: `run_training` → `training.py`: `train_one_epoch`     | Learning rate, loss, backward, accumulation and AdamW step                          |
@@ -78,7 +78,7 @@ not update weights. Calibration is a separate program using separate scenes.
 that those settings and split counts still match, then restores weights,
 Adam moments and random-generator states. Checkpoint hashes identify loaded files.
 The current code saves complete epochs; historical source/software guards and
-mid-epoch recovery are in the [snapshot](../archive/research_prototype_20261102/).
+mid-epoch recovery are in the [snapshot](../archive/research_prototype_20261102).
 
 Input corruption and dataset-preparation code is maintained in
 [ConvRML-Generalized-Specialists/input_modifications](https://github.com/Shdakudow/ConvRML-Generalized-Specialists/tree/main/input_modifications).
@@ -100,7 +100,7 @@ RGB measurement: 3×256×256
 
 Im2im requests three RGB heads at construction. Ensemble members add a variance
 head. QUTCC modulates normalized features with q; MC dropout inserts stochastic
-masks. Those additions are in [models/](../models/). Encoder normalization and
+masks. Those additions are in [models/](../models). Encoder normalization and
 decoder upsampling remain shared.
 The sizes above illustrate the existing PLD data. All four default models accept
 other RGB dimensions, pad internally to a multiple of 32 and crop their outputs
@@ -167,7 +167,7 @@ have matching RGB dimensions, normally 270×480. The model pads and crops;
 the loader leaves dimensions intact. Prepared clean and fixed-corruption
 manifests share this schema, with the original target paths/IDs retained.
 
-[Portable commands](../archive/publication_support/docs/RUNNING_EXPERIMENTS.md) · [Recorded settings](../configs/experiment_settings.json)
+[Portable commands](../archive/publication_support/docs/RUNNING_EXPERIMENTS.md) · [Recorded settings](../config.json)
 
 Dataset setup checks nonempty, unique, disjoint image IDs but no longer computes
 manifest or ID hashes. Resume checks split counts, not exact image membership or
@@ -180,3 +180,16 @@ The main `train_setup.py` coordinates setup, epochs, validation and saving.
 `loss(measurement, target, generator=None)`, so the shared loop calls it directly
 without a method-specific loss wrapper. Only QUTCC consumes that generator;
 MC dropout continues to use the usual PyTorch random stream for its masks.
+
+## Current configuration
+
+Edit the root [config.json](../config.json) for new runs. `datasets` selects the
+loader and profile; `profiles` defines AdamW, batch sizes, precision, epochs and
+learning-rate schedules. `seed_policy` controls random streams. `alpha` is the
+interval miss target, and `calibration.delta` is the RCPS failure budget.
+Training still saves the effective configuration beside each run's checkpoints.
+
+Historical split IDs, counts, hashes, environment records and the pre-cleanup
+settings are in [archive/reproducibility/](../archive/reproducibility/). They are
+not required to configure a new run. No numerical training or calibration
+setting changed in this reorganization.

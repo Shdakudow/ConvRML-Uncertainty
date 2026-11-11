@@ -43,9 +43,16 @@ class ReleaseMetadata(unittest.TestCase):
             )
 
     def test_split_hashes_match_the_published_order_and_have_no_leakage(self):
-        for dataset, spec in protocol.settings()["datasets"].items():
+        historical = json.loads(
+            (
+                ROOT / "archive/reproducibility/experiment_settings_before_cleanup.json"
+            ).read_text()
+        )
+        for dataset, spec in historical["datasets"].items():
             data = json.loads(
-                (ROOT / "reproducibility/splits" / f"{dataset}.json").read_text()
+                (
+                    ROOT / "archive/reproducibility/splits" / f"{dataset}.json"
+                ).read_text()
             )
             seen = set()
             for role, ids in data["ids"].items():

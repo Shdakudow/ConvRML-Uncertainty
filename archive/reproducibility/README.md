@@ -1,15 +1,18 @@
-# Reproduce the comparisons
+# Historical reproducibility records
+
+Current run settings are in [config.json](../../config.json). These records
+describe their original revisions; they are not live configuration defaults.
 
 The portable commands use the public model definitions and explicit data/checkpoint
 paths. No cluster account, scheduler, archived trainer or local home directory is
-required. [Commands](../archive/publication_support/docs/RUNNING_EXPERIMENTS.md) cover download, fresh training,
+required. [Commands](../publication_support/docs/RUNNING_EXPERIMENTS.md) cover download, fresh training,
 resume and calibrated evaluation.
 
 | Record                                                                     | Contents                                                                                                                   |
 | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| [experiment_settings.json](../configs/experiment_settings.json)            | Exact model/profile settings, seeds, split sizes and ordered-ID hashes                                                     |
-| [splits/](splits/)                                                         | Existing train/validation/test/calibration IDs in their saved order                                                        |
-| [checkpoint_index.json](../archive/checkpoints/checkpoint_index.json)                  | Single index of 280 frozen milestone artifacts with release URLs, size and SHA-256; used by the optional download command |
+| [experiment_settings_before_cleanup.json](experiment_settings_before_cleanup.json)            | Exact model/profile settings, seeds, split sizes and ordered-ID hashes                                                     |
+| [splits/](splits)                                                         | Existing train/validation/test/calibration IDs in their saved order                                                        |
+| [checkpoint_index.json](../checkpoints/checkpoint_index.json)                  | Single index of 280 frozen milestone artifacts with release URLs, size and SHA-256; used by the optional download command |
 | [checkpoint_release_receipt.json](checkpoint_release_receipt.json)         | Verified upload receipt for the 40 retained QUTCC/raw artifacts                                                            |
 | [environment-tested.json](environment-tested.json)                         | Software used for release verification, with scope/device                                                                  |
 | [verification.json](verification.json)                                     | Automated checks and their practical scope                                                                                 |
@@ -77,7 +80,7 @@ Current Im2im checkpoints use `backbone.*` for every dataset. Direct head
 construction changes fresh Im2im head initialization; loaded predictions are
 preserved. Earlier equivalence records describe their dated source snapshots.
 
-The [pre-simplification source](../archive/research_prototype_20261102/) retains
+The [pre-simplification source](../research_prototype_20261102) retains
 source/version enforcement, Slurm automation and historical migration code.
 The baseline trainer supports complete-epoch resume. Generalized and specialist
 trainers and their launch records have moved to

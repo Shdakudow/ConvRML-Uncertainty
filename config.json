@@ -1,0 +1,103 @@
+{
+  "schema": "convrml-portable-v1",
+  "checkpoint_interval": 5,
+  "alpha": 0.1,
+  "dropout_probability": 0.05,
+  "mc_samples": 30,
+  "datasets": {
+    "rml": {
+      "experiment": 2,
+      "loader": "numpy",
+      "camera_index": 0
+    },
+    "diffuser": {
+      "experiment": 2,
+      "loader": "numpy",
+      "camera_index": 1
+    },
+    "raw_clean": {
+      "experiment": 3,
+      "loader": "images",
+      "camera_index": 2
+    },
+    "raw_corrupted": {
+      "experiment": 3,
+      "loader": "images",
+      "camera_index": 2
+    }
+  },
+  "profiles": {
+    "baseline": {
+      "optimizer": "AdamW",
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "weight_decay": 0.0001,
+      "peak_lr": 0.0001,
+      "schedule": "constant",
+      "epochs": 50,
+      "batch_size": 2,
+      "microbatch": 2,
+      "precision": "bfloat16",
+      "gradient_clip": 1.0
+    },
+    "paper": {
+      "optimizer": "AdamW",
+      "betas": [
+        0.9,
+        0.99
+      ],
+      "weight_decay": 0.0,
+      "peak_lr": 0.0001,
+      "schedule": "warmup_cosine",
+      "epochs": 50,
+      "batch_size": 4,
+      "microbatch": 2,
+      "precision": "float32",
+      "gradient_clip": null
+    },
+    "adaptation": {
+      "optimizer": "AdamW",
+      "betas": [
+        0.9,
+        0.99
+      ],
+      "weight_decay": 0.0,
+      "peak_lr": 1e-05,
+      "schedule": "constant",
+      "epochs": 30,
+      "batch_size": 4,
+      "microbatch": 1,
+      "precision": "float32",
+      "gradient_clip": null,
+      "parent_epoch": 30
+    }
+  },
+  "methods": {
+    "experiment2": [
+      "im2im",
+      "ensemble",
+      "mc_dropout",
+      "qutcc"
+    ],
+    "experiment3": [
+      "im2im",
+      "qutcc"
+    ]
+  },
+  "seed_policy": {
+    "paper_base": 202610180,
+    "baseline_initialization": 20261006,
+    "baseline_training": 20271006,
+    "baseline_data": 20281006,
+    "baseline_quantile": 20291006,
+    "arm_index": {
+      "im2im": 101,
+      "mc_dropout": 102
+    }
+  },
+  "calibration": {
+    "delta": 0.05
+  }
+}

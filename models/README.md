@@ -4,7 +4,7 @@ Models are defined once. Im2im and QUTCC are shared by the Parallel Lensless
 Dataset (PLD, ConvRML 100k) and the DiffuserCam Lensless Mirflickr Dataset (DLMD).
 Ensemble and MC-dropout comparisons currently use PLD. Dataset-specific loading
 and optimization settings are in [dataset.py](../dataset.py) and
-[configs/](../configs/), not in separate model branches.
+[config.json](../config.json), not in separate model branches.
 
 | Method | Implementation | Training objective | Uncertainty |
 | --- | --- | --- | --- |
