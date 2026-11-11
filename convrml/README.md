@@ -80,11 +80,9 @@ Adam moments and random-generator states. Checkpoint hashes identify loaded file
 The current code saves complete epochs; historical source/software guards and
 mid-epoch recovery are in the [snapshot](../archive/research_prototype_20261102/).
 
-For online corruptions, `input_modifications/presets.py` holds the parameter
-table and `online.apply_condition` applies one named condition. Dataset preparation
-reuses sensor patterns across images; online augmentation draws a pattern per
-selected image. Neither path modifies targets. Optional experiment protocols are
-documented in [experiments/](../experiments/README.md).
+Input corruption and dataset-preparation code is maintained in
+[ConvRML-Generalized-Specialists/input_modifications](https://github.com/Shdakudow/ConvRML-Generalized-Specialists/tree/main/input_modifications).
+The baseline loads prepared pairs and does not depend on that package.
 
 ## Following the backbone
 
