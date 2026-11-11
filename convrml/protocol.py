@@ -122,21 +122,10 @@ def dataset_for(dataset, manifest, pairs, split):
     return ImagePairs(manifest, split)
 
 
-def id_digest(ids):
-    """Hash ordered image IDs; both membership and order are experiment identity."""
-    return hashlib.sha256(
-        json.dumps(list(map(str, ids)), separators=(",", ":")).encode()
-    ).hexdigest()
-
-
 def audit_manifest(manifest):
-    """Check nonempty, disjoint split IDs and record the supplied data identity.
-
-    Accept new datasets and image sizes. Published split counts/hashes remain
-    reference records, rather than restrictions on the research prototype.
-    """
+    """Reject empty/overlapping image lists and return split counts. No hashing."""
     splits = read_split_file(manifest)
-    identities, seen = {}, set()
+    counts, seen = {}, set()
     for role in ("train", "val", "test", "calibration"):
         if role not in splits:
             continue
@@ -144,10 +133,10 @@ def audit_manifest(manifest):
         if not ids or len(ids) != len(set(ids)) or seen.intersection(ids):
             raise ValueError("Empty, duplicated or overlapping split IDs")
         seen.update(ids)
-        identities[role] = dict(count=len(ids), ids_sha256=id_digest(ids))
-    if not identities:
+        counts[role] = dict(count=len(ids))
+    if not counts:
         raise ValueError("Manifest has no recognized splits")
-    return dict(manifest_sha256=sha256(manifest), splits=identities)
+    return dict(splits=counts)
 
 
 def autocast(run, device):

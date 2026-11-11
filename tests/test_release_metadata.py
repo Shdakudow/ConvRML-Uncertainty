@@ -1,5 +1,6 @@
 """Keep release settings, split indexes and artifact selection coherent."""
 
+import hashlib
 import json
 from pathlib import Path
 import unittest
@@ -51,7 +52,10 @@ class ReleaseMetadata(unittest.TestCase):
                 self.assertEqual(len(ids), len(set(ids)))
                 self.assertFalse(seen.intersection(ids))
                 seen.update(ids)
-                self.assertEqual(protocol.id_digest(ids), spec["id_hashes"][role])
+                digest = hashlib.sha256(
+                    json.dumps(list(map(str, ids)), separators=(",", ":")).encode()
+                ).hexdigest()
+                self.assertEqual(digest, spec["id_hashes"][role])
 
     def test_hb_uses_whole_images_and_separate_tail_confidence_budgets(self):
         rng = np.random.default_rng(9)

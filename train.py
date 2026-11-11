@@ -165,8 +165,8 @@ def setup_training(args, config, target_epoch, *, factory=None):
     # Load only train/validation; calibration and test pairs are not used here.
     # The split file lists image identities/paths; the datasets load pixels.
     # Keep the leakage check separate from image loading.
-    data_identity = audit_manifest(args.manifest)
-    if not {"train", "val"} <= data_identity["splits"].keys():
+    data_summary = audit_manifest(args.manifest)
+    if "train" not in data_summary["splits"] or "val" not in data_summary["splits"]:
         raise ValueError("Training requires train and val splits")
     training = dataset_for(args.dataset, args.manifest, args.pairs, "train")
     validation = dataset_for(args.dataset, args.manifest, args.pairs, "val")
@@ -192,7 +192,7 @@ def setup_training(args, config, target_epoch, *, factory=None):
     data_rng = torch.Generator().manual_seed(config["seeds"]["data"])
     identity = dict(
         run=config,
-        data=data_identity,
+        data=data_summary,
         smoke=args.smoke,
         device=str(device),
         workers=args.workers,

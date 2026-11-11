@@ -75,7 +75,7 @@ not update weights. Calibration is a separate program using separate scenes.
 | Held-out scores      | `evaluation.evaluate_test_set` → `metrics.py`           | `report.json`, `per_image.csv`, optional `examples.npz`; raw/clipped views stay separate |
 
 `run` and `config` are ordinary dictionaries of recorded settings. Resume checks
-that those settings and the manifest identity still match, then restores weights,
+that those settings and split counts still match, then restores weights,
 Adam moments and random-generator states. Checkpoint hashes identify loaded files.
 The current code saves complete epochs; historical source/software guards and
 mid-epoch recovery are in the [snapshot](../archive/research_prototype_20261102/).
@@ -170,3 +170,9 @@ the loader leaves dimensions intact. Prepared clean and fixed-corruption
 manifests share this schema, with the original target paths/IDs retained.
 
 [Portable commands](../archive/publication_support/docs/RUNNING_EXPERIMENTS.md) · [Recorded settings](../configs/experiment_settings.json)
+
+Dataset setup checks nonempty, unique, disjoint image IDs but no longer computes
+manifest or ID hashes. Resume checks split counts, not exact image membership or
+ordering; keep the same split file when resuming. Published historical hashes
+remain in the reproducibility records. Checkpoint download integrity checks are
+separate and remain enabled.

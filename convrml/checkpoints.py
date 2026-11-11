@@ -129,10 +129,20 @@ def save_checkpoint(path, value):
 def resume_training(
     path, model, optimizer, expected, *, device, quantile_rng, data_rng
 ):
-    """Restore ordinary epoch-boundary state after checking settings and split IDs."""
+    """Restore epoch-boundary state after checking settings and split counts."""
     checkpoint, _ = read_checkpoint(path)
-    if any(checkpoint[key] != expected[key] for key in ("run", "data", "smoke")):
+    if any(checkpoint[key] != expected[key] for key in ("run", "smoke")):
         raise ValueError("Resume settings or dataset changed")
+    # Older checkpoints also stored hashes. Only compare counts now; keep
+    # existing checkpoint files readable without rewriting their metadata.
+    saved_counts = {
+        name: split["count"] for name, split in checkpoint["data"]["splits"].items()
+    }
+    current_counts = {
+        name: split["count"] for name, split in expected["data"]["splits"].items()
+    }
+    if saved_counts != current_counts:
+        raise ValueError("Resume dataset split counts changed")
     load_model_weights(model, checkpoint["model"])
     optimizer.load_state_dict(checkpoint["optimizer"])
     torch.set_rng_state(checkpoint["rng"])

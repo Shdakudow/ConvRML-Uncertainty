@@ -189,6 +189,28 @@ class PortableWorkflow(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "Dataset does not belong"):
                     protocol.profile(wrong, dataset, "qutcc")
 
+    def test_dataset_hashes_are_not_written_or_required_for_resume(self):
+        path = train.run_training(
+            self.training_args("old_hashes", 1), factory=self.factory
+        )
+        saved = torch.load(path, weights_only=False)
+        self.assertEqual(set(saved["data"]), {"splits"})
+        for split in saved["data"]["splits"].values():
+            self.assertEqual(set(split), {"count"})
+            split["ids_sha256"] = "historical optional fingerprint"
+        saved["data"]["manifest_sha256"] = "historical optional fingerprint"
+        torch.save(saved, path)
+        train.run_training(
+            self.training_args("old_hashes", 2, True), factory=self.factory
+        )
+        saved = torch.load(path, weights_only=False)
+        saved["data"]["splits"]["train"]["count"] += 1
+        torch.save(saved, path)
+        with self.assertRaisesRegex(ValueError, "split counts changed"):
+            train.run_training(
+                self.training_args("old_hashes", 2, True), factory=self.factory
+            )
+
     def test_resume_matches_uninterrupted_parameters_rng_and_loss(self):
         direct = train.run_training(
             self.training_args("direct", 2), factory=self.factory
