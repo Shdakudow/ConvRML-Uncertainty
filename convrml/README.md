@@ -31,7 +31,7 @@ Use the root `train_setup.py` and `python -m evaluation.run` commands; each work
 ## Read it as a PyTorch experiment
 
 Start with [dataset.py](../dataset.py), then a model in [models/](../models),
-then `train_batch` in [training.py](training.py). These are the data, prediction/loss,
+then `train_batch` in [training.py](../training.py). These are the data, prediction/loss,
 and optimizer update. Configuration and checkpoint bookkeeping can wait.
 
 A **manifest** is only a saved list of images. `read_split_file` uses ordinary
@@ -180,7 +180,7 @@ remain in the reproducibility records. Checkpoint download integrity checks are
 separate and remain enabled.
 
 The main `train_setup.py` coordinates setup, epochs, validation and saving.
-`convrml/training.py` owns `train_one_epoch` and `train_batch`. Every model has
+Root `training.py` owns `train_one_epoch` and `train_batch`. Every model has
 `loss(measurement, target, generator=None)`, so the shared loop calls it directly
 without a method-specific loss wrapper. Only QUTCC consumes that generator;
 MC dropout continues to use the usual PyTorch random stream for its masks.

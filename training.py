@@ -9,7 +9,7 @@ import time
 
 import torch
 
-from .protocol import autocast, learning_rate
+from convrml.protocol import autocast, learning_rate
 
 
 def train_one_epoch(

@@ -1,7 +1,7 @@
 """Train, validate and save one of the four reconstruction/uncertainty models.
 
 Read run_training for the workflow, setup_training for initialization, and
-convrml/training.py for optimizer updates. Profiles remain dictionaries.
+training.py for optimizer updates. Profiles remain dictionaries.
 Losses live in models/. Calibration and final test evaluation are separate.
 """
 
@@ -20,7 +20,7 @@ from convrml.checkpoints import (
     save_training_progress,
 )
 from evaluation.metrics import reconstruction_metrics
-from convrml.training import train_one_epoch
+from training import train_one_epoch
 from convrml.protocol import (
     audit_manifest,
     autocast,

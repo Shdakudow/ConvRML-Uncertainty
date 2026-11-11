@@ -25,14 +25,14 @@ show previously trained experiments; changing this code does not retrain those m
 | [models/](models/) | Four model definitions, their losses and prediction methods |
 | [convrml/backbone.py](convrml/backbone.py) | Shared ConvNeXt/FPN architecture |
 | [convrml/film.py](convrml/film.py) | QUTCC feature modulation by quantile embeddings |
-| [convrml/training.py](convrml/training.py) | Batch/epoch loops, backward pass and optimizer updates |
+| [training.py](training.py) | Batch/epoch loops, backward pass and optimizer updates |
 | [convrml/calibration.py](convrml/calibration.py) | Baseline RCPS and QUTCC quantile calibration algorithms |
 | [evaluation/](evaluation/) | Evaluation entry point, metrics, reports and downloads |
 | [tests/](tests/) | Small automated correctness checks; not the image test dataset |
 | [archive/](archive/) | Historical code, split records, environments and checkpoint catalog |
 
 Start with a model's `forward`, `loss` and `bounds`, then `train_batch` in
-`convrml/training.py`. The main workflow is `run_training` in `train_setup.py`.
+`training.py`. The main workflow is `run_training` in `train_setup.py`.
 Loss formulas live in model classes; the shared loop calls `model.loss(...)`.
 Only QUTCC uses the optional quantile generator passed to that method.
 
