@@ -9,7 +9,7 @@ import tempfile
 import urllib.error
 import urllib.request
 
-from .protocol import sha256
+from convrml.protocol import sha256
 
 INDEX_PATH = (
     Path(__file__).resolve().parents[1] / "archive/checkpoints/checkpoint_index.json"

@@ -7,8 +7,8 @@ import unittest
 import numpy as np
 import torch
 
-import calibration as evaluate
-from convrml import calibration
+from evaluation import run as evaluate
+from evaluation import calibration
 from archive.publication_support.calibration_legacy import (
     reference_calibration as original,
 )

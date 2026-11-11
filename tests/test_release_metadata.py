@@ -7,8 +7,9 @@ import unittest
 
 import numpy as np
 
-from convrml import download, protocol
-from convrml.calibration import (
+from convrml import protocol
+from evaluation import download
+from evaluation.calibration import (
     paper_quantiles,
     risk_threshold,
     rcps_scales,

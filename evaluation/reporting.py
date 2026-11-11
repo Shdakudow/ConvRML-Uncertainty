@@ -1,6 +1,6 @@
 """Held-out test metrics and exports for already calibrated, frozen models.
 
-This module does not fit calibration parameters. The top-level calibration.py
+This module does not fit calibration parameters. The evaluation.run
 workflow fits them on the separate calibration split before calling these helpers.
 """
 
@@ -13,7 +13,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from .metrics import finite_mean, interval_metrics
-from .protocol import write_json
+from convrml.protocol import write_json
 
 
 def summarize_metrics(rows):

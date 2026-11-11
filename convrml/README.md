@@ -10,19 +10,19 @@ commands. Optional plotting, provenance tools and GitHub Actions live in
 | [film.py](film.py)                                                                           | Quantile modulation at 36 encoder + 12 decoder normalization sites                                           |
 | [quantile_embedding.py](quantile_embedding.py)                                               | Sinusoidal scalar-q embedding                                                                                |
 | [intervals.py](intervals.py)                                                                 | Native Gaussian-moment bounds before calibration                                                             |
-| [calibration.py](calibration.py)                                                             | Baseline RCPS-HB scales and QUTCC Algorithm 1 calibrated quantiles                                           |
-| [evaluation.py](evaluation.py)                                                               | Held-out test loop, metrics, report assembly, CSV and example exports                                        |
+| [calibration.py](../evaluation/calibration.py)                                                             | Baseline RCPS-HB scales and QUTCC Algorithm 1 calibrated quantiles                                           |
+| [reporting.py](../evaluation/reporting.py)                                                               | Held-out test loop, metrics, report assembly, CSV and example exports                                        |
 | [dataset.py](../dataset.py)                                                                  | PLD NumPy-cache and DLMD RGB paired-file datasets                                                            |
-| [../train_setup.py](../train_setup.py) / [../calibration.py](../calibration.py)                          | Training loop and calibration → test → export workflow                                                       |
-| [metrics.py](metrics.py)                                                                     | SSIM, PSNR, MAE, LPIPS, coverage, width, crossings and uncertainty/error correlations                        |
+| [../train_setup.py](../train_setup.py) / [evaluation/run.py](../evaluation/run.py)                          | Training loop and calibration → test → export workflow                                                       |
+| [metrics.py](../evaluation/metrics.py)                                                                     | SSIM, PSNR, MAE, LPIPS, coverage, width, crossings and uncertainty/error correlations                        |
 | [protocol.py](protocol.py) / [experiment_settings.json](../configs/experiment_settings.json) | Model/data selection, recorded settings, identity and resume checks                                          |
 | [checkpoints.py](checkpoints.py)                                                             | Training-state/milestone saving, legacy Im2im name translation, strict loading, resume and ensemble assembly |
-| [download.py](download.py) / [checkpoint_index.json](../archive/checkpoints/checkpoint_index.json)                  | Verified downloads of published checkpoint files                                                             |
+| [download.py](../evaluation/download.py) / [checkpoint_index.json](../archive/checkpoints/checkpoint_index.json)                  | Verified downloads of published checkpoint files                                                             |
 
 Training losses, including the pinball formula, are defined directly in each
 [Im2im/QUTCC model file](../models/). PLD and DLMD use the same Im2im and QUTCC
 classes; there are no dataset-specific copies of these losses or architectures.
-Use the root `train_setup.py` and `calibration.py` commands; each workflow has one entry point.
+Use the root `train_setup.py` and `python -m evaluation.run` commands; each workflow has one entry point.
 
 ## Read it as a PyTorch experiment
 
@@ -71,7 +71,7 @@ not update weights. Calibration is a separate program using separate scenes.
 | Learned mapping      | `protocol.make_model` → `models/` → `backbone.py`       | `forward`, `loss`, and `bounds`; q conditioning is in `film.py`                          |
 | Weight updates       | `train_setup.py`: `run_training` → `training.py`: `train_one_epoch`     | Learning rate, loss, backward, accumulation and AdamW step                          |
 | Saved training state | `checkpoints.save_training_progress`                    | `latest.pt` has optimizer/RNG state; milestone files retain model/data identity          |
-| Interval fitting     | Root `calibration.py` → `calibration.fit_calibration`   | RCPS tail scales or QUTCC q inputs, fitted on calibration pairs only                     |
+| Interval fitting     | Root `python -m evaluation.run` → `calibration.fit_calibration`   | RCPS tail scales or QUTCC q inputs, fitted on calibration pairs only                     |
 | Held-out scores      | `evaluation.evaluate_test_set` → `metrics.py`           | `report.json`, `per_image.csv`, optional `examples.npz`; raw/clipped views stay separate |
 
 `run` and `config` are ordinary dictionaries of recorded settings. Resume checks

@@ -20,11 +20,11 @@ explicitly labelled small fixtures and is not a full-dataset experiment.
 ## Download saved weights
 
 ```bash
-python -m convrml.download --dataset rml --method qutcc --epoch 50 --output weights/rml/qutcc
-python -m convrml.download --dataset rml --method im2im --epoch 50 --output weights/rml/im2im
-python -m convrml.download --dataset rml --method mc_dropout --epoch 50 --output weights/rml/mc
-python -m convrml.download --dataset rml --method ensemble --epoch 50 --members 5 --output weights/rml/ensemble
-python -m convrml.download --dataset raw_clean --method qutcc --epoch 50 --output weights/raw/qutcc
+python -m evaluation.download --dataset rml --method qutcc --epoch 50 --output weights/rml/qutcc
+python -m evaluation.download --dataset rml --method im2im --epoch 50 --output weights/rml/im2im
+python -m evaluation.download --dataset rml --method mc_dropout --epoch 50 --output weights/rml/mc
+python -m evaluation.download --dataset rml --method ensemble --epoch 50 --members 5 --output weights/rml/ensemble
+python -m evaluation.download --dataset raw_clean --method qutcc --epoch 50 --output weights/raw/qutcc
 ```
 
 `--list` shows names/hashes without downloading. Ensemble downloads default to
@@ -36,7 +36,7 @@ requires an authenticated GitHub CLI with access, or manually supplied indexed f
 ## Evaluate RML / normalized DiffuserCam
 
 ```bash
-python calibration.py --dataset rml --method qutcc \
+python -m evaluation.run --dataset rml --method qutcc \
   --checkpoints weights/rml/qutcc/exp2__rml__qutcc__epoch_050.pt \
   --manifest "$CONVRML_DATA/rml/manifest.json" --pairs "$CONVRML_DATA/rml/pairs.npy" \
   --calibration-manifest "$CONVRML_DATA/rml/calibration/manifest.json" \
@@ -55,7 +55,7 @@ parallel-camera data, distinct from raw DLMD.
 ## Evaluate raw DiffuserCam
 
 ```bash
-python calibration.py --dataset raw_clean --method qutcc \
+python -m evaluation.run --dataset raw_clean --method qutcc \
   --checkpoints weights/raw/qutcc/exp3__raw_clean__qutcc__epoch_050.pt \
   --manifest "$CONVRML_DATA/raw_clean/split.json" \
   --calibration-manifest "$CONVRML_DATA/raw_clean/split.json" \

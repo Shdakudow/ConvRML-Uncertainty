@@ -7,7 +7,7 @@ import numpy as np
 import torch
 from scipy import stats
 
-from convrml.metrics import (
+from evaluation.metrics import (
     PerceptualMetric,
     finite_mean,
     interval_metrics,

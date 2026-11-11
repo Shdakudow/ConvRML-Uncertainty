@@ -19,7 +19,7 @@ from convrml.checkpoints import (
     initialize_from_clean,
     save_training_progress,
 )
-from convrml.metrics import reconstruction_metrics
+from evaluation.metrics import reconstruction_metrics
 from convrml.training import train_one_epoch
 from convrml.protocol import (
     audit_manifest,
