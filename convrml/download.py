@@ -11,7 +11,9 @@ import urllib.request
 
 from .protocol import sha256
 
-INDEX_PATH = Path(__file__).with_name("checkpoint_index.json")
+INDEX_PATH = (
+    Path(__file__).resolve().parents[1] / "archive/checkpoints/checkpoint_index.json"
+)
 
 
 def select_artifacts(dataset, method, epoch, member=None, members=5, *, index=None):

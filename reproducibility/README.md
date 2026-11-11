@@ -9,7 +9,7 @@ resume and calibrated evaluation.
 | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | [experiment_settings.json](../configs/experiment_settings.json)            | Exact model/profile settings, seeds, split sizes and ordered-ID hashes                                                     |
 | [splits/](splits/)                                                         | Existing train/validation/test/calibration IDs in their saved order                                                        |
-| [checkpoint_index.json](../convrml/checkpoint_index.json)                  | Single index of 280 frozen milestone artifacts with release URLs, size and SHA-256; also packaged for the download command |
+| [checkpoint_index.json](../archive/checkpoints/checkpoint_index.json)                  | Single index of 280 frozen milestone artifacts with release URLs, size and SHA-256; used by the optional download command |
 | [checkpoint_release_receipt.json](checkpoint_release_receipt.json)         | Verified upload receipt for the 40 retained QUTCC/raw artifacts                                                            |
 | [environment-tested.json](environment-tested.json)                         | Software used for release verification, with scope/device                                                                  |
 | [verification.json](verification.json)                                     | Automated checks and their practical scope                                                                                 |
