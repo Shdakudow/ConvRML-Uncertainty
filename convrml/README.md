@@ -1,12 +1,16 @@
 # Shared model and runtime code
 
+FPN expands to **Feature Pyramid Network**, our implementation's multiscale
+decoder name. The original ConvRML paper uses **Feedforward Neural Network
+(FNN)** for its decoder; these names should not imply identical architectures.
+
 Every Python module here is used by the public models or the train/evaluate/download
 commands. Optional plotting, provenance tools and GitHub Actions live in
 [archive/publication_support/](../archive/publication_support).
 
 | File                                                                                         | Purpose                                                                                                      |
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| [backbone.py](backbone.py)                                                                   | ConvNeXtV2-Base encoder, FNN decoder, RGB residual head                                                      |
+| [backbone.py](backbone.py)                                                                   | ConvNeXtV2-Base encoder, FPN decoder, RGB residual head                                                      |
 | [film.py](film.py)                                                                           | Quantile modulation at 36 encoder + 12 decoder normalization sites                                           |
 | [quantile_embedding.py](quantile_embedding.py)                                               | Sinusoidal scalar-q embedding                                                                                |
 | [intervals.py](intervals.py)                                                                 | Native Gaussian-moment bounds before calibration                                                             |
@@ -92,7 +96,7 @@ For a 256×256 measurement, [backbone.py](backbone.py) follows this path:
 RGB measurement: 3×256×256
   encoder input normalization
   ConvNeXt stages: 128×64×64, 256×32×32, 512×16×16, 1024×8×8
-  1×1 projections + coarse-to-fine FNN merging: 256×64×64
+  1×1 projections + coarse-to-fine FPN merging: 256×64×64
   up1: 256×128×128       ← features() returns here
   up2: 256×256×256
   RGB head + original measurement: 3×256×256

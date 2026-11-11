@@ -1,7 +1,14 @@
 # ConvRML-Uncertainty
 
 Four methods for lensless image reconstruction and uncertainty: **Im2im, QUTCC,
-deep ensemble, and MC dropout**, sharing a ConvNeXtV2/FNN backbone.
+deep ensemble, and MC dropout**, sharing a ConvNeXtV2/FPN backbone.
+
+**FPN means Feature Pyramid Network** in this implementation: its decoder combines
+features at multiple scales. The original ConvRML paper calls its decoder a
+**Feedforward Neural Network (FNN)**. Our `ConvNeXtFPN` name describes this
+implementation and is not the paper’s terminology; the architecture is an
+adaptation, not an exact reproduction of its ConvNeXt-T/FNN model.
+See the [paper’s reconstruction architecture](https://arxiv.org/html/2602.04834v2#S4).
 
 Generalized-input and corruption-specialist studies are maintained separately in
 [ConvRML-Generalized-Specialists](https://github.com/Shdakudow/ConvRML-Generalized-Specialists).
@@ -16,7 +23,7 @@ show previously trained experiments; changing this code does not retrain those m
 | [config.json](config.json) | Defaults for datasets, optimizers, schedules, seeds and calibration |
 | [dataset.py](dataset.py) | Load paired measurements and ground truths |
 | [models/](models/) | Four model definitions, their losses and prediction methods |
-| [convrml/backbone.py](convrml/backbone.py) | Shared ConvNeXt/FNN architecture |
+| [convrml/backbone.py](convrml/backbone.py) | Shared ConvNeXt/FPN architecture |
 | [convrml/film.py](convrml/film.py) | QUTCC feature modulation by quantile embeddings |
 | [convrml/training.py](convrml/training.py) | Batch/epoch loops, backward pass and optimizer updates |
 | [convrml/calibration.py](convrml/calibration.py) | Baseline RCPS and QUTCC quantile calibration algorithms |

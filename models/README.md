@@ -13,7 +13,7 @@ and optimization settings are in [dataset.py](../dataset.py) and
 | Deep ensemble | [ensemble.py](ensemble.py) | Gaussian NLL for each independent member | Predicted variance and member disagreement; RCPS |
 | MC dropout | [mc_dropout.py](mc_dropout.py) | MSE with dropout at 48 sites | 30 stochastic passes, p=0.05; RCPS |
 
-Each model file contains its loss. All methods use the shared ConvNeXtV2-Base/FNN
+Each model file contains its loss. All methods use the shared ConvNeXtV2-Base/FPN
 backbone in [convrml/](../convrml/). Existing PLD runs cover all four methods;
 existing DLMD runs cover Im2im and QUTCC.
 
@@ -65,7 +65,7 @@ acquisition systems. Existing ensemble/MC-dropout benchmark runs remain PLD-only
 ## Im2im checkpoint names
 
 `Im2im()` always uses `backbone.*` weight names, for every dataset. It requests
-three RGB output heads directly with `ConvNeXtFNN(output_heads=3)`; no temporary
+three RGB output heads directly with `ConvNeXtFPN(output_heads=3)`; no temporary
 three-channel head is created and replaced.
 
 The common checkpoint loader automatically translates old `base.*` and `net.*`

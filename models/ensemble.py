@@ -3,7 +3,7 @@
 The model accepts floating (N,3,H,W) measurements in [0,1], with a matching target.
 The loader handles file format and intensity conversion. Default members pad to
 multiples of 32 internally and crop both mean and variance back to H/W.
-Each member has the shared ConvNeXt/FNN, RGB mean and RGB variance heads.
+Each member has the shared ConvNeXt/FPN, RGB mean and RGB variance heads.
 All members see the entire training split with independent initialization and
 shuffle seeds. Default comparison uses five members; ten is a separate reference.
 Checkpoint keys retain ``baseModel.*`` for each independently trained member.
@@ -15,11 +15,11 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from convrml.backbone import ConvNeXtFNN
+from convrml.backbone import ConvNeXtFPN
 from convrml.intervals import gaussian_interval_from_mean_variance
 
 
-class _GaussianBackbone(ConvNeXtFNN):
+class _GaussianBackbone(ConvNeXtFPN):
     def __init__(self):
         super().__init__()
         self.variance_head = nn.Conv2d(256, 3, 3, padding=1)
