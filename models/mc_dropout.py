@@ -77,8 +77,11 @@ class MCDropout(ConvNeXtFPN):
 
         return hook
 
-    def loss(self, y, target):
-        """Scalar MSE over all RGB values; model.train() enables training dropout."""
+    def loss(self, y, target, *, generator=None):
+        """Scalar MSE over all RGB values; model.train() enables training dropout.
+
+        generator is accepted for the shared training API; this loss does not use it.
+        """
         return (self(y).float() - target).square().mean()
 
     @torch.no_grad()

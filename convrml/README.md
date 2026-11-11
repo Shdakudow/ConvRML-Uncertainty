@@ -27,7 +27,7 @@ Use the root `train.py` and `calibration.py` commands; each workflow has one ent
 ## Read it as a PyTorch experiment
 
 Start with [dataset.py](../dataset.py), then a model in [models/](../models/),
-then `train_batch` in [train.py](../train.py). These are the data, prediction/loss,
+then `train_batch` in [training.py](training.py). These are the data, prediction/loss,
 and optimizer update. Configuration and checkpoint bookkeeping can wait.
 
 A **manifest** is only a saved list of images. `read_split_file` uses ordinary
@@ -69,7 +69,7 @@ not update weights. Calibration is a separate program using separate scenes.
 | Recorded settings    | `protocol.profile` → `configs/experiment_settings.json` | Optimizer, schedule, precision, batch/microbatch sizes and four seed streams             |
 | Image pairs          | `protocol.dataset_for` → `dataset.py`                   | Manifest IDs/order, measurement/target paths, uint8 / 255 conversion                     |
 | Learned mapping      | `protocol.make_model` → `models/` → `backbone.py`       | `forward`, `loss`, and `bounds`; q conditioning is in `film.py`                          |
-| Weight updates       | Root `train.py`: `run_training` → `train_one_epoch`     | Learning rate, loss, backward, accumulation and AdamW step                          |
+| Weight updates       | `train.py`: `run_training` → `training.py`: `train_one_epoch`     | Learning rate, loss, backward, accumulation and AdamW step                          |
 | Saved training state | `checkpoints.save_training_progress`                    | `latest.pt` has optimizer/RNG state; milestone files retain model/data identity          |
 | Interval fitting     | Root `calibration.py` → `calibration.fit_calibration`   | RCPS tail scales or QUTCC q inputs, fitted on calibration pairs only                     |
 | Held-out scores      | `evaluation.evaluate_test_set` → `metrics.py`           | `report.json`, `per_image.csv`, optional `examples.npz`; raw/clipped views stay separate |
@@ -176,3 +176,9 @@ manifest or ID hashes. Resume checks split counts, not exact image membership or
 ordering; keep the same split file when resuming. Published historical hashes
 remain in the reproducibility records. Checkpoint download integrity checks are
 separate and remain enabled.
+
+The main `train.py` coordinates setup, epochs, validation and saving.
+`convrml/training.py` owns `train_one_epoch` and `train_batch`. Every model has
+`loss(measurement, target, generator=None)`, so the shared loop calls it directly
+without a method-specific loss wrapper. Only QUTCC consumes that generator;
+MC dropout continues to use the usual PyTorch random stream for its masks.

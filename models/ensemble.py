@@ -54,8 +54,11 @@ class EnsembleMember(nn.Module):
             F.softplus(raw[:, self.channels :]) + self.min_variance,
         )
 
-    def loss(self, x, target):
-        """Mean Gaussian NLL, omitting the constant 0.5*log(2*pi)."""
+    def loss(self, x, target, *, generator=None):
+        """Mean Gaussian NLL, omitting the constant 0.5*log(2*pi).
+
+        generator is accepted for the shared training API; this loss does not use it.
+        """
         mean, variance = self(x)
         mean, variance = mean.float(), variance.float()
         return 0.5 * (variance.log() + (target - mean).square() / variance).mean()

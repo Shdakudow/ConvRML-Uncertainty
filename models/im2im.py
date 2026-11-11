@@ -43,8 +43,11 @@ class Im2im(nn.Module):
         # Training stores heads as lower/center/upper; callers receive center first.
         return outputs[:, 1], outputs[:, 0], outputs[:, 2]
 
-    def loss(self, y, target):
-        """Train all parameters jointly: center MSE plus endpoint pinball losses."""
+    def loss(self, y, target, *, generator=None):
+        """Train all parameters jointly: center MSE plus endpoint pinball losses.
+
+        generator is accepted for the shared training API; this loss does not use it.
+        """
         # The center estimates a conditional mean; endpoints estimate the native
         # 90% interval. Equal coefficients are the recorded experiment setting.
         center, lower, upper = self.bounds(y)

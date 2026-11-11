@@ -354,7 +354,7 @@ class PortableWorkflow(unittest.TestCase):
 
     def test_baseline_resume_keeps_persistent_shuffle_and_dropout_rng(self):
         class TinyMC(TinyQ):
-            def loss(self, y, target):
+            def loss(self, y, target, *, generator=None):
                 return (self(y) - target).square().mean()
 
         def factory(run):
