@@ -149,6 +149,7 @@ class KRCPS:
                 array._mmap.close()
         return self.parameters
 
+    @torch.inference_mode()
     def predict(self, image):
         center, first, second = self.model.bounds(image)
         expansion = self.parameters["lambda_map"].to(image.device)
@@ -212,6 +213,7 @@ class QUTCCCalibration:
         )
         return self.parameters
 
+    @torch.inference_mode()
     def predict(self, image):
         return self.model.bounds(
             image, self.parameters["lower_q"], self.parameters["upper_q"]

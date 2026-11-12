@@ -24,7 +24,8 @@ class MCDropout(nn.Module):
         add_dropout(self.baseModel)
 
     def center(self, image):
-        return self.baseModel(image)
+        """Use the same Monte Carlo mean for validation and interval prediction."""
+        return self.predict_samples(image).mean(dim=0)
 
     def predict_samples(self, image):
         modes = {module: module.training for module in self.baseModel.modules()}
@@ -32,7 +33,7 @@ class MCDropout(nn.Module):
         for module in self.baseModel.modules():
             if isinstance(module, nn.Dropout):
                 module.train()
-        samples = torch.stack([self.baseModel(image) for _ in range(50)], dim=0)
+        samples = torch.stack([self.baseModel(image) for _ in range(30)], dim=0)
         for module, mode in modes.items():
             module.training = mode
         return samples
@@ -52,4 +53,5 @@ class MCDropout(nn.Module):
         return torch.cat((lower, mean, upper), dim=1)
 
     def loss(self, image, target):
-        return F.mse_loss(self.center(image), target)
+        # Training needs one stochastic pass with gradients, not an MC average.
+        return F.mse_loss(self.baseModel(image), target)

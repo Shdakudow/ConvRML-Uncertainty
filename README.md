@@ -9,7 +9,7 @@ reconstruction decoder in `ConvNeXt/backbone.py`.
 | QUTCC | One RGB quantile image for the supplied `q` | Pinball loss at a randomly sampled `q` per image |
 | Im2im | Lower, center, and upper RGB images | Center MSE plus lower/upper pinball losses |
 | Ensemble | Ten independent RGB mean/variance predictors | Mean Gaussian NLL across the ten members |
-| MC dropout | One RGB reconstruction; 50 stochastic passes for intervals | MSE |
+| MC dropout | Mean and variance from 30 stochastic passes | MSE |
 
 `timesteps` is removed. QUTCC retains `q`, embedded and applied through FiLM
 after the encoder block normalizations and decoder batch normalizations.
@@ -31,6 +31,9 @@ precision formula, with length scale 1 and weight decay 1e-4. Its interval
 variance includes `2 * dataset_size * 1e-4 / 0.9` in addition to sample variance.
 That term is inherited from the draft and can dominate the native width on a
 large dataset. Calibration operates on those native intervals separately.
+Training uses one stochastic pass per batch. Validation uses the mean of
+30 passes, matching the reconstruction returned with the uncertainty bounds.
+BatchNorm stays in evaluation mode during MC sampling while dropout is active.
 
 ## Data and training
 
@@ -118,6 +121,8 @@ interface is the same. Each object stores its fitted values in
 `calibrator.parameters`; `fit` also returns that dictionary.
 The two calibration classes are independent, with their own `fit` and
 `predict` methods. Each fit uses evaluation mode and disables gradient tracking.
+Both calibrated `predict` methods also use `torch.inference_mode()` so direct
+prediction calls do not retain computation graphs.
 
 An interval offset expands a native interval `[lower, upper]` to
 `[lower - offset, upper + offset]`. K-RCPS stores an offset for each spatial
@@ -184,7 +189,7 @@ checks on a 48 GB RTX A6000 with independent member batch orders. Peak
 allocated training memory was 33.14 GiB at 270×480 and 36.34 GiB at 300×480.
 Those checks used two training passes with AdamW and validation, with
 physical batch size 10 and FP32.
-All 21 regular checks also pass, including batch coverage, pairing, independent orders, seed
+All 23 regular checks also pass, including batch coverage, pairing, independent orders, seed
 reproducibility, matched schedules, and AdamW update equivalence.
 Detailed results are recorded in `tests/CHECKS.json`.
 

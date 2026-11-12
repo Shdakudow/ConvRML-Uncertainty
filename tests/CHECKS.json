@@ -1,9 +1,9 @@
 {
   "full_suite": {
-    "tests": 29,
-    "passed": 21,
+    "tests": 31,
+    "passed": 23,
     "skipped": 8,
-    "seconds": 116.917,
+    "seconds": 118.872,
     "integration_loader_workers": 2
   },
   "real_lpips_test_passed": true,
@@ -288,7 +288,8 @@
     "slurm_exit_codes": "all eight COMPLETED 0:0",
     "loop_version": "Measured before the independent batch-order change; not rerun for this update.",
     "ensemble_members_when_measured": 5,
-    "current_default_ensemble_members": 10
+    "current_default_ensemble_members": 10,
+    "mc_dropout_measurements": "Before the 30-pass MC-mean validation update; not rerun for this change."
   },
   "previous_full_suite_with_production_workers": {
     "tests": 27,
@@ -394,5 +395,23 @@
     ],
     "format": "PNG exports",
     "loader": "current dataloader.ImagePairs"
+  },
+  "mc_dropout_prediction_update": {
+    "forward_passes": 30,
+    "validation_prediction": "Monte Carlo sample mean",
+    "interval_center": "Monte Carlo sample mean",
+    "training_passes_per_batch": 1,
+    "training_gradients_test_passed": true,
+    "center_and_bounds_mean_test_passed": true,
+    "observation_noise_term": "unchanged"
+  },
+  "calibrated_prediction_inference_mode": {
+    "methods": [
+      "KRCPS.predict",
+      "QUTCCCalibration.predict"
+    ],
+    "outputs_require_grad": false,
+    "parameter_gradients_preserved_outside_prediction": true,
+    "tests_passed": true
   }
 }

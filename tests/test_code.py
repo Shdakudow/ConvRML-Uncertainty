@@ -216,7 +216,7 @@ class ReconstructionTests(unittest.TestCase):
         ]
         with torch.no_grad():
             samples = model.predict_samples(torch.rand(2, 3, 33, 35))
-        self.assertEqual(samples.shape, (50, 2, 3, 33, 35))
+        self.assertEqual(samples.shape, (30, 2, 3, 33, 35))
         self.assertGreater(float(samples.var(0).mean()), 0)
         self.assertEqual(
             modes, {name: module.training for name, module in model.named_modules()}
@@ -228,7 +228,56 @@ class ReconstructionTests(unittest.TestCase):
         ]
         for old, new in zip(before, after):
             torch.testing.assert_close(old, new)
-        model.loss(torch.rand(2, 3, 33, 35), torch.rand(2, 3, 33, 35)).backward()
+        with patch.object(
+            model.baseModel, "forward", wraps=model.baseModel.forward
+        ) as forward:
+            loss = model.loss(torch.rand(2, 3, 33, 35), torch.rand(2, 3, 33, 35))
+        self.assertEqual(forward.call_count, 1)
+        loss.backward()
+        self.assertIsNotNone(next(model.parameters()).grad)
+
+    def test_dropout_center_and_bounds_use_the_same_30_pass_mean(self):
+        model = MCDropout(small_backbone(), dataset_size=10).eval()
+        image = torch.rand(2, 3, 33, 35)
+        with torch.inference_mode():
+            torch.manual_seed(777)
+            expected = model.predict_samples(image).mean(dim=0)
+            torch.manual_seed(777)
+            with patch.object(
+                model.baseModel, "forward", wraps=model.baseModel.forward
+            ) as forward:
+                center = model.center(image)
+            self.assertEqual(forward.call_count, 30)
+            torch.manual_seed(777)
+            interval_center, _, _ = model.bounds(image)
+        torch.testing.assert_close(center, expected)
+        torch.testing.assert_close(interval_center, expected)
+
+    def test_calibrated_prediction_disables_gradients_for_both_methods(self):
+        class Bounds(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.weight = nn.Parameter(torch.tensor(0.5))
+
+            def bounds(self, image, *quantiles):
+                center = image * self.weight
+                return center, center - 0.1, center + 0.1
+
+        for method in (KRCPS, QUTCCCalibration):
+            with self.subTest(method=method.__name__):
+                model = Bounds().eval()
+                calibrator = method(model)
+                calibrator.parameters = dict(
+                    lambda_map=torch.zeros(4, 4), lower_q=0.05, upper_q=0.95
+                )
+                with torch.enable_grad():
+                    outputs = calibrator.predict(torch.ones(2, 3, 4, 4))
+                for output in outputs:
+                    self.assertFalse(output.requires_grad)
+                    self.assertIsNone(output.grad_fn)
+                self.assertTrue(model.weight.requires_grad)
+                model.bounds(torch.ones(2, 3, 4, 4))[0].sum().backward()
+                self.assertIsNotNone(model.weight.grad)
 
     def test_schedule_endpoints_and_decay(self):
         self.assertAlmostEqual(learning_rate(0, 10001), 1e-5)
