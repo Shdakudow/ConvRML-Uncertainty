@@ -321,5 +321,78 @@
     "preserved_tracked_files": 237,
     "archive": "archive/previous_implementation_20261111",
     "active_tests_exclude_archive": true
+  },
+  "ten_member_gpu_readiness": {
+    "status": "passed",
+    "job_id": 417980,
+    "code_revision": "4c32826ecad52a6c5f72338586bd4a1c2b113c49",
+    "ensemble_members": 10,
+    "batch_size": 10,
+    "precision": "float32",
+    "independent_member_batch_orders": true,
+    "includes_adamw_and_validation": true,
+    "training_passes": 2,
+    "data": "synthetic tensors; execution and memory only",
+    "slurm_exit_codes": "both COMPLETED 0:0",
+    "results": [
+      {
+        "method": "ensemble",
+        "height": 270,
+        "width": 480,
+        "batch_size": 10,
+        "dtype": "float32",
+        "gpu": "NVIDIA RTX A6000",
+        "gpu_total_gib": 47.40179443359375,
+        "training_peak_allocated_gib": 33.14101505279541,
+        "training_peak_reserved_gib": 42.623046875,
+        "validation_peak_allocated_gib": 27.954906463623047,
+        "validation_peak_reserved_gib": 42.623046875,
+        "scores": {
+          "psnr": 4.831151008605957,
+          "ssim": 0.00022497811005450785,
+          "lpips": 1.3387269020080566
+        },
+        "passed": true,
+        "seconds": 75.84128082904499
+      },
+      {
+        "method": "ensemble",
+        "height": 300,
+        "width": 480,
+        "batch_size": 10,
+        "dtype": "float32",
+        "gpu": "NVIDIA RTX A6000",
+        "gpu_total_gib": 47.40179443359375,
+        "training_peak_allocated_gib": 36.344650745391846,
+        "training_peak_reserved_gib": 44.408203125,
+        "validation_peak_allocated_gib": 30.56693744659424,
+        "validation_peak_reserved_gib": 44.408203125,
+        "scores": {
+          "psnr": 4.831048011779785,
+          "ssim": 0.00022377593268174678,
+          "lpips": 1.3368724822998046
+        },
+        "passed": true,
+        "seconds": 80.23043276788667
+      }
+    ]
+  },
+  "existing_manifest_readiness": {
+    "split_sizes": {
+      "train": 17999,
+      "val": 2000,
+      "calibration": 3000,
+      "test": 2000
+    },
+    "unique_scene_ids": 24999,
+    "duplicate_scene_ids_across_splits": false,
+    "sampled_pairs_loaded_per_split": 1,
+    "sample_shape": [
+      3,
+      270,
+      480
+    ],
+    "format": "PNG exports",
+    "loader": "current dataloader.ImagePairs"
   }
 }

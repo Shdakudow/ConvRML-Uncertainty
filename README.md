@@ -143,8 +143,7 @@ Training weights are unchanged. Test data never enters calibration.
 [your repository](https://github.com/Shdakudow/code-for-quant/blob/0e164119fc81e1d0c9cb1a889d2a2f0f2525f081/evaluation/krcps/procedures/krcps.py),
 based on [Sulam-Group/k-rcps](https://github.com/Sulam-Group/k-rcps).
 The final calibration step uses HB with delta=0.1 instead of the source fork's
-confidence-independent risk expression. The upstream MIT license is retained
-in `KRCPS_LICENSE.txt`. CVXPY supplies the convex solver.
+confidence-independent risk expression. CVXPY supplies the convex solver.
 
 ## Checks
 
@@ -179,9 +178,13 @@ comparing memory or diagnosing an out-of-memory result, for example with
 On 2026-11-11, all eight GPU checks passed on Unicorn's RTX 6000 Ada (48 GB)
 with PyTorch 2.5.1+cu118. Peak allocated training memory ranged from 29.48 to
 36.82 GiB; peak reserved memory reached 46.49 GiB. Those measurements used
-five ensemble members and precede the independent batch-order update; they
-do not measure the current ten-member ensemble. All 21 regular checks pass after
-that update, including batch coverage, pairing, independent orders, seed
+five ensemble members and precede the independent batch-order update.
+The current ten-member ensemble subsequently passed both full-resolution
+checks on a 48 GB RTX A6000 with independent member batch orders. Peak
+allocated training memory was 33.14 GiB at 270×480 and 36.34 GiB at 300×480.
+Those checks used two training passes with AdamW and validation, with
+physical batch size 10 and FP32.
+All 21 regular checks also pass, including batch coverage, pairing, independent orders, seed
 reproducibility, matched schedules, and AdamW update equivalence.
 Detailed results are recorded in `tests/CHECKS.json`.
 
@@ -194,5 +197,4 @@ Earlier snapshots remain under [`archive/`](archive/).
 The backbone adapts [Meta's ConvNeXt](https://github.com/facebookresearch/ConvNeXt)
 and the decoder adapts
 [Lensless Imaging Transformer](https://github.com/BobPXX/Lensless_Imaging_Transformer).
-Their MIT notices are retained in `ConvNeXt/LICENSE`. The k-RCPS MIT notice is
-in `KRCPS_LICENSE.txt`. The original ConvRML BSD notice is retained in `LICENSE`.
+License notices are available in the linked upstream repositories.
