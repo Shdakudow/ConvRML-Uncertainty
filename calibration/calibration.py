@@ -12,6 +12,7 @@ import numpy as np
 from scipy.special import xlogy
 from scipy.stats import binom
 import torch
+from torch.nn import functional as F
 from torch.utils.data import DataLoader, Subset
 
 from calibration.krcps_optimization import SETTINGS, _optimize_group_lambdas
@@ -55,8 +56,8 @@ class KRCPS:
 
     @staticmethod
     def _risk(target, lower, upper, expansion):
-        lower = (lower - expansion).clamp(0, 1)
-        upper = (upper + expansion).clamp(0, 1)
+        lower = (lower - expansion).clip(0, 1)
+        upper = (upper + expansion).clip(0, 1)
         return float(((target < lower) | (target > upper)).float().mean())
 
     @torch.inference_mode()
@@ -122,7 +123,7 @@ class KRCPS:
                 selected_risk = risk
                 if torch.all(expansion == 0):
                     break
-                expansion = (expansion - SETTINGS["stepsize"]).clamp_min(0)
+                expansion = F.relu(expansion - SETTINGS["stepsize"])
                 risk = self._risk(target, lower, upper, expansion)
 
             pvalue = self._hb_pvalue(selected_risk, n_cal)
@@ -153,8 +154,8 @@ class KRCPS:
     def predict(self, image):
         center, first, second = self.model.bounds(image)
         expansion = self.parameters["lambda_map"].to(image.device)
-        lower = (torch.minimum(first, second) - expansion).clamp(0, 1)
-        upper = (torch.maximum(first, second) + expansion).clamp(0, 1)
+        lower = (torch.minimum(first, second) - expansion).clip(0, 1)
+        upper = (torch.maximum(first, second) + expansion).clip(0, 1)
         return center, lower, upper
 
 

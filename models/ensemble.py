@@ -32,7 +32,7 @@ class DeepEnsemble(nn.Module):
         means, variances = torch.stack(means), torch.stack(variances)
         mean = means.mean(dim=0)
         variance = (variances + means.square()).mean(dim=0) - mean.square()
-        return mean, variance.clamp_min(0)
+        return mean, F.relu(variance)
 
     def center(self, image):
         return torch.stack([member(image)[0] for member in self.members]).mean(0)

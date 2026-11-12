@@ -90,7 +90,7 @@ def validate(model, loader, perceptual, device):
         psnr.update(prediction, target)
         ssim.update(prediction, target)
         # Evaluate LPIPS on a clipped copy; PSNR and SSIM use raw predictions.
-        lpips_sum += float(perceptual(prediction.clamp(0, 1), target).sum())
+        lpips_sum += float(perceptual(prediction.clip(0, 1), target).sum())
         perceptual.reset()
         count += len(measurement)
     return dict(
