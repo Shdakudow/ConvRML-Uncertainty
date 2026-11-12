@@ -43,11 +43,14 @@ class Block(nn.Module):
         )
         self.drop_path = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
 
-    def forward(self, x):
+    def forward(self, x, film=None, embedding=None):
+        """Apply the block, with optional QUTCC conditioning after LayerNorm."""
         input = x
         x = self.dwconv(x)
         x = x.permute(0, 2, 3, 1)  # (N, C, H, W) -> (N, H, W, C)
         x = self.norm(x)
+        if film is not None:
+            x = film(x, embedding, channels_last=True)
         x = self.pwconv1(x)
         x = self.act(x)
         x = self.pwconv2(x)

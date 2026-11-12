@@ -3,8 +3,8 @@
     "tests": 31,
     "passed": 23,
     "skipped": 8,
-    "seconds": 118.872,
-    "integration_loader_workers": 2
+    "seconds": 5.057,
+    "integration_loader_workers": 0
   },
   "real_lpips_test_passed": true,
   "synthetic_training_epochs": 10,
@@ -413,5 +413,26 @@
     "outputs_require_grad": false,
     "parameter_gradients_preserved_outside_prediction": true,
     "tests_passed": true
+  },
+  "full_suite_before_block_refactor": {
+    "tests": 31,
+    "passed": 23,
+    "skipped": 8,
+    "seconds": 118.872,
+    "integration_loader_workers": 2
+  },
+  "qutcc_block_refactor": {
+    "reference_commit": "ca5469f",
+    "film_location": "ConvNeXt.backbone.Block.forward, after LayerNorm",
+    "comparison_cases": 8,
+    "exact_outputs": true,
+    "exact_parameter_gradients": true,
+    "exact_input_and_quantile_gradients": true,
+    "checkpoint_keys_and_buffers_unchanged": true,
+    "training_and_evaluation_checked": true,
+    "with_and_without_layer_scale_checked": true,
+    "nonzero_film_checked": true,
+    "unconditioned_blocks_checked": true,
+    "tolerance": 0
   }
 }

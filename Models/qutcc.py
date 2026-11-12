@@ -62,13 +62,7 @@ class QUTCC(nn.Module):
         for index, stage in enumerate(self.backbone.encoder.stages):
             x = self.backbone.encoder.downsample_layers[index](x)
             for block, film in zip(stage, self.encoder_film[index]):
-                residual = x
-                x = block.dwconv(x).permute(0, 2, 3, 1)
-                x = film(block.norm(x), embedding, channels_last=True)
-                x = block.pwconv2(block.act(block.pwconv1(x)))
-                if block.gamma is not None:
-                    x = block.gamma * x
-                x = residual + block.drop_path(x.permute(0, 3, 1, 2))
+                x = block(x, film=film, embedding=embedding)
             features.append(getattr(self.backbone.encoder, f"norm{index}")(x))
 
         size = (

@@ -13,6 +13,8 @@ reconstruction decoder in `ConvNeXt/backbone.py`.
 
 `timesteps` is removed. QUTCC retains `q`, embedded and applied through FiLM
 after the encoder block normalizations and decoder batch normalizations.
+The ConvNeXt block owns its forward computation and accepts optional FiLM
+conditioning. QUTCC calls the block directly instead of repeating its layers.
 The other three methods receive only image tensors. The decoder's new
 `out_channels` argument is needed for Im2im's 9 output channels and each
 ensemble member's 6 output channels; the sensor input remains RGB.
