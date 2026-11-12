@@ -16,15 +16,15 @@ from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from ConvNeXt.backbone import ConvNeXt, ConvRecon
-from Models.common import pinball_loss
-from Models import make_model
-from Models.qutcc import QUTCC
-from Models.im2im import Im2im
-from Models.ensemble import DeepEnsemble, DeepEnsembleMember
-from Models.mcdropout import MCDropout
+from models.common import pinball_loss
+from models import make_model
+from models.qutcc import QUTCC
+from models.im2im import Im2im
+from models.ensemble import DeepEnsemble, DeepEnsembleMember
+from models.mcdropout import MCDropout
 from dataloader import ImagePairs
-from Calibration.calibration import KRCPS, QUTCCCalibration
-from Calibration.krcps_optimization import SETTINGS
+from calibration.calibration import KRCPS, QUTCCCalibration
+from calibration.krcps_optimization import SETTINGS
 from train import learning_rate, train_epoch, validate
 
 
@@ -64,7 +64,7 @@ class ReconstructionTests(unittest.TestCase):
         def backbone(channels, height, width, out_channels):
             return nn.Conv2d(channels, out_channels, kernel_size=1)
 
-        with patch("Models.ConvRecon", side_effect=backbone):
+        with patch("models.ConvRecon", side_effect=backbone):
             torch.manual_seed(777)
             model = make_model("ensemble", 33, 35, 10)
             torch.manual_seed(777)

@@ -1,7 +1,7 @@
 # Archived implementations
 
-The active implementation is at the repository root in `Models/`, `ConvNeXt/`,
-`Calibration/`, `dataloader.py`, and `train.py`.
+The active implementation is at the repository root in `models/`, `ConvNeXt/`,
+`calibration/`, `dataloader.py`, and `train.py`.
 
 [`previous_implementation_20261111/`](previous_implementation_20261111/)
 preserves the implementation replaced on 2026-11-11, from commit

@@ -14,7 +14,7 @@ from scipy.stats import binom
 import torch
 from torch.utils.data import DataLoader, Subset
 
-from Calibration.krcps_optimization import SETTINGS, _optimize_group_lambdas
+from calibration.krcps_optimization import SETTINGS, _optimize_group_lambdas
 
 
 class KRCPS:

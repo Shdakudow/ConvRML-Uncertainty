@@ -111,7 +111,7 @@ not implement checkpoint resumption.
 Use an explicit calibrator for each method:
 
 ```python
-from Calibration.calibration import KRCPS, QUTCCCalibration
+from calibration.calibration import KRCPS, QUTCCCalibration
 
 calibrator = KRCPS(model)  # Im2im, ensemble, or MC dropout
 parameters = calibrator.fit(calibration_loader, device)
@@ -133,7 +133,7 @@ pixel, shared across its RGB channels. QUTCC instead selects quantile inputs.
 QUTCC searches for two quantile levels using a finite-image correction.
 `KRCPS` fits spatial additive interval offsets with alpha=0.1 (90% target
 coverage) and delta=0.1 (90% confidence). The HB risk-threshold search uses
-40 iterations. The remaining k-RCPS settings in `Calibration/krcps_optimization.py` come from
+40 iterations. The remaining k-RCPS settings in `calibration/krcps_optimization.py` come from
 your existing `code-for-quant/analysis_config.yaml`: 2 groups, 10 optimization
 images, 500 sampled spatial coordinates, initial expansion 0.5, step 0.002,
 and the original 30-value gamma sweep from 0.25 to 0.75.

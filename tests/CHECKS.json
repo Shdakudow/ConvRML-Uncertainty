@@ -3,7 +3,7 @@
     "tests": 31,
     "passed": 23,
     "skipped": 8,
-    "seconds": 5.057,
+    "seconds": 5.109,
     "integration_loader_workers": 0
   },
   "real_lpips_test_passed": true,
@@ -51,7 +51,7 @@
     "inference_mode_and_coverage_retained": true
   },
   "inline_krcps_settings": {
-    "location": "Calibration/krcps_optimization.py",
+    "location": "calibration/krcps_optimization.py",
     "values_unchanged": true,
     "tests_passed": 14
   },
@@ -434,5 +434,11 @@
     "nonzero_film_checked": true,
     "unconditioned_blocks_checked": true,
     "tolerance": 0
+  },
+  "package_layout": {
+    "models": "models/",
+    "calibration": "calibration/",
+    "imports_verified": true,
+    "active_uppercase_package_references": 0
   }
 }

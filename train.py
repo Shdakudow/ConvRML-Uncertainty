@@ -11,8 +11,8 @@ from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMe
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
 
 from dataloader import get_loaders
-from Models import make_model
-from Models.ensemble import DeepEnsemble
+from models import make_model
+from models.ensemble import DeepEnsemble
 
 EPOCHS = 50
 
