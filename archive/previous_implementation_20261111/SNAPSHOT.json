@@ -1,0 +1,1667 @@
+{
+  "source_commit": "f0b6c1f13523e154fcf8ba5de765807ef1306399",
+  "date": "2026-11-11",
+  "previous_tracked_files": 237,
+  "preservation": "Every previous tracked file is retained byte-for-byte at its mapped path.",
+  "files": [
+    {
+      "original_path": "README.md",
+      "archived_path": "archive/previous_implementation_20261111/README.md",
+      "git_mode": "100644",
+      "git_blob": "b741eb2ba8e421a7072a10b59210847136c1b8fd",
+      "sha256": "34f2c636eb8ef171309fe39cbf73b653d223fcb51782b5c6cdc1b3f4dd697c82"
+    },
+    {
+      "original_path": "archive/README.md",
+      "archived_path": "archive/previous_implementation_20261111/_archive_README_before_migration.md",
+      "git_mode": "100644",
+      "git_blob": "23546313856d73b75d02304ac05be2c4113f3a7f",
+      "sha256": "dd17065a53013ab98977347696746cda1eb1df3b85d61221234d405b64a7cfed"
+    },
+    {
+      "original_path": "archive/checkpoints/README.md",
+      "archived_path": "archive/checkpoints/README.md",
+      "git_mode": "100644",
+      "git_blob": "eee5e0054705f220d60dd9abd1348dea470aa84f",
+      "sha256": "210daa51ce7789522ea0e0b23a7aabca7d158eacad802f8c49dd8fc8f29cc4eb"
+    },
+    {
+      "original_path": "archive/checkpoints/checkpoint_index.json",
+      "archived_path": "archive/checkpoints/checkpoint_index.json",
+      "git_mode": "100644",
+      "git_blob": "434e93de46469f5704fd19dc05e3bab2c5e03e71",
+      "sha256": "ed9a3cb78c8512d593f59d5709cefb8c2f5e58febbfd0aa8a3db279a2d87749f"
+    },
+    {
+      "original_path": "archive/history_20261022.tar.gz",
+      "archived_path": "archive/history_20261022.tar.gz",
+      "git_mode": "100644",
+      "git_blob": "a04a557d542a9dbc72b1b53772d504d045fda403",
+      "sha256": "70ba2651ed8b7ff15195704e9634d290119c86542a1b6c7f332d9f53eeec0d7c"
+    },
+    {
+      "original_path": "archive/index.json",
+      "archived_path": "archive/index.json",
+      "git_mode": "100644",
+      "git_blob": "672bcb58f39e9f980e0c0e847e4c7e1fc1433901",
+      "sha256": "fa26a684733b4c44cf21f8a99a8747b6306b45aea60ba8d19e1fe97df7e081c3"
+    },
+    {
+      "original_path": "archive/operations/COVERAGE90.md",
+      "archived_path": "archive/operations/COVERAGE90.md",
+      "git_mode": "100644",
+      "git_blob": "dd6e2956f70011daa6165d0fa9c406a08fb27043",
+      "sha256": "3b2766fe739b317b23bab304c101e00dde62d03597891f769aaeb991bd3f5397"
+    },
+    {
+      "original_path": "archive/operations/README.md",
+      "archived_path": "archive/operations/README.md",
+      "git_mode": "100644",
+      "git_blob": "c05e03f5e853a5f5688f620b72efc8c8f3482ae0",
+      "sha256": "548fab3c6772fd79cd910673d9780c24d38d88834c746b05475eaa49d0759e3f"
+    },
+    {
+      "original_path": "archive/operations/check_shared_equivalence.py",
+      "archived_path": "archive/operations/check_shared_equivalence.py",
+      "git_mode": "120000",
+      "git_blob": "4fd90951029d9a72beac72458147beb23520ec6d",
+      "sha256": "1ae02c5bb637a3a7e6b0a9a1420e1541a900a07e9ef154585ef7a4dc611bf035"
+    },
+    {
+      "original_path": "archive/operations/coverage90_cluster.py",
+      "archived_path": "archive/operations/coverage90_cluster.py",
+      "git_mode": "100644",
+      "git_blob": "c5f692592f31c88a43e57ca74637b8a577ea5973",
+      "sha256": "d2ea9ac981efe9ff65fa131f563b3de3df3077adbf119a1390fa669378aec0c6"
+    },
+    {
+      "original_path": "archive/operations/dispatch_coverage90_milestones.py",
+      "archived_path": "archive/operations/dispatch_coverage90_milestones.py",
+      "git_mode": "100644",
+      "git_blob": "ab92e9e83659c01b758cf4cf9883b0446b8cc45b",
+      "sha256": "498e05ac982af1dce621188fe606d819f5954a58c65aada1605ad11e281e811d"
+    },
+    {
+      "original_path": "archive/operations/evaluate_coverage90.py",
+      "archived_path": "archive/operations/evaluate_coverage90.py",
+      "git_mode": "100644",
+      "git_blob": "76a8e3e123f68594d2492e60a1558da30a80fa93",
+      "sha256": "66bfebb1c0792f7c6529c66f82ff4f44c28333d5bac2bdb926e01134c7a085e0"
+    },
+    {
+      "original_path": "archive/operations/export/README.md",
+      "archived_path": "archive/operations/export/README.md",
+      "git_mode": "100644",
+      "git_blob": "1995a635600ede684d43d891f95a2aceebd88fbe",
+      "sha256": "5fdc72b65ee33e2c32a228ddb0ff036a0fe6161f7af320ffdd1f7154bf468b88"
+    },
+    {
+      "original_path": "archive/operations/export/export_paper_qutcc50_demo.py",
+      "archived_path": "archive/operations/export/export_paper_qutcc50_demo.py",
+      "git_mode": "100644",
+      "git_blob": "992e45d265665a8c0e2714c2c07a38fa2b0bb3aa",
+      "sha256": "293904ccbb2ff920a9466d71ec0bdaa9c05f81da45ea95a7431a90be04d5c936"
+    },
+    {
+      "original_path": "archive/operations/export/export_raw_demo.py",
+      "archived_path": "archive/operations/export/export_raw_demo.py",
+      "git_mode": "100644",
+      "git_blob": "4992f17557ca9be50eae01111c5d29482351b4e6",
+      "sha256": "0e30b492298cc3473924fb668035869ef9a5f06d37da37896e1fb396cda5139f"
+    },
+    {
+      "original_path": "archive/operations/mirflickr50_20261027/README.md",
+      "archived_path": "archive/operations/mirflickr50_20261027/README.md",
+      "git_mode": "100644",
+      "git_blob": "4bdecc0c54c990f2512b76ee27af5f254f37f930",
+      "sha256": "9946b65602a007a453fa648863e7a00b6508b2995995d23878e236933bcca6b3"
+    },
+    {
+      "original_path": "archive/operations/mirflickr50_20261027/preflight.py",
+      "archived_path": "archive/operations/mirflickr50_20261027/preflight.py",
+      "git_mode": "100644",
+      "git_blob": "0f36cf8663ef0bdba60858bbf1c4cd6370085d7c",
+      "sha256": "168693d8dc2a9e0f82e6c94504228b5e62691cd753ad5667041df31eca0b3661"
+    },
+    {
+      "original_path": "archive/operations/mirflickr50_20261027/run.sbatch",
+      "archived_path": "archive/operations/mirflickr50_20261027/run.sbatch",
+      "git_mode": "100644",
+      "git_blob": "e4e9d73102322859db4402684dbd3a1165f44f0a",
+      "sha256": "2f18e391a18ba289db0da4286194f0d01bc4be19c8d07966030ad1bbfee00b2f"
+    },
+    {
+      "original_path": "archive/operations/mirflickr50_20261027/submit.py",
+      "archived_path": "archive/operations/mirflickr50_20261027/submit.py",
+      "git_mode": "100644",
+      "git_blob": "62f2f81130f395e4c31a1b074d3fdb616e53358b",
+      "sha256": "95429eab40f0c28ab8e1722a9343bbde4c2cca1e6aee36a93de2c7719938bddb"
+    },
+    {
+      "original_path": "archive/operations/plot_learning_curves.py",
+      "archived_path": "archive/operations/plot_learning_curves.py",
+      "git_mode": "120000",
+      "git_blob": "03cf2a558ff32a1f7b6379cc93464337a77ea181",
+      "sha256": "2e0e939be956ae5aa1e5a80ff6d65c8ff61c1d06016ce60453cf666ba884610d"
+    },
+    {
+      "original_path": "archive/operations/run_coverage90_milestone.py",
+      "archived_path": "archive/operations/run_coverage90_milestone.py",
+      "git_mode": "100644",
+      "git_blob": "ebcf40f4ddab0b6e03a9ca19f3f1129f0056f16a",
+      "sha256": "9e046e40af7dbfcd9dfc00f094750a2d7178a67e311c9f1953c1d08b0698dc5c"
+    },
+    {
+      "original_path": "archive/operations/tests/test_coverage90_cluster.py",
+      "archived_path": "archive/operations/tests/test_coverage90_cluster.py",
+      "git_mode": "100644",
+      "git_blob": "7706686ab3f9688fde81254b055d2375a6a8f090",
+      "sha256": "86bb9107c8edfa701235d213c190cb3158e0d3a2abf64b4fd1c60a39d6fc42d8"
+    },
+    {
+      "original_path": "archive/operations/tests/test_coverage90_milestones.py",
+      "archived_path": "archive/operations/tests/test_coverage90_milestones.py",
+      "git_mode": "100644",
+      "git_blob": "76b7e1615aa48a5cfaa10bd3f14f2a300a55592c",
+      "sha256": "2afbf9c739af22a5777768064a3a4021ae4f01e81113866e3211dc73ac31bc16"
+    },
+    {
+      "original_path": "archive/operations/verify_source_release.py",
+      "archived_path": "archive/operations/verify_source_release.py",
+      "git_mode": "120000",
+      "git_blob": "42e455181fccb0ad8bdad7db3846e5eec4325e11",
+      "sha256": "e7b4f2f8e13c997497342b03939af4031667caebeb1bf359ec34d2a8ed4c87ed"
+    },
+    {
+      "original_path": "archive/provenance/README.md",
+      "archived_path": "archive/provenance/README.md",
+      "git_mode": "100644",
+      "git_blob": "8bc25e86614e17a0b827ccec77cdafe2f4e81a22",
+      "sha256": "ab7b581be5300a64c2400a2dd58adc252f86b7e337dc5679ab4ee4b1c7ef0758"
+    },
+    {
+      "original_path": "archive/provenance/cleanup_20261022.json",
+      "archived_path": "archive/provenance/cleanup_20261022.json",
+      "git_mode": "100644",
+      "git_blob": "b415ebcc953ff9f4fcc2206746033ecb3f541085",
+      "sha256": "8c74b4a35bb79dba7caaa5674a0bd94238fcd57f83b64d0908911232851b4863"
+    },
+    {
+      "original_path": "archive/provenance/cleanup_equivalence_20261022.json",
+      "archived_path": "archive/provenance/cleanup_equivalence_20261022.json",
+      "git_mode": "100644",
+      "git_blob": "6ba5e7a15f67ff556c8042f8339809ffc9dba663",
+      "sha256": "b3077a8f0069c8e1cbbeedb3fc2f058835e66dbb0c532293afbf8d20f274916c"
+    },
+    {
+      "original_path": "archive/provenance/layout_migration_20261021.json",
+      "archived_path": "archive/provenance/layout_migration_20261021.json",
+      "git_mode": "100644",
+      "git_blob": "2d19a15e43f57dd0f776e1be0273faeec1a0610e",
+      "sha256": "10ef6abc552f8ad05f5c907b4aaa2e1f65505716c7c30cd9fd9421f718f9c27b"
+    },
+    {
+      "original_path": "archive/provenance/publication_layout_20261025.json",
+      "archived_path": "archive/provenance/publication_layout_20261025.json",
+      "git_mode": "100644",
+      "git_blob": "f3929133eab260a5097602be2de60624d21f2f22",
+      "sha256": "7327fd9d7c01ef0af6a21bf0366adf7d9f1f13acd583faae7cd084a63580adf1"
+    },
+    {
+      "original_path": "archive/provenance/publication_model_equivalence_20261025.json",
+      "archived_path": "archive/provenance/publication_model_equivalence_20261025.json",
+      "git_mode": "100644",
+      "git_blob": "1392aa1c27a163f70183beae2c37c47d528f36ed",
+      "sha256": "0a6ed08eb743767705ed65a472a2df7b2891265f4ac7d318259a43724a7beb3c"
+    },
+    {
+      "original_path": "archive/provenance/shared_code_equivalence_20261021.json",
+      "archived_path": "archive/provenance/shared_code_equivalence_20261021.json",
+      "git_mode": "100644",
+      "git_blob": "6ba5e7a15f67ff556c8042f8339809ffc9dba663",
+      "sha256": "b3077a8f0069c8e1cbbeedb3fc2f058835e66dbb0c532293afbf8d20f274916c"
+    },
+    {
+      "original_path": "archive/provenance/source_snapshot_20261019.json",
+      "archived_path": "archive/provenance/source_snapshot_20261019.json",
+      "git_mode": "100644",
+      "git_blob": "47526a448f72a092a2bc4e0439482df1eb8c3200",
+      "sha256": "eefbfae0b552a8f5d4a676e57162e977bbfff46ba41a7fc967abc72ca48a3327"
+    },
+    {
+      "original_path": "archive/provenance/unicorn_source_20261020.json",
+      "archived_path": "archive/provenance/unicorn_source_20261020.json",
+      "git_mode": "100644",
+      "git_blob": "451e8febe4135b8c16c66ed37b7bbcf793300005",
+      "sha256": "92da26905af33eb4a02cb434f0c3b1d2a7d312f9a8c34862fc1b656db7d12b79"
+    },
+    {
+      "original_path": "archive/provenance/unicorn_source_20261020.tar.gz",
+      "archived_path": "archive/provenance/unicorn_source_20261020.tar.gz",
+      "git_mode": "100644",
+      "git_blob": "bf5f7a306c31d1371a88a7a20e0b0a072ac965d2",
+      "sha256": "c81dc6e24f134ba60472eaf81d1da0b95bfe005bddf63ac3f85a90510d612398"
+    },
+    {
+      "original_path": "archive/provenance/upstream_convrml_CITATION.cff",
+      "archived_path": "archive/provenance/upstream_convrml_CITATION.cff",
+      "git_mode": "100644",
+      "git_blob": "089b5e76dfd288b165d82593ef749c40d9aa50cc",
+      "sha256": "2047e73ba75ab0efed293e509367b6abb29bcb12fade611a77f06347e01385a3"
+    },
+    {
+      "original_path": "archive/publication_support/README.md",
+      "archived_path": "archive/publication_support/README.md",
+      "git_mode": "100644",
+      "git_blob": "1d923ebfafcaba26cf7377f6b4d3ecff3eeaa67e",
+      "sha256": "13ee50883d4dd8b3f371d400f7e66bfb12736908c75ab751ff3197b7e34ad39b"
+    },
+    {
+      "original_path": "archive/publication_support/calibration_legacy/README.md",
+      "archived_path": "archive/publication_support/calibration_legacy/README.md",
+      "git_mode": "100644",
+      "git_blob": "f4d749be90b501912f6ecaf42ef82a30efd3b416",
+      "sha256": "a3b312637621e4065d92ed6d4b614f3b496d9bc58ed77d92f76567e75e64cf74"
+    },
+    {
+      "original_path": "archive/publication_support/calibration_legacy/empirical.py",
+      "archived_path": "archive/publication_support/calibration_legacy/empirical.py",
+      "git_mode": "100644",
+      "git_blob": "ab3c15244fda0715e7fa580b7d539095554b538e",
+      "sha256": "31d84e768fe3ad7f58b2f275bd91581478ae434cc37f1ad325e3534177fac8e8"
+    },
+    {
+      "original_path": "archive/publication_support/calibration_legacy/evaluate_snapshot.py",
+      "archived_path": "archive/publication_support/calibration_legacy/evaluate_snapshot.py",
+      "git_mode": "100644",
+      "git_blob": "b3c34745ff549ceacb0b8429367ad7eea09268ec",
+      "sha256": "557b60e8d4696b5824e83bca51566e45f0de4a1bd1bc265b712d91a3bfafe305"
+    },
+    {
+      "original_path": "archive/publication_support/calibration_legacy/reference_calibration.py",
+      "archived_path": "archive/publication_support/calibration_legacy/reference_calibration.py",
+      "git_mode": "100644",
+      "git_blob": "8cf4bed0805ee6fba506c3a389687b4e18ce90b5",
+      "sha256": "54a50993ecb7bf7de8319c273a70923a918ca179efd7dc85b2e14136599257ce"
+    },
+    {
+      "original_path": "archive/publication_support/calibration_legacy/settings_snapshot.json",
+      "archived_path": "archive/publication_support/calibration_legacy/settings_snapshot.json",
+      "git_mode": "100644",
+      "git_blob": "560a41dd772f2845ddf36e29c4f15465f418a133",
+      "sha256": "b89dd0316f1029f86b1fc6d1bdc28f2cd961767428d72e19de23345aa1e9de60"
+    },
+    {
+      "original_path": "archive/publication_support/calibration_legacy/tests/test_coverage90.py",
+      "archived_path": "archive/publication_support/calibration_legacy/tests/test_coverage90.py",
+      "git_mode": "100644",
+      "git_blob": "fe0f9f7ae433374995c48e8ee042e840d9adeee9",
+      "sha256": "0babc6948ad47d1cd1f3558399532733ef7eb2f8a1fc15286ebbde02895b1a23"
+    },
+    {
+      "original_path": "archive/publication_support/docs/COVERAGE90.md",
+      "archived_path": "archive/publication_support/docs/COVERAGE90.md",
+      "git_mode": "100644",
+      "git_blob": "aaea3ff3cc64ec7614f2250c2added97d90fb9ea",
+      "sha256": "91413337304bf23b1ac4fbe3457ee92e75e6af6be2fa9215ef0f449a570cf9b7"
+    },
+    {
+      "original_path": "archive/publication_support/docs/METHODS_AND_METRICS.md",
+      "archived_path": "archive/publication_support/docs/METHODS_AND_METRICS.md",
+      "git_mode": "100644",
+      "git_blob": "b7fc60a84632975062d6fdfd0536d0ee572b7f79",
+      "sha256": "c6b91df9f73cd0b85a96eae6bfc2e9d8245ce0aebeac358ef2a2d2baece708c1"
+    },
+    {
+      "original_path": "archive/publication_support/docs/MODEL_COMPARISON.md",
+      "archived_path": "archive/publication_support/docs/MODEL_COMPARISON.md",
+      "git_mode": "100644",
+      "git_blob": "c54c68355773c2cfd7ab69a1cce35ad3b80d8d1e",
+      "sha256": "a7cd254198a0b1b9eb38474ed7f29bdeb304d61d44ab8239e605fcfc0249e7df"
+    },
+    {
+      "original_path": "archive/publication_support/docs/RUNNING_EXPERIMENTS.md",
+      "archived_path": "archive/publication_support/docs/RUNNING_EXPERIMENTS.md",
+      "git_mode": "100644",
+      "git_blob": "026df4bd9779368ef66561a214f18a5bad3e7858",
+      "sha256": "d7505a8618a2465ea25a249a93593ff849667aa68ea499302d6c46bd30efffec"
+    },
+    {
+      "original_path": "archive/publication_support/tools/README.md",
+      "archived_path": "archive/publication_support/tools/README.md",
+      "git_mode": "100644",
+      "git_blob": "353307a7736cbb71ba66f8fe4ef9ffce914922ce",
+      "sha256": "d24c8fae9dcc99157a2243a3eddce30f4e90f53266913616726954c3d3a9c7b6"
+    },
+    {
+      "original_path": "archive/publication_support/tools/check_shared_equivalence.py",
+      "archived_path": "archive/publication_support/tools/check_shared_equivalence.py",
+      "git_mode": "100644",
+      "git_blob": "5b53cbe676e92fcd9c15f749a5b91a81f4d83fcd",
+      "sha256": "24ff8e9e41624279c748da7d1a81291d1debace59048c6ef2cbf741becb9e959"
+    },
+    {
+      "original_path": "archive/publication_support/tools/plot_learning_curves.py",
+      "archived_path": "archive/publication_support/tools/plot_learning_curves.py",
+      "git_mode": "100644",
+      "git_blob": "0f5611bb9a5c4b270ab10509a45c4cb8a714fb61",
+      "sha256": "08f7adab77a2f7b237149e2f3fc33e500592a7f12376fa654f2da06c46eef27d"
+    },
+    {
+      "original_path": "archive/publication_support/tools/verify_source_release.py",
+      "archived_path": "archive/publication_support/tools/verify_source_release.py",
+      "git_mode": "100644",
+      "git_blob": "de813e75d13ffa0f27b75c6aa120c555a4251b19",
+      "sha256": "466de38082a305bcf5e832173ba8b87dc58e0399fa2fb59afe8b132d54699cf1"
+    },
+    {
+      "original_path": "archive/publication_support/workflows/tests.yml",
+      "archived_path": "archive/publication_support/workflows/tests.yml",
+      "git_mode": "100644",
+      "git_blob": "2bfe63f1a23a9f04ee669b221b7351d69ae588f4",
+      "sha256": "09d4fce968da44628886cec9976f59802a70dd3c86909ba4a693ca2ab0c9a3d5"
+    },
+    {
+      "original_path": "archive/reproducibility/DATA.md",
+      "archived_path": "archive/reproducibility/DATA.md",
+      "git_mode": "100644",
+      "git_blob": "6d41b2c2365fd58b5eab925abb5c3052a100ed01",
+      "sha256": "f5f939291dc75e228142b96dfc48c59b9eb564752c374113d9f7868425c020f6"
+    },
+    {
+      "original_path": "archive/reproducibility/README.md",
+      "archived_path": "archive/reproducibility/README.md",
+      "git_mode": "100644",
+      "git_blob": "f5e650ab4d55a30a0ea73a71bd7c2168439515c6",
+      "sha256": "492aa25a86917ddcf80d0156c7d2e85e64cd4cad0ea27c40b14ce08f332ff4f5"
+    },
+    {
+      "original_path": "archive/reproducibility/checkpoint_release_receipt.json",
+      "archived_path": "archive/reproducibility/checkpoint_release_receipt.json",
+      "git_mode": "100644",
+      "git_blob": "83fa606d887a35cb6ff5923efdb7b580ce654326",
+      "sha256": "f92dfd9979b1f15a9ae89c1909fdeecc926532a20d8b5388591ed70bb90a3904"
+    },
+    {
+      "original_path": "archive/reproducibility/checkpoint_withdrawal_20261030.json",
+      "archived_path": "archive/reproducibility/checkpoint_withdrawal_20261030.json",
+      "git_mode": "100644",
+      "git_blob": "8f4acd4a88aa4b0bca6783b673635d1b7339bf40",
+      "sha256": "af0e872bd3c8d65e1cdb1ce50f3ef0fe97e5bfa33ccff48c5b5c6963c6d8fcd5"
+    },
+    {
+      "original_path": "archive/reproducibility/cleanup_verification.json",
+      "archived_path": "archive/reproducibility/cleanup_verification.json",
+      "git_mode": "100644",
+      "git_blob": "ea9de16720d98f9b3dc7f254070380ed8654d353",
+      "sha256": "517a70b9810f458367792a99ec7a1294328a5c2bcaaa93a97615b0f4e48076db"
+    },
+    {
+      "original_path": "archive/reproducibility/configuration-history.md",
+      "archived_path": "archive/reproducibility/configuration-history.md",
+      "git_mode": "100644",
+      "git_blob": "9d20e851cb5a5e29f53c71d052927c2dbea66479",
+      "sha256": "fae3266cde0f6ea769382061bcef372d6ef7aa0e332db7c3d272d36eb7d2eda1"
+    },
+    {
+      "original_path": "archive/reproducibility/constraints-tested.txt",
+      "archived_path": "archive/reproducibility/constraints-tested.txt",
+      "git_mode": "100644",
+      "git_blob": "58770458fe63525d9ada5cd414f11c52a782d7b0",
+      "sha256": "38a4e5a321ef59ec3a393576609f979d408e9e10034026182f274ca0d0bbda83"
+    },
+    {
+      "original_path": "archive/reproducibility/environment-tested.json",
+      "archived_path": "archive/reproducibility/environment-tested.json",
+      "git_mode": "100644",
+      "git_blob": "97d91a23fecab8afb58cc8530fb6b0f20ea51dbb",
+      "sha256": "7a5e22e2ed0c105d5e0a6bf851df45e6f435dd9e604c2b47a640eb263a40e852"
+    },
+    {
+      "original_path": "archive/reproducibility/experiment_settings_before_cleanup.json",
+      "archived_path": "archive/reproducibility/experiment_settings_before_cleanup.json",
+      "git_mode": "100644",
+      "git_blob": "146bfa28e7e4bcc5d08906298a07dd80c5497c2b",
+      "sha256": "c0be384b4acb8dfc2aee9dadd3cfd5652430a0ad5196f08113c56b961ea89337"
+    },
+    {
+      "original_path": "archive/reproducibility/model-equivalence.json",
+      "archived_path": "archive/reproducibility/model-equivalence.json",
+      "git_mode": "100644",
+      "git_blob": "328dece0c4f6ac8472fd55fc02f287a4609a9c49",
+      "sha256": "d61ca615086e19890d3c7197c0ce9fcad9a4e0fec82da3f727f5b8edf2ce2a23"
+    },
+    {
+      "original_path": "archive/reproducibility/paper_calibration_verification.json",
+      "archived_path": "archive/reproducibility/paper_calibration_verification.json",
+      "git_mode": "100644",
+      "git_blob": "550c17e2d48d87d3b8f238263d6c2286c721dc2a",
+      "sha256": "be259079b404281d4e8e21d54d1e381d2b2f2059617f353d0019d18c47caabd8"
+    },
+    {
+      "original_path": "archive/reproducibility/raw_input_modifications_20261030.json",
+      "archived_path": "archive/reproducibility/raw_input_modifications_20261030.json",
+      "git_mode": "100644",
+      "git_blob": "021f6dba7108f0e9ac4a2e809af63098b224e343",
+      "sha256": "7b08d0d135f1c4cdc1ce2431e723188dc1d39fe39134d5b50d84326bdcd44636"
+    },
+    {
+      "original_path": "archive/reproducibility/resolution64_reconstruction_20261030.json",
+      "archived_path": "archive/reproducibility/resolution64_reconstruction_20261030.json",
+      "git_mode": "100644",
+      "git_blob": "d15940073b5f7086ed75f0bf693ed7876072e822",
+      "sha256": "7cf0ead7e456ef5c41904f7276eeaecacfe2936fd15a55fbf08e5515f1553b0a"
+    },
+    {
+      "original_path": "archive/reproducibility/shared_models_equivalence.json",
+      "archived_path": "archive/reproducibility/shared_models_equivalence.json",
+      "git_mode": "100644",
+      "git_blob": "8ca121ccaa8c03e4c9d66402e163baad61196c63",
+      "sha256": "ae3858da38ee5425f59224785e2ba74077bd542c0feda4ff9b96e0aba53f3140"
+    },
+    {
+      "original_path": "archive/reproducibility/splits/diffuser.json",
+      "archived_path": "archive/reproducibility/splits/diffuser.json",
+      "git_mode": "100644",
+      "git_blob": "3b4b78bc998a9a7a80a834ae1356f2f61ffb0c14",
+      "sha256": "0fe65bbf78107d7385e08fd9109b3210df4e3466ce0ec7adbddd2755418138e6"
+    },
+    {
+      "original_path": "archive/reproducibility/splits/raw_clean.json",
+      "archived_path": "archive/reproducibility/splits/raw_clean.json",
+      "git_mode": "100644",
+      "git_blob": "18254e5e522404dfe542d66b4721958e7928242f",
+      "sha256": "8b4ef0be252f7f3dc70684b0e496467e4ecd48afa5489eb19dac64dc75ff58ff"
+    },
+    {
+      "original_path": "archive/reproducibility/splits/raw_corrupted.json",
+      "archived_path": "archive/reproducibility/splits/raw_corrupted.json",
+      "git_mode": "100644",
+      "git_blob": "420304a6425e731bab8daff46948216f6ff17c28",
+      "sha256": "82df1ba185f906a32b6779c2ce40ad1ce281b1eebc99ff2427deec8a26c76929"
+    },
+    {
+      "original_path": "archive/reproducibility/splits/rml.json",
+      "archived_path": "archive/reproducibility/splits/rml.json",
+      "git_mode": "100644",
+      "git_blob": "125e2d3245da728777da93cb87b422b59eb416be",
+      "sha256": "a12e8fac0cb81c375a89c944f43ec3c0293ae5d5a4103255516ce36d16e884c8"
+    },
+    {
+      "original_path": "archive/reproducibility/stronger_input_reconstruction_20261030.json",
+      "archived_path": "archive/reproducibility/stronger_input_reconstruction_20261030.json",
+      "git_mode": "100644",
+      "git_blob": "254a989d58d625ef835242e5f90ce5cfb744b6dc",
+      "sha256": "5b6148d04eba12f91d3feee5f84eb5ad57515a3764af422bdf3843dd560d139a"
+    },
+    {
+      "original_path": "archive/reproducibility/verification.json",
+      "archived_path": "archive/reproducibility/verification.json",
+      "git_mode": "100644",
+      "git_blob": "70fafe341c819dd8e43fedbc1f38a0ffa34b66d0",
+      "sha256": "5c6209501599f86902a8a8d9559a0bc199e55f470713af259a337cf79d97aefd"
+    },
+    {
+      "original_path": "archive/reproduction/README.md",
+      "archived_path": "archive/reproduction/README.md",
+      "git_mode": "100644",
+      "git_blob": "a0ba6359e4a3c7d1e9a77b4ca545dd9da69bad91",
+      "sha256": "420ee30cd50233f79a340457835d5d6b37e0db539f2f25d575b5b54a6833f65e"
+    },
+    {
+      "original_path": "archive/reproduction/docs/COVERAGE90.md",
+      "archived_path": "archive/reproduction/docs/COVERAGE90.md",
+      "git_mode": "100644",
+      "git_blob": "45813a82f25d53cda6ec1baf3ed70b8fb83d3686",
+      "sha256": "c73da188c257eb812380c7040302a7ce644dcf3b4bf87498f931b90578becc86"
+    },
+    {
+      "original_path": "archive/reproduction/docs/METHODS_AND_METRICS.md",
+      "archived_path": "archive/reproduction/docs/METHODS_AND_METRICS.md",
+      "git_mode": "100644",
+      "git_blob": "050e2b4a63043f5fa4b83b9e494bb45b78075679",
+      "sha256": "a7024a5ea4e90341cb49fc642756f24ec1fb04b3e8fa64fac2d5fd26936ba2b4"
+    },
+    {
+      "original_path": "archive/reproduction/docs/MODEL_COMPARISON.md",
+      "archived_path": "archive/reproduction/docs/MODEL_COMPARISON.md",
+      "git_mode": "100644",
+      "git_blob": "a138aa020347129d67ad916859d0ea5cb7ec9aaa",
+      "sha256": "3587cbd45e58bebfc1b2e06058d2233c093784c96be09e9541dd84591bfaab48"
+    },
+    {
+      "original_path": "archive/reproduction/docs/RUNNING_EXPERIMENTS.md",
+      "archived_path": "archive/reproduction/docs/RUNNING_EXPERIMENTS.md",
+      "git_mode": "100644",
+      "git_blob": "2aec0b8dbb5e525a2129fc0c3042ae069377eb74",
+      "sha256": "cef5c1e8afc3b8f609f07570a1208a8caa7aaa11fe8c0ed5c6ca8fb731877e65"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/README.md",
+      "archived_path": "archive/reproduction/experiments/experiment2/README.md",
+      "git_mode": "100644",
+      "git_blob": "f7ac1788f8453c847a3de4581080ab4e689e02c5",
+      "sha256": "168ec8031ff4a2b9dba5b88b1f48afa9d909434383ccc0ed63ba0d5ff244a6b9"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/analysis/README.md",
+      "archived_path": "archive/reproduction/experiments/experiment2/analysis/README.md",
+      "git_mode": "100644",
+      "git_blob": "4d5babcc3d40c541730ac2c653d16509a1a9afa6",
+      "sha256": "89c27dc9ff2c18ee3b957a714eb9f98abbf30c18bfd95b637967d668b6570584"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/analysis/analyze_saved_examples.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/analysis/analyze_saved_examples.py",
+      "git_mode": "100644",
+      "git_blob": "6dd8c20cba92993d7799c4d936311692b3b13613",
+      "sha256": "65ec1ecd1dab630c1989ee7734772bf20596cb58ae176c757ffc0546a1525be0"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/analysis/evaluate_full_test.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/analysis/evaluate_full_test.py",
+      "git_mode": "100644",
+      "git_blob": "9f7766740ad3554b2db2c5fa1451a6b6ca4bda7c",
+      "sha256": "70684cf4b3c45f1572ab829b4ff0e51676771e1a1a3e5e9bd3c0d2277f429740"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/analysis/metrics.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/analysis/metrics.py",
+      "git_mode": "100644",
+      "git_blob": "9a4c04125d78d80bb4bb3b519bcadc65bec7a888",
+      "sha256": "d06c8d862f9705467390aefa7ecd17d5db29b9c21a9c413de85aebc822b25dc7"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/analysis/test_metrics.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/analysis/test_metrics.py",
+      "git_mode": "100644",
+      "git_blob": "5b6798a6393d76dbe4b071cbf748c14d530cb868",
+      "sha256": "ff44ce5f4aa17d6a2228fc3ee60fbe04920f21d14cf22b3b37e2840deebbd73a"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/analysis/visualize.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/analysis/visualize.py",
+      "git_mode": "100644",
+      "git_blob": "77607ceea52f6f3702746b71b014f4a227c2aea6",
+      "sha256": "78caa2c2fb135df63ae2526bf2a15f38b5aad89eff031b1953f5869508f9af76"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/baselines/common.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/baselines/common.py",
+      "git_mode": "100644",
+      "git_blob": "2900c8e3f0ec18a3ca3d6f3d6d0d80100785b5cd",
+      "sha256": "88dd170cc369a0bd23b8c5030200e7a218239ac0c5be36d96e6cbd05a772d53d"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/baselines/convrml_heads.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/baselines/convrml_heads.py",
+      "git_mode": "100644",
+      "git_blob": "ee3d17b62ad797b57d28339c4fb1736180e93c7e",
+      "sha256": "178daa3cefb44b0ec752ff80473285868b9cde437d8d6de465f87fd13f650618"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/baselines/deep_ensemble.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/baselines/deep_ensemble.py",
+      "git_mode": "100644",
+      "git_blob": "8eb754d5f789acb83d578416795e817df442d6a6",
+      "sha256": "e948231c552092c4475cd1d977a96666c80d7e19379072fc378a8b6e555489c3"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/baselines/formal_rml.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/baselines/formal_rml.py",
+      "git_mode": "100644",
+      "git_blob": "3f781e750f4abc626857b8c2efc88125700b0b88",
+      "sha256": "358b19b7076d35355fbd6420e065799859db91ad44a583ace14ca6d2b3fdadab"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/baselines/mc_dropout.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/baselines/mc_dropout.py",
+      "git_mode": "100644",
+      "git_blob": "f9a00f96f0d08d01de825dbc4d7d46e71a26133e",
+      "sha256": "66b09152897ce403d7ecca27f11b5644c1431961c806b838ce54044d3ac0a31b"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/configs/four_model_comparison.json",
+      "archived_path": "archive/reproduction/experiments/experiment2/configs/four_model_comparison.json",
+      "git_mode": "100644",
+      "git_blob": "2699e7bd87fd80871771f0a128c94cb1483db1ae",
+      "sha256": "866defe2c6cb12b8885bf223b0f8fc6e0558eedaecaf72ef9b00567b6e91e33a"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/models/_shared_film.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/models/_shared_film.py",
+      "git_mode": "120000",
+      "git_blob": "eca5f7253161ab0ac409a3ef43f4b74b15e5c349",
+      "sha256": "09549fc2c9df847c891893a1d54f006fcb6f4f19d81b86ef42ccefa871930ad0"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/models/constrained_adaptive_qutcc.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/models/constrained_adaptive_qutcc.py",
+      "git_mode": "100644",
+      "git_blob": "2f186186c50ef9356c918eb6cccbd2f0e181e18f",
+      "sha256": "0105579095fc44fa79238bead78029035288333f6cac3a67be180b6bc60439ce"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/models/convnext.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/models/convnext.py",
+      "git_mode": "100755",
+      "git_blob": "9fe30e100726579ca5fdc8456ffe83bbf8759467",
+      "sha256": "311acd7ecefcc40c14fe754b8db949c9998774a6aff54d3dc6d9873702ad18d9"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/models/convnext_norm_film.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/models/convnext_norm_film.py",
+      "git_mode": "100644",
+      "git_blob": "7f8ab518ee36e0d4253776e1c97d09afaba298b8",
+      "sha256": "c78fe8d10d7b316e9320f1224ca24fd362a30e1f6fadb48923794b404f7c2b46"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/models/corrected_uncertainty.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/models/corrected_uncertainty.py",
+      "git_mode": "100644",
+      "git_blob": "4fb9e896fcf1a95c59811ab1eee7332bb5cc31f0",
+      "sha256": "150e4a9a52718f29c67dc80634e3c895e91ff0bf87c0a8cb9e0aa176edfb2234"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/models/formal_quantile.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/models/formal_quantile.py",
+      "git_mode": "100644",
+      "git_blob": "80e7e18f2fd3f797690558530ba33e8572366fb5",
+      "sha256": "c65bfc659e58a5da0c89a5c7a7b9349b8ff8ffbc2a67f7441dff44a723bcfbb5"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/models/image_adaptive_qutcc.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/models/image_adaptive_qutcc.py",
+      "git_mode": "100644",
+      "git_blob": "7d8d6bc895fa4a70f4d152343831d26a9a808e93",
+      "sha256": "11665478481d12229ed101c78b31de17a7ac0aaf946ff46f61f5552d8a2877ff"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/models/learned_quantile_selector.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/models/learned_quantile_selector.py",
+      "git_mode": "100644",
+      "git_blob": "bf2ac115cc15de9994139838d7cefca5496029fc",
+      "sha256": "dcca3641c54fbe1875d60e48afdddc920d6ad82a346105ee2acb1daa156c7315"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/models/quantile_grid.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/models/quantile_grid.py",
+      "git_mode": "100644",
+      "git_blob": "97b3fce8fbc07a10d9bb78d2fc4f910342bda813",
+      "sha256": "937eb60b50dc412c194596bc53d0210bd4220e670fec846b254e88d8f1895547"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/models/qutcc_original/nn.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/models/qutcc_original/nn.py",
+      "git_mode": "100644",
+      "git_blob": "02e8e63807190864afb005b37f7d9dcbeae26749",
+      "sha256": "f5d092d84b48df1c4032440fe36125cbe6979ce4beb06b16d65fc57a2069a550"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/models/qutcc_original/provenance.json",
+      "archived_path": "archive/reproduction/experiments/experiment2/models/qutcc_original/provenance.json",
+      "git_mode": "100644",
+      "git_blob": "c4d3cb8ecd047d06c1942221c7e531d431dba1f0",
+      "sha256": "cccc7b8e45d927c1e74840a61a0e6e2f47ba7d593282522d4908f4c2416d6b63"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/models/shamus_rml.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/models/shamus_rml.py",
+      "git_mode": "120000",
+      "git_blob": "d430b4ebbb3b118a13fd04f674614ff734fe4b59",
+      "sha256": "7817bf1ebf682b0020e29e76c2b859eb49d7e4a00057a8dd6b880ad981ac594d"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/qutcc/.gitignore",
+      "archived_path": "archive/reproduction/experiments/experiment2/qutcc/.gitignore",
+      "git_mode": "100644",
+      "git_blob": "2e7dea477af433f97d94f613d52c0529354b4336",
+      "sha256": "b0c7f38ceb8c5b0268f66546c27a76aacb50a2183337bd7e81c8bba1d9eb06d0"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/qutcc/README.md",
+      "archived_path": "archive/reproduction/experiments/experiment2/qutcc/README.md",
+      "git_mode": "100644",
+      "git_blob": "41f7d6bb115e68e7b00ff8e13204f9c888a3ce36",
+      "sha256": "44fa28c8618e295388ef19ba005f2d57758e3670eb174bed9b8e387972c041be"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/qutcc/calibration.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/qutcc/calibration.py",
+      "git_mode": "120000",
+      "git_blob": "c86f6a7736eb2638ac94d722d6b316516081dd99",
+      "sha256": "e3a2499cb9ffad33ba78c663090b151c5cfab0fb415a4bdc31bcf5d21a35e220"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/qutcc/data.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/qutcc/data.py",
+      "git_mode": "120000",
+      "git_blob": "80e3dcbfb06878d2fc4662b3842c2da6a7b56505",
+      "sha256": "dfe432a0613b1b6b587b3ee73b81b83056dc832aecba288049ff05a4b6985ac3"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/qutcc/evaluate.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/qutcc/evaluate.py",
+      "git_mode": "120000",
+      "git_blob": "e994723c12e5ea235f047f405d6023e997fd66bc",
+      "sha256": "10ab39413045851673e0a1a1021f3dc7ec21a87d7d1acff28463d6518508e766"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/qutcc/model.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/qutcc/model.py",
+      "git_mode": "120000",
+      "git_blob": "290f98a2c2c538e0fd4f78422e31648433e93722",
+      "sha256": "bbe99f7fb6d75e1db86931392a468e97e96a41793d11bc1d839b1ac001e99a24"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/qutcc/models/__init__.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/qutcc/models/__init__.py",
+      "git_mode": "100644",
+      "git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/qutcc/models/convnext_norm_film.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/qutcc/models/convnext_norm_film.py",
+      "git_mode": "120000",
+      "git_blob": "c910b190db5a84c067eb098cfbde9165d01a3e97",
+      "sha256": "23b74632da35f508a96de3286b2318b6c23a225da2064e4d91e892250bc538c3"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/qutcc/models/qutcc_original/__init__.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/qutcc/models/qutcc_original/__init__.py",
+      "git_mode": "100644",
+      "git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/qutcc/models/qutcc_original/nn.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/qutcc/models/qutcc_original/nn.py",
+      "git_mode": "120000",
+      "git_blob": "76f32523cec6b45feed2e831679995acf60d6468",
+      "sha256": "9c2f05d5b6c22c3838a760286f7b0229cceff7c175f2fea4bd2b056c5b995e25"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/qutcc/models/shamus_rml.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/qutcc/models/shamus_rml.py",
+      "git_mode": "120000",
+      "git_blob": "29dc811c575523c57ffedc837cde69d50002a933",
+      "sha256": "8b494238c5819ab621c8d4d999d1d586353de65f7ac86e1418db762318aae496"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/qutcc/protocol.json",
+      "archived_path": "archive/reproduction/experiments/experiment2/qutcc/protocol.json",
+      "git_mode": "120000",
+      "git_blob": "bb257577710dfce95632199f1c42106da4bf7580",
+      "sha256": "3dcecebfb55aace9fa57fb502b0c6f42e70db5ba2e059731b953a9075501d9ff"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/qutcc/provenance.json",
+      "archived_path": "archive/reproduction/experiments/experiment2/qutcc/provenance.json",
+      "git_mode": "100644",
+      "git_blob": "e6963051c6d3e9c864cc6f2ae95472b7592f952d",
+      "sha256": "3559e5f5a4790ff41ece1e3ba5904bf8108032ab0791a5ce8e558282f69ec57a"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/qutcc/test_protocol.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/qutcc/test_protocol.py",
+      "git_mode": "120000",
+      "git_blob": "2dbf6955bf4426e92c393c36588135ce6624540d",
+      "sha256": "e48e747494ce49eadfb0827c96e78de7bc1f6c91f80cef8312da2ee55c72f508"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/qutcc/train.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/qutcc/train.py",
+      "git_mode": "120000",
+      "git_blob": "68971f7796cd9ff65bc92468076cf8438bc762df",
+      "sha256": "cae52ec757607461da86f11140f94fbbb868e11f368462b09c217703b3b566b2"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/reports/runtime_benchmark_20261009.json",
+      "archived_path": "archive/reproduction/experiments/experiment2/reports/runtime_benchmark_20261009.json",
+      "git_mode": "100644",
+      "git_blob": "3d27a517c53ab1d5094ea527e996df96c44a33ee",
+      "sha256": "efa3dbd9f1cb383dacfa3c644b3ed5eda3635859fa2888f26714e22f71ee7fc0"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/run_model.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/run_model.py",
+      "git_mode": "100644",
+      "git_blob": "f66162b5f94b23384807e592d0f533e6df097a79",
+      "sha256": "7ee8996132fd88bd52fb6e383f1e5ab57ebd559a17007d8f74a5f548da879306"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/scripts/asymmetric_rcps.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/scripts/asymmetric_rcps.py",
+      "git_mode": "100644",
+      "git_blob": "d6752fb43a5c748cab0454ec477fdc7fd1c10ea8",
+      "sha256": "e560f0959f170e31b8ecaee28ee5adcbfd232f4a5091168f14ccf9632b635992"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/scripts/corrected_comparison_evaluate.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/scripts/corrected_comparison_evaluate.py",
+      "git_mode": "100644",
+      "git_blob": "122c0ec075b5da155666c04dd757571a921c03f4",
+      "sha256": "54fcea0c7fff8355be6437c9ca825c91db6818415d6122cf5ac48b6925adb4cd"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/scripts/corrected_comparison_study.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/scripts/corrected_comparison_study.py",
+      "git_mode": "100644",
+      "git_blob": "dc2724ebb635617702e95aa051fd91f5d88b1bb9",
+      "sha256": "b17fe50cc0db78843e6ea5e6bfb3806954c804f4f9eaeef852f7f66469b93224"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/scripts/corrected_runtime.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/scripts/corrected_runtime.py",
+      "git_mode": "100644",
+      "git_blob": "36841d7da013d1dcfa175dc0ba8fc1f617cb316d",
+      "sha256": "7e7ef7ae12f24ee341fe20ec45977f7078972fe5c930c260000d8b8e9bedf3fc"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/scripts/evaluate_interval_curves.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/scripts/evaluate_interval_curves.py",
+      "git_mode": "100644",
+      "git_blob": "c9bb7e600c4aafb4b1bd7478453c7a51923bc0ca",
+      "sha256": "4ad909dd49861a5dc57635839047a39588b055a2c9e544c69cb510aaa2891da3"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/scripts/export_corrected_milestone.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/scripts/export_corrected_milestone.py",
+      "git_mode": "100644",
+      "git_blob": "cfc94de26938837672d2a49729fa3ce01846b02d",
+      "sha256": "2f442bc79af61f9b98fe86ba7def3ac872c93494c8a3f425e4b5926a67e06d4a"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/scripts/export_ensemble_size_comparison.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/scripts/export_ensemble_size_comparison.py",
+      "git_mode": "100644",
+      "git_blob": "911e9a3c70537fb8fc8969a2769c4f16e0ea8824",
+      "sha256": "4f3cb154ed70bbcaa7da081067dceff72e723909feeb76eaec0bab603fc7bf67"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/scripts/formal_rml_train.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/scripts/formal_rml_train.py",
+      "git_mode": "100644",
+      "git_blob": "23ebc9f4160c96e279a2894c81ebf3c019d6540d",
+      "sha256": "86fbbf2239bcb8f8c2cc9dae67740857250aa16fa8b6934ff63a7f59326e7051"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/scripts/rcps_bounds.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/scripts/rcps_bounds.py",
+      "git_mode": "100644",
+      "git_blob": "8fc92cdc1578513cb7e4016ea9d192ffe4716fea",
+      "sha256": "805748f09d16ebbd827ebb563ba83ee5e862bd0bc0b8331ab3fb967d6553c771"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/scripts/train_constrained_adaptive50.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/scripts/train_constrained_adaptive50.py",
+      "git_mode": "100644",
+      "git_blob": "7db6b4995894a6bb47045a779258113cbce4b528",
+      "sha256": "c2f19978bb4bde0864d744069ba33cdf929a12251b6e89de904756d2b2ef3a93"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/scripts/train_image_adaptive_qutcc.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/scripts/train_image_adaptive_qutcc.py",
+      "git_mode": "100644",
+      "git_blob": "7bda8448f08ace6b3e15336e04a340961bed9609",
+      "sha256": "26d3617e3610e042abd7a63b4293d7302faee7f298e31d7a61751008c4f62d1b"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/scripts/training_records.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/scripts/training_records.py",
+      "git_mode": "100644",
+      "git_blob": "0bec496429efc63af484263d830f3be7e0753407",
+      "sha256": "ab21f7da2151d96a383dd8c39b941ca2a364f9734345013c37a72efc5a169d85"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/tests/test_bayesian_baselines.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/tests/test_bayesian_baselines.py",
+      "git_mode": "100644",
+      "git_blob": "8d9814e85eb65a3b0f98399c3924cab839f13d13",
+      "sha256": "b80030131ac33939db5f14df1cf5f1a23773cfe02b6c97d543e9845ac81a3a30"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/tests/test_convnext_norm_film.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/tests/test_convnext_norm_film.py",
+      "git_mode": "100644",
+      "git_blob": "1edaccbe3047007e34fa7fc989cbc0207913c778",
+      "sha256": "53505c9e0ac08236a6e3c13ec1f829e68c425c262227cd6ed3d6856f26d8b0ac"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/tests/test_corrected_comparison.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/tests/test_corrected_comparison.py",
+      "git_mode": "100644",
+      "git_blob": "e089d03d0b8265c51bdf769104ba76943ce15f40",
+      "sha256": "6d46e06055f3cd19309bdfa54dbea33f26bdd5c8868168ce0646c3224224c9a9"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/tests/test_corrected_runtime.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/tests/test_corrected_runtime.py",
+      "git_mode": "100644",
+      "git_blob": "3b0bcba487c52b4004a0f895db97b1540fca7e8d",
+      "sha256": "a558a26a7f3acaa9240ffbc8d2a70085b5879cb5d15e0cea2622cb4bd2a07540"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/tests/test_rcps_bounds.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/tests/test_rcps_bounds.py",
+      "git_mode": "100644",
+      "git_blob": "6af0e97d0a75af286fefbd91c45c41ae24de11ee",
+      "sha256": "db4178fb5033a90721412243ccdf2bb88701883dc95185054a0705e611e9e78d"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment2/tests/test_training_records.py",
+      "archived_path": "archive/reproduction/experiments/experiment2/tests/test_training_records.py",
+      "git_mode": "100644",
+      "git_blob": "e274442f427ef90b39ccb2274120a6e8324a8f13",
+      "sha256": "f3169f655401beea641ba63b859006051effbeff8784216e5c6570aeacae4612"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/README.md",
+      "archived_path": "archive/reproduction/experiments/experiment3/README.md",
+      "git_mode": "100644",
+      "git_blob": "fddf4f03fbd3c86d3cad91d429d12e75a7cea394",
+      "sha256": "5dddd9da22618c274c5f1eec39ebe367bd28f0a5e25f4a0601df85f63fa6a021"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/clean/.gitignore",
+      "archived_path": "archive/reproduction/experiments/experiment3/clean/.gitignore",
+      "git_mode": "100644",
+      "git_blob": "2e7dea477af433f97d94f613d52c0529354b4336",
+      "sha256": "b0c7f38ceb8c5b0268f66546c27a76aacb50a2183337bd7e81c8bba1d9eb06d0"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/clean/README.md",
+      "archived_path": "archive/reproduction/experiments/experiment3/clean/README.md",
+      "git_mode": "100644",
+      "git_blob": "5f0f61d4d35f74f325798b3e33f809c635517967",
+      "sha256": "fa8b98503ff64c694aecc745585bad0db56f2754a7f2d72f66748beb3f47d2e7"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/clean/calibration.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/clean/calibration.py",
+      "git_mode": "120000",
+      "git_blob": "c86f6a7736eb2638ac94d722d6b316516081dd99",
+      "sha256": "e3a2499cb9ffad33ba78c663090b151c5cfab0fb415a4bdc31bcf5d21a35e220"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/clean/data.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/clean/data.py",
+      "git_mode": "120000",
+      "git_blob": "80e3dcbfb06878d2fc4662b3842c2da6a7b56505",
+      "sha256": "dfe432a0613b1b6b587b3ee73b81b83056dc832aecba288049ff05a4b6985ac3"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/clean/evaluate.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/clean/evaluate.py",
+      "git_mode": "120000",
+      "git_blob": "e994723c12e5ea235f047f405d6023e997fd66bc",
+      "sha256": "10ab39413045851673e0a1a1021f3dc7ec21a87d7d1acff28463d6518508e766"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/clean/model.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/clean/model.py",
+      "git_mode": "120000",
+      "git_blob": "290f98a2c2c538e0fd4f78422e31648433e93722",
+      "sha256": "bbe99f7fb6d75e1db86931392a468e97e96a41793d11bc1d839b1ac001e99a24"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/clean/models/__init__.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/clean/models/__init__.py",
+      "git_mode": "100644",
+      "git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/clean/models/convnext_norm_film.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/clean/models/convnext_norm_film.py",
+      "git_mode": "120000",
+      "git_blob": "c910b190db5a84c067eb098cfbde9165d01a3e97",
+      "sha256": "23b74632da35f508a96de3286b2318b6c23a225da2064e4d91e892250bc538c3"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/clean/models/qutcc_original/__init__.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/clean/models/qutcc_original/__init__.py",
+      "git_mode": "100644",
+      "git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/clean/models/qutcc_original/nn.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/clean/models/qutcc_original/nn.py",
+      "git_mode": "120000",
+      "git_blob": "76f32523cec6b45feed2e831679995acf60d6468",
+      "sha256": "9c2f05d5b6c22c3838a760286f7b0229cceff7c175f2fea4bd2b056c5b995e25"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/clean/models/shamus_rml.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/clean/models/shamus_rml.py",
+      "git_mode": "120000",
+      "git_blob": "29dc811c575523c57ffedc837cde69d50002a933",
+      "sha256": "8b494238c5819ab621c8d4d999d1d586353de65f7ac86e1418db762318aae496"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/clean/protocol.json",
+      "archived_path": "archive/reproduction/experiments/experiment3/clean/protocol.json",
+      "git_mode": "120000",
+      "git_blob": "bb257577710dfce95632199f1c42106da4bf7580",
+      "sha256": "3dcecebfb55aace9fa57fb502b0c6f42e70db5ba2e059731b953a9075501d9ff"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/clean/test_protocol.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/clean/test_protocol.py",
+      "git_mode": "120000",
+      "git_blob": "2dbf6955bf4426e92c393c36588135ce6624540d",
+      "sha256": "e48e747494ce49eadfb0827c96e78de7bc1f6c91f80cef8312da2ee55c72f508"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/clean/train.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/clean/train.py",
+      "git_mode": "120000",
+      "git_blob": "68971f7796cd9ff65bc92468076cf8438bc762df",
+      "sha256": "cae52ec757607461da86f11140f94fbbb868e11f368462b09c217703b3b566b2"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted/README.md",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted/README.md",
+      "git_mode": "100644",
+      "git_blob": "760530a68159c2a9640d14b73746967fe29e26f7",
+      "sha256": "7aa83fa708ddb774363306a902fa095dca77ce61e267636f54923b649ad6290e"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted/base_data.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted/base_data.py",
+      "git_mode": "120000",
+      "git_blob": "80e3dcbfb06878d2fc4662b3842c2da6a7b56505",
+      "sha256": "dfe432a0613b1b6b587b3ee73b81b83056dc832aecba288049ff05a4b6985ac3"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted/build_dataset.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted/build_dataset.py",
+      "git_mode": "100644",
+      "git_blob": "3c1e8b29d388d382be7bc08b06ebc11e64b42b01",
+      "sha256": "efb628ad7849706d9777f6bac8fa2ebcd9e60938a4ebb862d6323134099e6c3d"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted/calibration.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted/calibration.py",
+      "git_mode": "120000",
+      "git_blob": "c86f6a7736eb2638ac94d722d6b316516081dd99",
+      "sha256": "e3a2499cb9ffad33ba78c663090b151c5cfab0fb415a4bdc31bcf5d21a35e220"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted/corruptions.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted/corruptions.py",
+      "git_mode": "100644",
+      "git_blob": "c960cc6e0ee00b13badce617de40813776d736f7",
+      "sha256": "550db2853f4fd519df97f4ae3261fb2b7a5c1c28f36629fe2b55dfbf1538db93"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted/data.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted/data.py",
+      "git_mode": "100644",
+      "git_blob": "c323ccc6fb027e2250b654b89e6d4ab0a0599d79",
+      "sha256": "a14bb8f22582d470bb5d3b46dd7c26b457addbad5be75296439e384cb1a132b7"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted/evaluate.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted/evaluate.py",
+      "git_mode": "100644",
+      "git_blob": "5646889a1da89b11e378f33573c5dd461bb5ba73",
+      "sha256": "8f1ee3ed12ca373fc1744af52eec1f82cea75b51b53c96eadd10de8cb7eafca0"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted/model.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted/model.py",
+      "git_mode": "120000",
+      "git_blob": "290f98a2c2c538e0fd4f78422e31648433e93722",
+      "sha256": "bbe99f7fb6d75e1db86931392a468e97e96a41793d11bc1d839b1ac001e99a24"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted/models/__init__.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted/models/__init__.py",
+      "git_mode": "100644",
+      "git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted/models/convnext_norm_film.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted/models/convnext_norm_film.py",
+      "git_mode": "120000",
+      "git_blob": "c910b190db5a84c067eb098cfbde9165d01a3e97",
+      "sha256": "23b74632da35f508a96de3286b2318b6c23a225da2064e4d91e892250bc538c3"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted/models/qutcc_original/__init__.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted/models/qutcc_original/__init__.py",
+      "git_mode": "100644",
+      "git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted/models/qutcc_original/nn.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted/models/qutcc_original/nn.py",
+      "git_mode": "120000",
+      "git_blob": "76f32523cec6b45feed2e831679995acf60d6468",
+      "sha256": "9c2f05d5b6c22c3838a760286f7b0229cceff7c175f2fea4bd2b056c5b995e25"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted/models/shamus_rml.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted/models/shamus_rml.py",
+      "git_mode": "120000",
+      "git_blob": "29dc811c575523c57ffedc837cde69d50002a933",
+      "sha256": "8b494238c5819ab621c8d4d999d1d586353de65f7ac86e1418db762318aae496"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted/protocol.json",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted/protocol.json",
+      "git_mode": "100644",
+      "git_blob": "2dac13da63e8ca77de35630317f122df6c894414",
+      "sha256": "f3f1beeb4e5863b703bde25068323ea3d49a2c544c08ae20941c76493ba1b064"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted/test_corruptions.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted/test_corruptions.py",
+      "git_mode": "100644",
+      "git_blob": "b17e7888e10499dbf14b3a4482d3dedae09eb57b",
+      "sha256": "a7a63b4f3fe3da77aa683b74ecd01022a69d7613f09b0a89025d85940ad45d64"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted/test_materialized_data.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted/test_materialized_data.py",
+      "git_mode": "100644",
+      "git_blob": "177a918b2876081ccf823fcd210e5e897b9283a3",
+      "sha256": "f3e72449273038f52f828f98fee338f27033634298f120485c917599d9fe7c29"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted/train.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted/train.py",
+      "git_mode": "100644",
+      "git_blob": "08d6c6ccc15690c9d1301fd0c8864341b9b32fd1",
+      "sha256": "0c9d9c70db0b3ca5ed236a210b797a617ee598629fb12fee72050058a30bdb84"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/README.md",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/README.md",
+      "git_mode": "100644",
+      "git_blob": "8652453257adb153c34f9701ddf65196c1fe407f",
+      "sha256": "358ae9d40d568ab56b95b04f509567b3227dff22ba67574e5131692c8cbe928a"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/base_data.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/base_data.py",
+      "git_mode": "120000",
+      "git_blob": "80e3dcbfb06878d2fc4662b3842c2da6a7b56505",
+      "sha256": "dfe432a0613b1b6b587b3ee73b81b83056dc832aecba288049ff05a4b6985ac3"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/calibration.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/calibration.py",
+      "git_mode": "120000",
+      "git_blob": "c86f6a7736eb2638ac94d722d6b316516081dd99",
+      "sha256": "e3a2499cb9ffad33ba78c663090b151c5cfab0fb415a4bdc31bcf5d21a35e220"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/continuation.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/continuation.py",
+      "git_mode": "100644",
+      "git_blob": "21397550c8e335e9d897808e73333db3e1ddc266",
+      "sha256": "76f3dbf83981b68f8c63a130b26fcfa8d188e386a3629217326f97bd2dd6c077"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/data.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/data.py",
+      "git_mode": "100644",
+      "git_blob": "38d70c6aba2d4c3ceeb4f2bb28a1ed7ffd77ac41",
+      "sha256": "4a2acc8856e89749ff1a8c4d09e1b49e333608ea8bf386e017482f58588504cc"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/evaluate.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/evaluate.py",
+      "git_mode": "120000",
+      "git_blob": "c54ba74c285e72cca7d83b80b629f2fd5c03f5b8",
+      "sha256": "366f44a8b34c900f25830c645f4360f35b7f670048b74ad98b6661954f8a44fa"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/model.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/model.py",
+      "git_mode": "120000",
+      "git_blob": "290f98a2c2c538e0fd4f78422e31648433e93722",
+      "sha256": "bbe99f7fb6d75e1db86931392a468e97e96a41793d11bc1d839b1ac001e99a24"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/models/__init__.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/models/__init__.py",
+      "git_mode": "100644",
+      "git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/models/convnext_norm_film.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/models/convnext_norm_film.py",
+      "git_mode": "120000",
+      "git_blob": "c910b190db5a84c067eb098cfbde9165d01a3e97",
+      "sha256": "23b74632da35f508a96de3286b2318b6c23a225da2064e4d91e892250bc538c3"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/models/qutcc_original/__init__.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/models/qutcc_original/__init__.py",
+      "git_mode": "100644",
+      "git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/models/qutcc_original/nn.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/models/qutcc_original/nn.py",
+      "git_mode": "120000",
+      "git_blob": "76f32523cec6b45feed2e831679995acf60d6468",
+      "sha256": "9c2f05d5b6c22c3838a760286f7b0229cceff7c175f2fea4bd2b056c5b995e25"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/models/shamus_rml.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/models/shamus_rml.py",
+      "git_mode": "120000",
+      "git_blob": "29dc811c575523c57ffedc837cde69d50002a933",
+      "sha256": "8b494238c5819ab621c8d4d999d1d586353de65f7ac86e1418db762318aae496"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/protocol.json",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/protocol.json",
+      "git_mode": "100644",
+      "git_blob": "8260c09bd3739c0d8e87700276736e60e3ee3444",
+      "sha256": "f481dfee9823ecc42d2259ff40dc00090278258ea2402bd6d692bfdbc25ca2d6"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/test_continuation.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/test_continuation.py",
+      "git_mode": "100644",
+      "git_blob": "c76e718e95d2e1f6e1013ec81f7105cf917dcbab",
+      "sha256": "f704c4537fdf2e7e7a0c76cd7cf995c374fbb5b0d840a882ba70fe231d392839"
+    },
+    {
+      "original_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/train.py",
+      "archived_path": "archive/reproduction/experiments/experiment3/corrupted_continuation/train.py",
+      "git_mode": "100644",
+      "git_blob": "b3aee33a5cc60dc09a2678ef2c73b9c0a6c9c49b",
+      "sha256": "b39a9906572a208021dd2aed53b4d199290d2718ab29f0ef44feb2b70f6a9f5a"
+    },
+    {
+      "original_path": "archive/reproduction/requirements-reference.txt",
+      "archived_path": "archive/reproduction/requirements-reference.txt",
+      "git_mode": "100644",
+      "git_blob": "6a3b41b5a9c1dd65bb787609903cfcffdb736953",
+      "sha256": "42233a91ad0629daedfdb99be5667117c0548330103b712b916da5848f9c0761"
+    },
+    {
+      "original_path": "archive/reproduction/shared/README.md",
+      "archived_path": "archive/reproduction/shared/README.md",
+      "git_mode": "100644",
+      "git_blob": "256be320affe13b6c09bdc57cf7c7c43570df004",
+      "sha256": "d0fa3d62f30274431765286a4aed653ab1fa95828370c7b7a898edcd5342764c"
+    },
+    {
+      "original_path": "archive/reproduction/shared/calibration/coverage90.py",
+      "archived_path": "archive/reproduction/shared/calibration/coverage90.py",
+      "git_mode": "100644",
+      "git_blob": "ab3c15244fda0715e7fa580b7d539095554b538e",
+      "sha256": "31d84e768fe3ad7f58b2f275bd91581478ae434cc37f1ad325e3534177fac8e8"
+    },
+    {
+      "original_path": "archive/reproduction/shared/calibration/quantile_search.py",
+      "archived_path": "archive/reproduction/shared/calibration/quantile_search.py",
+      "git_mode": "100644",
+      "git_blob": "9c443f31e5aa88adebc67db6abc81dbd48093d12",
+      "sha256": "ea900af9ecbf83499c70568c3553ff04f75cd507128f1cae5f74683865edc2f9"
+    },
+    {
+      "original_path": "archive/reproduction/shared/data/paired.py",
+      "archived_path": "archive/reproduction/shared/data/paired.py",
+      "git_mode": "100644",
+      "git_blob": "45ea1170585486e7d5b05438797dc65e8549f303",
+      "sha256": "1422cda436ee68d8c67888c1806c0377b38165236f9fe8a85d05e681e8428620"
+    },
+    {
+      "original_path": "archive/reproduction/shared/evaluation/continuation.py",
+      "archived_path": "archive/reproduction/shared/evaluation/continuation.py",
+      "git_mode": "100644",
+      "git_blob": "e87ca509bc8f9300d759143237cecc276fb1d6d4",
+      "sha256": "133874a7e65f8fdfb847146cfc7584b6e7ffef7fa7a8d9542d9ee7a456274d0d"
+    },
+    {
+      "original_path": "archive/reproduction/shared/evaluation/paper.py",
+      "archived_path": "archive/reproduction/shared/evaluation/paper.py",
+      "git_mode": "100644",
+      "git_blob": "1750991c50f51e8055eb7a106d5b22b7885441af",
+      "sha256": "73ef8f7619caff7e0020c37d2bb781f415828e63344d66a86969ca88375327e8"
+    },
+    {
+      "original_path": "archive/reproduction/shared/models/backbone.py",
+      "archived_path": "archive/reproduction/shared/models/backbone.py",
+      "git_mode": "100644",
+      "git_blob": "616f4960bdd07ebea1afbce6eb3f935ac1015544",
+      "sha256": "26866a531ff151d50a276d71bf7e73a0c684dda4d381f823673b5214d0ad1b70"
+    },
+    {
+      "original_path": "archive/reproduction/shared/models/film.py",
+      "archived_path": "archive/reproduction/shared/models/film.py",
+      "git_mode": "100644",
+      "git_blob": "40ddf0261db93d6f784733767f57a57f8f01d191",
+      "sha256": "273da9d47ca331177a41c06c40327bb69393e1a3029b30ee96417bc4088a2bd9"
+    },
+    {
+      "original_path": "archive/reproduction/shared/models/quantile_embedding.py",
+      "archived_path": "archive/reproduction/shared/models/quantile_embedding.py",
+      "git_mode": "100644",
+      "git_blob": "817d1e2b646989e0ba92745bba3a092c270b543f",
+      "sha256": "dd9bcdec6d034598355e1446dd948addbe14a62af46baed3669e17c031812b96"
+    },
+    {
+      "original_path": "archive/reproduction/shared/models/quantile_model.py",
+      "archived_path": "archive/reproduction/shared/models/quantile_model.py",
+      "git_mode": "100644",
+      "git_blob": "bfc3a8c480c27d93f9d0b0a0a6bab4ca6889e79a",
+      "sha256": "d607153ed5395d49df88f2e930527628d68fc0f6e9f8c4822f93e33d532273d7"
+    },
+    {
+      "original_path": "archive/reproduction/shared/protocols/paper.json",
+      "archived_path": "archive/reproduction/shared/protocols/paper.json",
+      "git_mode": "100644",
+      "git_blob": "5dc5a4bf5e23b1c35ed9ea0406b6a049460554ac",
+      "sha256": "670bf4bd6da9db3594b62ce0d4f10189c8bc2b50d87be6e510689b80bfbbbc39"
+    },
+    {
+      "original_path": "archive/reproduction/shared/source_map.json",
+      "archived_path": "archive/reproduction/shared/source_map.json",
+      "git_mode": "100644",
+      "git_blob": "88eb3e194626f70383285747ddc4f13831c01fbb",
+      "sha256": "b5158b94436a5c00ebfedf6b6b4f145de9506d75cd63c3422c8896a2e7e3b100"
+    },
+    {
+      "original_path": "archive/reproduction/shared/tests/paper_protocol.py",
+      "archived_path": "archive/reproduction/shared/tests/paper_protocol.py",
+      "git_mode": "100644",
+      "git_blob": "f181c2d777731e047ba9990fef743f3072020ebd",
+      "sha256": "396771184bed1460b796a2bc07659d85776ec0a494cd335d59e83fe5abbdb7f6"
+    },
+    {
+      "original_path": "archive/reproduction/shared/training/paper.py",
+      "archived_path": "archive/reproduction/shared/training/paper.py",
+      "git_mode": "100644",
+      "git_blob": "feea112a8ec0cc58c9819ee135297b3497b58e0e",
+      "sha256": "2a4d3428dd70264d43c24a82331cffe58f4caf0a244aa1da042bd79c62532572"
+    },
+    {
+      "original_path": "archive/reproduction/tests/test_four_model_entrypoint.py",
+      "archived_path": "archive/reproduction/tests/test_four_model_entrypoint.py",
+      "git_mode": "100644",
+      "git_blob": "1cc8f8a42c8b7dfb16dadcd06a3cc7327b970499",
+      "sha256": "5119b364d156af32ca54f2427a8f93912d633074d94a950c7a8736a6206713ba"
+    },
+    {
+      "original_path": "archive/reproduction/tests/test_interval_equivalence.py",
+      "archived_path": "archive/reproduction/tests/test_interval_equivalence.py",
+      "git_mode": "100644",
+      "git_blob": "58fbcef420a1bc3426bb1e0c34582180347d7bef",
+      "sha256": "5c7583339faf71387b85af8d4bae7b40df9b12b7ae3fed88c222aa96fd638f8c"
+    },
+    {
+      "original_path": "archive/reproduction/tests/test_shared_source_layout.py",
+      "archived_path": "archive/reproduction/tests/test_shared_source_layout.py",
+      "git_mode": "100644",
+      "git_blob": "e72e5941948d7dd633a50c3d4cb8b8aa08c4f650",
+      "sha256": "36dcb6811a9cdb3f4d99d20d815ce8b665a15a9293b4a3d7582ff7fd2ecfd0f8"
+    },
+    {
+      "original_path": "archive/reproduction/tools",
+      "archived_path": "archive/reproduction/tools",
+      "git_mode": "120000",
+      "git_blob": "eaa8e89d57eee91cb1a5d819e3fb4464516747d1",
+      "sha256": "7803d0b31cbe39770686ac509693995dab452a1b677b6a6ce57fe138892434c0"
+    },
+    {
+      "original_path": "archive/research_prototype_20261102/README.md",
+      "archived_path": "archive/research_prototype_20261102/README.md",
+      "git_mode": "100644",
+      "git_blob": "e0acef7b33e2406eb2983148787a6c778d11045a",
+      "sha256": "d9a0470016c7e10e4ebf814ef28d9c555b4d744c987ad38ddc0340d1a10ea344"
+    },
+    {
+      "original_path": "archive/research_prototype_20261102/snapshot.json",
+      "archived_path": "archive/research_prototype_20261102/snapshot.json",
+      "git_mode": "100644",
+      "git_blob": "15a1da3f7fb0c220db478fe7eb18a160e6182a18",
+      "sha256": "efba6d6dfcb18d1f5b0f8ce945866fb1f806662d8bd5bc913134844824d4b36f"
+    },
+    {
+      "original_path": "archive/research_prototype_20261102/source_before_simplification.tar.gz",
+      "archived_path": "archive/research_prototype_20261102/source_before_simplification.tar.gz",
+      "git_mode": "100644",
+      "git_blob": "7cc659e6960435160d1d0a3cac1b3e19d8a2cf9b",
+      "sha256": "3e2af92c045b1aeb2c67d094a19f8b6fa9ffbc17ce74657b12c94cd6dc51a6a5"
+    },
+    {
+      "original_path": "config.json",
+      "archived_path": "archive/previous_implementation_20261111/config.json",
+      "git_mode": "100644",
+      "git_blob": "8e8a0c030f585810f411c1b0bf0323dcd488f57b",
+      "sha256": "61b98ee53699b5bf61aec0294048f856e5aeb7976b5ac140c2b357963475b6e8"
+    },
+    {
+      "original_path": "convrml/README.md",
+      "archived_path": "archive/previous_implementation_20261111/convrml/README.md",
+      "git_mode": "100644",
+      "git_blob": "5ff6b5dd5af62bcc77769a9e6dbb0df97a01cf6b",
+      "sha256": "ba0f5c2798bf08c4b279812ac95503da97ad9a6d9596798d29f7680f850d833d"
+    },
+    {
+      "original_path": "convrml/__init__.py",
+      "archived_path": "archive/previous_implementation_20261111/convrml/__init__.py",
+      "git_mode": "100644",
+      "git_blob": "aabf33e8c87aecd2ef59a480af87a1d0a751ca18",
+      "sha256": "3f43eda637d925355be6484c97506debddfc7742e4de2b2efaa89aaa349cb106"
+    },
+    {
+      "original_path": "convrml/backbone.py",
+      "archived_path": "archive/previous_implementation_20261111/convrml/backbone.py",
+      "git_mode": "100644",
+      "git_blob": "20210629aba253f5d30a48487d6e846be3fba73d",
+      "sha256": "9552a99e8e511477665c89ab45a3cb9bb91d7e587af8d86b891d9c6ad830f051"
+    },
+    {
+      "original_path": "convrml/calibration.py",
+      "archived_path": "archive/previous_implementation_20261111/convrml/calibration.py",
+      "git_mode": "100644",
+      "git_blob": "910b801df0cebca558e82094e16ba9853caf1b29",
+      "sha256": "d8da59283e9b8556084452cda1b95272a5cb4cc9be6bac6baf4fdd9fb185e590"
+    },
+    {
+      "original_path": "convrml/checkpoints.py",
+      "archived_path": "archive/previous_implementation_20261111/convrml/checkpoints.py",
+      "git_mode": "100644",
+      "git_blob": "403bc5dd1c9c6ee16f596be891985f6c7914b5ad",
+      "sha256": "7fb0d7a0b263104d594faf527b204183ec8cedc28e18609cdfe9dafbc5801964"
+    },
+    {
+      "original_path": "convrml/film.py",
+      "archived_path": "archive/previous_implementation_20261111/convrml/film.py",
+      "git_mode": "100644",
+      "git_blob": "32b22f1b3c318b6e61d64ac32d23a930b93b0295",
+      "sha256": "3c5c6c7c45938a5ddc2e1b2c55adffdb7689eff9ab886e48f56f0d4fed5c94e3"
+    },
+    {
+      "original_path": "convrml/intervals.py",
+      "archived_path": "archive/previous_implementation_20261111/convrml/intervals.py",
+      "git_mode": "100644",
+      "git_blob": "493e5fe3043c4e55cc16c818a224ce50afa7d14d",
+      "sha256": "211c47c622276b963d2e4da6e378e54cc3138ca6e01204afaa9861d6e1b81ff4"
+    },
+    {
+      "original_path": "convrml/quantile_embedding.py",
+      "archived_path": "archive/previous_implementation_20261111/convrml/quantile_embedding.py",
+      "git_mode": "100644",
+      "git_blob": "6082f4b6793e002111858dc48d4331512b04736d",
+      "sha256": "a52ee2f3f171a9fad24d321a2babeb8f31cd4fdcc34260f576db8a017180e990"
+    },
+    {
+      "original_path": "dataset.py",
+      "archived_path": "archive/previous_implementation_20261111/dataset.py",
+      "git_mode": "100644",
+      "git_blob": "40fb95107658997c40fb0d6bc35917ef1fcd70f3",
+      "sha256": "a1d2dd9720abe828f0f728f73009befc36855c0f0ec8fd80971391b9758583de"
+    },
+    {
+      "original_path": "evaluation/README.md",
+      "archived_path": "archive/previous_implementation_20261111/evaluation/README.md",
+      "git_mode": "100644",
+      "git_blob": "61f0338479b95c74d1da51c5523ae6ae7796b7cb",
+      "sha256": "79f87ce46bf5ef6bb620f6ead0d10a59f394beddad62b35e52d3e620b84c5dcb"
+    },
+    {
+      "original_path": "evaluation/__init__.py",
+      "archived_path": "archive/previous_implementation_20261111/evaluation/__init__.py",
+      "git_mode": "100644",
+      "git_blob": "34599077362255631aa716f93c6f08fa2b7b9ab6",
+      "sha256": "be4f3c83c64f2ac91be96d2b58afe0cb0e06b83799a291c439899d92763be202"
+    },
+    {
+      "original_path": "evaluation/download.py",
+      "archived_path": "archive/previous_implementation_20261111/evaluation/download.py",
+      "git_mode": "100644",
+      "git_blob": "25c63f07ec6f9ad0dfe2432f0e08c70b90e82fdb",
+      "sha256": "aaef854c7ea6317e75f33cc4ce67a37cd4074e367f01f061d8eb91ab7ee7b381"
+    },
+    {
+      "original_path": "evaluation/metrics.py",
+      "archived_path": "archive/previous_implementation_20261111/evaluation/metrics.py",
+      "git_mode": "100644",
+      "git_blob": "5860371a7b238938f1b0529fb3d55cab6c2071d1",
+      "sha256": "98ab4bfb2161e1e9962f14d1575dc8a08bdf3d397bff8c17d96f50ad013df902"
+    },
+    {
+      "original_path": "evaluation/reporting.py",
+      "archived_path": "archive/previous_implementation_20261111/evaluation/reporting.py",
+      "git_mode": "100644",
+      "git_blob": "aa705c11560bf965fea44642a6b3b5287a549b26",
+      "sha256": "f2f0fafc8ea23d6476be16e1ad6fe1b90f2ba80f7fa29b417fc8492f58b4788b"
+    },
+    {
+      "original_path": "evaluation/run.py",
+      "archived_path": "archive/previous_implementation_20261111/evaluation/run.py",
+      "git_mode": "100644",
+      "git_blob": "984a999fb6d5d8a08b399221fc7c98b702432b67",
+      "sha256": "edbdace92305a36d4c442b6bf077e33d0a94a7190a762c5dcf8c6374dbb0fe00"
+    },
+    {
+      "original_path": "models/README.md",
+      "archived_path": "archive/previous_implementation_20261111/models/README.md",
+      "git_mode": "100644",
+      "git_blob": "c0068ec76d859bce01f093f684f094df4af3162d",
+      "sha256": "a1fe5b5a6513467b3f5549dce6d9d23f083aa158198385eac54e408bcfe9c764"
+    },
+    {
+      "original_path": "models/__init__.py",
+      "archived_path": "archive/previous_implementation_20261111/models/__init__.py",
+      "git_mode": "100644",
+      "git_blob": "3cc41d37a971bebce4acf40d355ad0acb365a565",
+      "sha256": "fb0ce07a78abf9ba249ccee0cd2c664001cfc4d18ffd6bba65ad622dc2aefadf"
+    },
+    {
+      "original_path": "models/ensemble.py",
+      "archived_path": "archive/previous_implementation_20261111/models/ensemble.py",
+      "git_mode": "100644",
+      "git_blob": "e39eab8f91d578ce602dab6a9f715d4a3b642806",
+      "sha256": "d7dc44b820c13543dede03f3b6afbb551bb93681f560f172c9c45dfd4c6b180f"
+    },
+    {
+      "original_path": "models/im2im.py",
+      "archived_path": "archive/previous_implementation_20261111/models/im2im.py",
+      "git_mode": "100644",
+      "git_blob": "ec469ca6f0c17200e7dd53096f0cc848ee3179ff",
+      "sha256": "898034d50acc0c06dfaaa786121335450d4c71a4657c1cb1f68de90da42687c8"
+    },
+    {
+      "original_path": "models/mc_dropout.py",
+      "archived_path": "archive/previous_implementation_20261111/models/mc_dropout.py",
+      "git_mode": "100644",
+      "git_blob": "40169574a84af1f0c716269529e29050012ecb92",
+      "sha256": "ad9729e143a0203219e34288705d87e6e1ac5cd06f8b5b25c54be8a98bb9ddd6"
+    },
+    {
+      "original_path": "models/qutcc.py",
+      "archived_path": "archive/previous_implementation_20261111/models/qutcc.py",
+      "git_mode": "100644",
+      "git_blob": "727b64da864a30f5f389bb93b055adb6fe3191e6",
+      "sha256": "d9d93624dfa2f4fe85f7db25e1277bad42427cb70ab3e145f4ff98ab3582fe98"
+    },
+    {
+      "original_path": "tests/README.md",
+      "archived_path": "archive/previous_implementation_20261111/tests/README.md",
+      "git_mode": "100644",
+      "git_blob": "cacbda1fed1a2f0e7eb881ee2410b6305fa76db5",
+      "sha256": "7b7d78a30635377079f9b4480b3e11f68640e60aac5c37bc14e248f52ff0d499"
+    },
+    {
+      "original_path": "tests/test_dataset.py",
+      "archived_path": "archive/previous_implementation_20261111/tests/test_dataset.py",
+      "git_mode": "100644",
+      "git_blob": "570ce6370d609c5a2cff18a2c909fc2c8785310c",
+      "sha256": "435026afdbf5dadc29fc4afa4e7c1a4c9c5132039ceab967fa4c26627afa5d7f"
+    },
+    {
+      "original_path": "tests/test_learning_curves.py",
+      "archived_path": "archive/previous_implementation_20261111/tests/test_learning_curves.py",
+      "git_mode": "100644",
+      "git_blob": "7af8bcbb20d23bde86ab8f93d5105a3d2dd4af5f",
+      "sha256": "a83391f500d3315a0dd6f1b509867acd50028d688d9bd65695f7e64965ce857e"
+    },
+    {
+      "original_path": "tests/test_metrics.py",
+      "archived_path": "archive/previous_implementation_20261111/tests/test_metrics.py",
+      "git_mode": "100644",
+      "git_blob": "438ffbe95011c89b456e20d0936b06a368cad1fe",
+      "sha256": "49ec7499d9c06e9feae9dd446bff3c184537d8b8d383b34330a1ceb31419210b"
+    },
+    {
+      "original_path": "tests/test_paper_calibration.py",
+      "archived_path": "archive/previous_implementation_20261111/tests/test_paper_calibration.py",
+      "git_mode": "100644",
+      "git_blob": "3fe3e4d989a3835ec9812ddc7a5fa7cc7e4a3f73",
+      "sha256": "620f767542a28b2e98f0cb5c7a54048a8c6b2dc9fe9f1c9693050f0899990e1f"
+    },
+    {
+      "original_path": "tests/test_portable_workflow.py",
+      "archived_path": "archive/previous_implementation_20261111/tests/test_portable_workflow.py",
+      "git_mode": "100644",
+      "git_blob": "7be2e5800041ade1afb10842ec6c722d46612266",
+      "sha256": "9f159e3c2e8c47761c17a5737971e78d03f91cc65badf2e25df8167fca7a5ba9"
+    },
+    {
+      "original_path": "tests/test_publication_models.py",
+      "archived_path": "archive/previous_implementation_20261111/tests/test_publication_models.py",
+      "git_mode": "100644",
+      "git_blob": "de42132aadd71e09236a6a780b90e33077a1c717",
+      "sha256": "ed920fdffeb192299d87d1fca66628457cf436e4a5dde2c61685f5051cee4cb2"
+    },
+    {
+      "original_path": "tests/test_release_metadata.py",
+      "archived_path": "archive/previous_implementation_20261111/tests/test_release_metadata.py",
+      "git_mode": "100644",
+      "git_blob": "a778607ad8be9774f42cac94cac1bb909d084bf8",
+      "sha256": "6ff6db74799f93cdc715dcfc4b10b1538cd3f4e6a088e838d6ac982714a03673"
+    },
+    {
+      "original_path": "train.py",
+      "archived_path": "archive/previous_implementation_20261111/train.py",
+      "git_mode": "100644",
+      "git_blob": "e9a26fa1eee43463e9a3aaefd7860987192b955d",
+      "sha256": "3fd444cbde8964da97c3f47dd90a85ca9c6aff8a4ebde3c2793aae897396911c"
+    },
+    {
+      "original_path": "training.py",
+      "archived_path": "archive/previous_implementation_20261111/training.py",
+      "git_mode": "100644",
+      "git_blob": "382bb9f4504f1a56bf08435c61544132937a92aa",
+      "sha256": "baee74c9de2c4bc0073d8891c73b04aa12f3d5e36e2a593ec331d8a52396f27d"
+    }
+  ]
+}

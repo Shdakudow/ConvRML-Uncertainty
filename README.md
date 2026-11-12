@@ -1,188 +1,198 @@
 # ConvRML-Uncertainty
 
-Four methods for lensless image reconstruction and uncertainty: **Im2im, QUTCC,
-deep ensemble, and MC dropout**, sharing a ConvNeXtV2/FPN backbone.
+ConvNeXt-Tiny reconstruction with QUTCC, Im2im, deep ensemble, and MC dropout
+uncertainty models. All four methods use the encoder and full-resolution
+reconstruction decoder in `ConvNeXt/backbone.py`.
 
-**FPN means Feature Pyramid Network** in this implementation: its decoder combines
-features at multiple scales. The original ConvRML paper calls its decoder a
-**Feedforward Neural Network (FNN)**. Our `ConvNeXtFPN` name describes this
-implementation and is not the paper’s terminology; the architecture is an
-adaptation, not an exact reproduction of its ConvNeXt-T/FNN model.
-See the [paper’s reconstruction architecture](https://arxiv.org/html/2602.04834v2#S4).
-
-Generalized-input and corruption-specialist studies are maintained separately in
-[ConvRML-Generalized-Specialists](https://github.com/Shdakudow/ConvRML-Generalized-Specialists).
-[Interactive results](https://shdakudow.github.io/ConvRML-Uncertainty-Demo/)
-show previously trained experiments; changing this code does not retrain those models.
-
-## Code layout
-
-| Location | What it does |
-| --- | --- |
-| [train.py](train.py) | Arguments, setup, epoch coordination, validation and saving |
-| [config.json](config.json) | Defaults for datasets, optimizers, schedules, seeds and calibration |
-| [dataset.py](dataset.py) | Load paired measurements and ground truths |
-| [models/](models/) | Four model definitions, their losses and prediction methods |
-| [convrml/backbone.py](convrml/backbone.py) | Shared ConvNeXt/FPN architecture |
-| [convrml/film.py](convrml/film.py) | QUTCC feature modulation by quantile embeddings |
-| [training.py](training.py) | Settings/profile loading, AdamW, learning-rate schedule and batch/epoch updates |
-| [convrml/calibration.py](convrml/calibration.py) | Baseline RCPS and QUTCC quantile calibration algorithms |
-| [evaluation/](evaluation/) | Evaluation entry point, metrics, reports and downloads |
-| [tests/](tests/) | Small automated correctness checks; not the image test dataset |
-| [archive/](archive/) | Historical code, split records, environments and checkpoint catalog |
-
-Start with a model's `forward`, `loss` and `bounds`, then `train_batch` in
-`training.py`. The main workflow is `run_training` in `train.py`.
-The training workflow has only two Python files: `train.py` coordinates it and
-`training.py` implements optimization. Edit numerical settings in `config.json`.
-Model construction lives in `models/__init__.py`; loader selection and split
-checks live in `dataset.py`. There is no separate `protocol.py` layer.
-Loss formulas live in model classes; the shared loop calls `model.loss(...)`.
-Only QUTCC uses the optional quantile generator passed to that method.
-
-## Methods
-
-| Method | Training loss | Uncertainty at inference |
+| Model | Output | Training loss |
 | --- | --- | --- |
-| Im2im | Center MSE + fixed lower/upper pinball losses, end to end | Endpoint heads, then asymmetric RCPS scaling |
-| QUTCC | Pinball with independently sampled uniform q per image | Quantile-conditioned predictions using FiLM; calibrated q endpoints |
-| Deep ensemble | Gaussian NLL for each independent member | Member mean/variance aggregation, then RCPS |
-| MC dropout | MSE with dropout | Repeated stochastic predictions, then RCPS |
+| QUTCC | One RGB quantile image for the supplied `q` | Pinball loss at a randomly sampled `q` per image |
+| Im2im | Lower, center, and upper RGB images | Center MSE plus lower/upper pinball losses |
+| Ensemble | Ten independent RGB mean/variance predictors | Mean Gaussian NLL across the ten members |
+| MC dropout | One RGB reconstruction; 50 stochastic passes for intervals | MSE |
 
-Current defaults: target miss fraction `alpha=0.10`, RCPS failure budget
-`delta=0.05`, dropout probability `p=0.05`, and 30 MC inference passes.
-Calibration uses separate scenes and does not update model weights or force
-exactly 90% test coverage. It does not normalize images or guarantee noncrossing
-QUTCC endpoints. See [model details](models/README.md).
+`timesteps` is removed. QUTCC retains `q`, embedded and applied through FiLM
+after the encoder block normalizations and decoder batch normalizations.
+The other three methods receive only image tensors. The decoder's new
+`out_channels` argument is needed for Im2im's 9 output channels and each
+ensemble member's 6 output channels; the sensor input remains RGB.
+Each epoch forms one set of training batches, then independently shuffles
+their order for each ensemble member. Membership within each batch stays
+the same across members, including the final partial batch. Each member
+trains through its entire batch order before the next member starts.
+Only batch indices are stored; images are loaded as needed.
+Every member uses the same learning-rate and weight-decay schedule for that
+epoch. AdamW updates only the active member, and gradients retain the mean-NLL
+scaling across members. Training loss is averaged across members and images.
+Seed 777 makes the batch orders reproducible across matching runs.
 
-## Setup
+MC dropout keeps the draft's probability of 0.1 and its observation-noise
+precision formula, with length scale 1 and weight decay 1e-4. Its interval
+variance includes `2 * dataset_size * 1e-4 / 0.9` in addition to sample variance.
+That term is inherited from the draft and can dominate the native width on a
+large dataset. Calibration operates on those native intervals separately.
 
-Run commands from this repository's root. Use a Python environment with a
-CPU/CUDA-compatible PyTorch and torchvision installation, then install the
-remaining dependencies:
+## Data and training
 
-```bash
-python -m pip install timm==1.0.22 numpy Pillow torchmetrics==1.8.2 scipy
-python train.py --help
-python -m evaluation.run --help
-```
+Install dependencies with `python -m pip install -r requirements.txt`.
+LPIPS downloads pretrained AlexNet metric weights on first use if they are
+not already cached.
 
-A [historical tested environment](archive/reproducibility/environment-tested.json)
-and [version constraints](archive/reproducibility/constraints-tested.txt) are
-retained for reference. This checkout runs directly; it does not require
-`pip install -e .`. LPIPS evaluation may download pretrained AlexNet weights;
-`--no-lpips` skips that metric for offline checks.
-
-## Data
-
-| Dataset | `--dataset` | Models configured | Prepared RGB dimensions |
-| --- | --- | --- | --- |
-| Parallel Lensless Dataset: RML | `rml` | All four | 256 × 256 |
-| Parallel Lensless Dataset: normalized DiffuserCam | `diffuser` | All four | 256 × 256 |
-| DiffuserCam Lensless MIRFLICKR | `raw_clean` | Im2im, QUTCC | 270 × 480 |
-| Prepared corrupted MIRFLICKR | `raw_corrupted` | Im2im, QUTCC adaptation | 270 × 480 |
-
-Images are external. See [data availability](archive/reproducibility/DATA.md).
-These are prepared uint8 RGB pairs, converted to float32 by dividing by 255.
-The loader does not resize or corrupt images. Models pad internally and crop
-outputs to the input dimensions. Predictions themselves are not restricted to [0,1].
-
-A **manifest** is a JSON file listing fixed split membership, not a new random
-split. PLD uses a NumPy cache shaped `(N, 2, 3, H, W)` and a split file:
+Use the existing JSON split format:
 
 ```json
-{"train": [{"id": "a"}], "val": [{"id": "b"}], "test": [{"id": "c"}]}
+{
+  "roles": {
+    "train": [{"id": "scene_1", "measurement": {"path": "inputs/1.png"}, "target": {"path": "targets/1.png"}}],
+    "val": [{"id": "scene_2", "measurement": {"path": "inputs/2.png"}, "target": {"path": "targets/2.png"}}],
+    "calibration": [{"id": "scene_3", "measurement": {"path": "inputs/3.png"}, "target": {"path": "targets/3.png"}}],
+    "test": [{"id": "scene_4", "measurement": {"path": "inputs/4.png"}, "target": {"path": "targets/4.png"}}]
+  }
+}
 ```
 
-The cache concatenates train, val, then test pairs; each pair stores measurement
-first and target second. The calibration cache has its own manifest containing
-only `calibration` rows.
+Paths can be absolute or relative to the manifest. Images are converted to RGB
+float tensors in [0,1]. The loader preserves image sizes; each batch uses scenes
+with the same input/target sizes. The encoder pads to multiples of 32 and the
+decoder produces the target size. The loader applies no additional corruption.
 
-MIRFLICKR uses image-file paths instead:
+The manifest is a list of input/target pairs divided into `train`, `val`,
+`calibration`, and `test` roles. It references the original files without copying
+them. Keep each scene in one role to keep validation, calibration, and testing
+independent of training.
 
-```json
-{"roles": {"train": [{"id": "a", "measurement": {"path": "measurements/a.png"}, "target": {"path": "targets/a.png"}}], "val": [], "test": [], "calibration": []}}
-```
-
-Fill the required split lists with actual pairs. Paths may be absolute or relative
-to the manifest. Split IDs must be unique and disjoint. The model code is shared
-across datasets; each dataset requires its own trained weights.
-
-## Train
+For PNG/TIFF/JPEG exports, the loader converts RGB pixels from 0–255 to 0–1.
+For original MIRFLICKR `.npy` files, it expects floating-point HWC arrays,
+reverses BGR to RGB, flips vertically, divides measurements by 0.9, and clips
+measurements and targets to [0,1]. Targets are not divided by 0.9. These are
+the original dataset's preprocessing steps; exported images are not corrected
+again. `.npy` values are not divided by 255 or quantized to 8-bit pixels.
 
 ```bash
-python train.py --dataset rml --method qutcc \
-  --manifest data/rml/manifest.json --pairs data/rml/pairs.npy \
-  --output runs/rml/qutcc --epochs 50 --device cuda
+python train.py --manifest /path/to/split.json --model qutcc --output runs/qutcc
 ```
 
-For MIRFLICKR, use `--dataset raw_clean --manifest data/split.json` and omit
-`--pairs`. Select another method with `--method im2im`, `mc_dropout`, or
-`ensemble`. Ensemble training requires `--member 0` through `--member 9`, with a
-separate run folder for each member. Member seeds control both initialization
-and data order independently.
+The only command-line arguments select the data, model, and output folder.
+Settings follow the draft and your updates: 50 epochs, AdamW, physical batch
+size 10 without gradient accumulation, and a nine-epoch linear
+warmup from 1e-5 to 1e-4, then cosine decay to 1e-9. Weight decay decreases
+from 1e-4 to zero with a cosine schedule. All model weights start from scratch.
 
-All **new runs use AdamW**. Current profiles still differ:
+`history.json` records loss, validation PSNR/SSIM/LPIPS, learning rate, and
+weight decay. PSNR, SSIM, and LPIPS come from TorchMetrics. The
+`PeakSignalNoiseRatio` and `StructuralSimilarityIndexMeasure` classes accumulate
+validation statistics within each epoch and start fresh for the next epoch.
+PSNR is averaged per image, using `dim=(1,2,3)`. LPIPS uses the
+pretrained AlexNet metric weights. PSNR and SSIM use raw predictions with
+intensity range 1. LPIPS uses a copy of predictions clipped to [0,1], following
+your selected evaluation policy and TorchMetrics' input range. Metrics are
+averaged per image. LPIPS is an evaluation metric here, not a training loss.
+Its lower values indicate closer
+perceptual similarity; it is not a coverage probability or a percentage.
+The fixed seed is your chosen value, 777. It supports repeatability rather than
+improving accuracy by itself. `latest.pt` saves the current weights and optimizer
+each epoch. Every 5 epochs, `best_through_epoch_005.pt`,
+`best_through_epoch_010.pt`, and so on save the weights with the highest raw
+validation SSIM seen from epoch 1 through that milestone. Selection is
+cumulative and does not reset every 5 epochs. Each best checkpoint records
+the selected model's actual `epoch`, `validation_ssim`, and
+`selected_through_epoch`. It contains weights and model metadata, without
+optimizer state. Tied SSIM values retain the earlier winner.
+This script starts a new run; it does
+not implement checkpoint resumption.
 
-| Profile | Used for | LR schedule | Betas | Weight decay | Effective batch |
-| --- | --- | --- | --- | --- | --- |
-| `baseline` | PLD Im2im, ensemble, MC dropout | Constant 1e-4, 50 epochs | (0.9, 0.999) | 1e-4 | 2 |
-| `paper` | QUTCC and clean MIRFLICKR Im2im | 30% warmup 1e-5 → 1e-4, then cosine toward 1e-9, 50 epochs | (0.9, 0.99) | 0 | 4 |
-| `adaptation` | Corrupted MIRFLICKR | Constant 1e-5, 30 epochs | (0.9, 0.99) | 0 | 4 |
+## Calibration
 
-`baseline` uses BF16 and gradient clipping at norm 1; the other profiles use FP32
-without gradient clipping. Image-file datasets use microbatch size 1. Adaptation
-requires `--initialize /path/to/same_method_clean_epoch_030.pt` or `--resume`.
-Historical Adam runs retain their recorded optimizer; resume them with their
-original source. Standardizing the optimizer name does not make every profile identical.
+Use an explicit calibrator for each method:
 
-Each run saves its effective `config.json`, per-epoch `history.json`, a recovery
-checkpoint `latest.pt`, and weight milestones every five epochs. Resume with the
-same arguments plus `--resume`. `--epochs` is an absolute stopping epoch; it does
-not reset the configured learning-rate horizon. Resume checks settings and split
-counts, not image-ID hashes, so retain the same split file and data ordering.
-Use `--smoke` and a separate output folder for a two-batch check.
+```python
+from Calibration.calibration import KRCPS, QUTCCCalibration
 
-## Calibrate and evaluate
-
-```bash
-python -m evaluation.run --dataset rml --method qutcc \
-  --checkpoints runs/rml/qutcc/checkpoints/epoch_050.pt \
-  --manifest data/rml/manifest.json --pairs data/rml/pairs.npy \
-  --calibration-manifest data/rml/calibration/manifest.json \
-  --calibration-pairs data/rml/calibration/pairs.npy \
-  --output outputs/rml/qutcc_050 --examples 10 --device cuda
+calibrator = KRCPS(model)  # Im2im, ensemble, or MC dropout
+parameters = calibrator.fit(calibration_loader, device)
+center, lower, upper = calibrator.predict(test_images)
 ```
 
-For image-file data, omit both NumPy arguments and pass a manifest containing
-the appropriate test/calibration splits to each manifest option. For ensembles,
-pass the ordered member checkpoints after `--checkpoints`. `--calibration native`
-provides an uncalibrated control without opening calibration images.
+For QUTCC, construct `QUTCCCalibration(model)` instead. The fit/predict
+interface is the same. Each object stores its fitted values in
+`calibrator.parameters`; `fit` also returns that dictionary.
+The two calibration classes are independent, with their own `fit` and
+`predict` methods. Each fit uses evaluation mode and disables gradient tracking.
 
-Results include `calibration.json`, `report.json`, `per_image.csv`, and optional
-`examples.npz`. Metrics include PSNR, SSIM, MAE, LPIPS, coverage, mean interval
-width, crossed-bound frequency, and Pearson/Spearman uncertainty–error correlation.
-Raw and clipped metrics are reported separately; LPIPS uses clipped RGB.
-Uncertainty is `upper - lower`, in normalized-intensity units.
+An interval offset expands a native interval `[lower, upper]` to
+`[lower - offset, upper + offset]`. K-RCPS stores an offset for each spatial
+pixel, shared across its RGB channels. QUTCC instead selects quantile inputs.
 
-Published weights can be downloaded using:
+QUTCC searches for two quantile levels using a finite-image correction.
+`KRCPS` fits spatial additive interval offsets with alpha=0.1 (90% target
+coverage) and delta=0.1 (90% confidence). The HB risk-threshold search uses
+40 iterations. The remaining k-RCPS settings in `Calibration/krcps_optimization.py` come from
+your existing `code-for-quant/analysis_config.yaml`: 2 groups, 10 optimization
+images, 500 sampled spatial coordinates, initial expansion 0.5, step 0.002,
+and the original 30-value gamma sweep from 0.25 to 0.75.
 
-```bash
-python -m evaluation.download --dataset rml --method qutcc --epoch 50 --output weights/rml/qutcc
-```
+The optimization images are excluded from the final HB check. Results record
+the split indices, measured calibration coverage, and whether the certificate
+passed. These are additive spatial offsets rather than the previous pair of
+multiplicative scales. Final intervals are clipped to [0,1], following the
+source k-RCPS implementation; PSNR/SSIM reconstruction metrics stay raw.
+Save fitted parameters with `torch.save` because `lambda_map` is a tensor.
+Training weights are unchanged. Test data never enters calibration.
 
-The [archived catalog](archive/checkpoints/checkpoint_index.json) records available
-artifacts and verifies their sizes/hashes. Private assets require GitHub access.
-Weights are not included in the source repository.
+`krcps_optimization.py` adapts the group-optimization routine from
+[your repository](https://github.com/Shdakudow/code-for-quant/blob/0e164119fc81e1d0c9cb1a889d2a2f0f2525f081/evaluation/krcps/procedures/krcps.py),
+based on [Sulam-Group/k-rcps](https://github.com/Sulam-Group/k-rcps).
+The final calibration step uses HB with delta=0.1 instead of the source fork's
+confidence-independent risk expression. The upstream MIT license is retained
+in `KRCPS_LICENSE.txt`. CVXPY supplies the convex solver.
 
-## Tests
+## Checks
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-`tests/` contains small CPU fixtures that check code correctness: pairing and
-normalization, model outputs, losses, calibration, metrics, export formats,
-checkpoint handling, and resumed versus uninterrupted training. It contains no
-held-out benchmark images and does not run full model training. The checks do
-not establish accuracy on real data or deterministic equality across GPU types.
+Runtime assertion and validation guards were removed after the first test pass.
+Assertions remain in the tests. Numerical operations needed by the methods,
+such as positive variance and normalization, remain in the implementation.
+Tests use small synthetic images, reduced test-only backbone widths for
+training, and the real LPIPS metric. They also exercise the original ConvNeXt
+backbone. Full-dataset training is a separate run.
+
+The loader checks include original MIRFLICKR orientation, channel order,
+measurement normalization, clipping, float32 output, and a full 270×480 batch
+of 10. To check GPU memory on the intended training GPU, run:
+
+```bash
+UQ_GPU_CHECK=1 python -m unittest discover -s tests -p test_code.py -k FullResolutionGPUTests -v
+```
+
+These optional checks use all four full-size models at both 270×480 and
+300×480, physical batch size 10, and FP32. Each runs two training steps with
+AdamW, then validation with PSNR, SSIM, and LPIPS. They print GPU identity,
+peak allocated/reserved memory, and the result. Synthetic image values are
+used to measure memory; this does not measure reconstruction quality or
+replace a full-dataset run. Run individual checks in separate processes when
+comparing memory or diagnosing an out-of-memory result, for example with
+`-k FullResolutionGPUTests.test_qutcc_mirflickr`.
+
+On 2026-11-11, all eight GPU checks passed on Unicorn's RTX 6000 Ada (48 GB)
+with PyTorch 2.5.1+cu118. Peak allocated training memory ranged from 29.48 to
+36.82 GiB; peak reserved memory reached 46.49 GiB. Those measurements used
+five ensemble members and precede the independent batch-order update; they
+do not measure the current ten-member ensemble. All 21 regular checks pass after
+that update, including batch coverage, pairing, independent orders, seed
+reproducibility, matched schedules, and AdamW update equivalence.
+Detailed results are recorded in `tests/CHECKS.json`.
+
+## Previous implementation and attribution
+
+The previous implementation is preserved in
+[`archive/previous_implementation_20261111/`](archive/previous_implementation_20261111/).
+Earlier snapshots remain under [`archive/`](archive/).
+
+The backbone adapts [Meta's ConvNeXt](https://github.com/facebookresearch/ConvNeXt)
+and the decoder adapts
+[Lensless Imaging Transformer](https://github.com/BobPXX/Lensless_Imaging_Transformer).
+Their MIT notices are retained in `ConvNeXt/LICENSE`. The k-RCPS MIT notice is
+in `KRCPS_LICENSE.txt`. The original ConvRML BSD notice is retained in `LICENSE`.

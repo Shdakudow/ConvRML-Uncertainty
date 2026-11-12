@@ -1,0 +1,325 @@
+{
+  "full_suite": {
+    "tests": 29,
+    "passed": 21,
+    "skipped": 8,
+    "seconds": 116.917,
+    "integration_loader_workers": 2
+  },
+  "real_lpips_test_passed": true,
+  "synthetic_training_epochs": 10,
+  "checkpoint_roundtrip_passed": true,
+  "ensemble_gradient_equivalence_passed": true,
+  "production_assertions": 0,
+  "explicit_validation_exceptions": 0,
+  "full_dataset_training_started": false,
+  "rcps_class_refactor": {
+    "tests_passed": 12,
+    "baseline_and_qutcc_exact_parity": true,
+    "production_assertions": 0
+  },
+  "convnext_only_cleanup": {
+    "tests_passed": 12,
+    "removed_files": [
+      "ConvNeXt/recon_transformer.py",
+      "ConvNeXt/swin_transformer.py"
+    ]
+  },
+  "krcps_update": {
+    "source_repository": "Shdakudow/code-for-quant",
+    "source_commit": "0e164119fc81e1d0c9cb1a889d2a2f0f2525f081",
+    "alpha": 0.1,
+    "delta": 0.1,
+    "confidence": 0.9,
+    "hb_iterations": 40,
+    "physical_batch_size": 10,
+    "psnr_ssim_predictions": "raw",
+    "lpips_predictions": "clipped to documented [0,1] range",
+    "default_config_synthetic_smoke_passed": true,
+    "default_config_synthetic_hb_pvalue": 0.09192442059767693,
+    "default_config_synthetic_optimization_images": 10,
+    "default_config_synthetic_calibration_images": 70,
+    "cvxpy_version": "1.7.5"
+  },
+  "training_seed": 777,
+  "lpips_policy": "User-approved clipping to [0,1] for LPIPS only; PSNR and SSIM use raw predictions.",
+  "independent_calibration_classes": {
+    "tests_passed": 14,
+    "shared_base_removed": true,
+    "unused_rng_replay_removed": true,
+    "empty_certificate_hook_removed": true,
+    "inference_mode_and_coverage_retained": true
+  },
+  "inline_krcps_settings": {
+    "location": "Calibration/krcps_optimization.py",
+    "values_unchanged": true,
+    "tests_passed": 14
+  },
+  "latest_training_entrypoint_check": {
+    "passed": true,
+    "seed": 777,
+    "synthetic_epochs": 10,
+    "data_loader_workers_for_targeted_recheck": 0,
+    "train_epoch_call_corrected": true
+  },
+  "best_checkpoint_selection": {
+    "metric": "highest raw validation SSIM",
+    "selection": "cumulative from epoch 1",
+    "save_every_epochs": 5,
+    "weights_snapshot_test_passed": true,
+    "latest_keeps_current_training_state": true
+  },
+  "torchmetrics_classes": {
+    "psnr": "PeakSignalNoiseRatio",
+    "ssim": "StructuralSimilarityIndexMeasure",
+    "averaging": "mean per image",
+    "fresh_state_each_validation_epoch": true,
+    "uneven_batch_averaging_test_passed": true
+  },
+  "mirflickr_npy_loader": {
+    "tests_passed": 3,
+    "original_bgr_to_rgb": true,
+    "vertical_flip": true,
+    "measurement_scale": 0.9,
+    "target_rescaled": false,
+    "float32": true,
+    "output_range": [
+      0,
+      1
+    ],
+    "batch_shape": [
+      10,
+      3,
+      270,
+      480
+    ],
+    "exported_images_unchanged": true
+  },
+  "full_resolution_gpu": {
+    "status": "passed",
+    "job_id": 415503,
+    "batch_size": 10,
+    "precision": "float32",
+    "sizes": [
+      [
+        270,
+        480
+      ],
+      [
+        300,
+        480
+      ]
+    ],
+    "models": [
+      "qutcc",
+      "im2im",
+      "ensemble",
+      "mcdropout"
+    ],
+    "training_steps": 2,
+    "includes_adamw_and_validation": true,
+    "passed": 8,
+    "gpu": "NVIDIA RTX 6000 Ada Generation",
+    "gpu_total_gib": 47.38275146484375,
+    "torch_version": "2.5.1+cu118",
+    "results": [
+      {
+        "method": "qutcc",
+        "height": 270,
+        "width": 480,
+        "batch_size": 10,
+        "dtype": "float32",
+        "gpu": "NVIDIA RTX 6000 Ada Generation",
+        "gpu_total_gib": 47.38275146484375,
+        "training_peak_allocated_gib": 29.803110599517822,
+        "training_peak_reserved_gib": 42.765625,
+        "validation_peak_allocated_gib": 17.194546699523926,
+        "validation_peak_reserved_gib": 42.765625,
+        "scores": {
+          "psnr": 4.74861478805542,
+          "ssim": -7.114384789019823e-05,
+          "lpips": 1.3355698585510254
+        },
+        "passed": true,
+        "seconds": 12.908624312840402
+      },
+      {
+        "method": "im2im",
+        "height": 270,
+        "width": 480,
+        "batch_size": 10,
+        "dtype": "float32",
+        "gpu": "NVIDIA RTX 6000 Ada Generation",
+        "gpu_total_gib": 47.38275146484375,
+        "training_peak_allocated_gib": 29.476927280426025,
+        "training_peak_reserved_gib": 42.490234375,
+        "validation_peak_allocated_gib": 24.013827800750732,
+        "validation_peak_reserved_gib": 42.490234375,
+        "scores": {
+          "psnr": 4.849420070648193,
+          "ssim": 0.0002973817754536867,
+          "lpips": 1.2949689865112304
+        },
+        "passed": true,
+        "seconds": 6.209008158184588
+      },
+      {
+        "method": "ensemble",
+        "height": 270,
+        "width": 480,
+        "batch_size": 10,
+        "dtype": "float32",
+        "gpu": "NVIDIA RTX 6000 Ada Generation",
+        "gpu_total_gib": 47.38275146484375,
+        "training_peak_allocated_gib": 31.638272285461426,
+        "training_peak_reserved_gib": 43.1640625,
+        "validation_peak_allocated_gib": 26.298402309417725,
+        "validation_peak_reserved_gib": 43.1640625,
+        "scores": {
+          "psnr": 4.87108850479126,
+          "ssim": 0.000363282801117748,
+          "lpips": 1.3365744590759276
+        },
+        "passed": true,
+        "seconds": 26.15046493895352
+      },
+      {
+        "method": "mcdropout",
+        "height": 270,
+        "width": 480,
+        "batch_size": 10,
+        "dtype": "float32",
+        "gpu": "NVIDIA RTX 6000 Ada Generation",
+        "gpu_total_gib": 47.38275146484375,
+        "training_peak_allocated_gib": 33.17604112625122,
+        "training_peak_reserved_gib": 46.400390625,
+        "validation_peak_allocated_gib": 24.008405208587646,
+        "validation_peak_reserved_gib": 46.400390625,
+        "scores": {
+          "psnr": 4.695583343505859,
+          "ssim": -0.00025818715221248567,
+          "lpips": 1.3255688667297363
+        },
+        "passed": true,
+        "seconds": 6.112397312186658
+      },
+      {
+        "method": "qutcc",
+        "height": 300,
+        "width": 480,
+        "batch_size": 10,
+        "dtype": "float32",
+        "gpu": "NVIDIA RTX 6000 Ada Generation",
+        "gpu_total_gib": 47.38275146484375,
+        "training_peak_allocated_gib": 33.063283920288086,
+        "training_peak_reserved_gib": 43.326171875,
+        "validation_peak_allocated_gib": 19.021113395690918,
+        "validation_peak_reserved_gib": 43.326171875,
+        "scores": {
+          "psnr": 4.757049560546875,
+          "ssim": -4.0098708268487826e-05,
+          "lpips": 1.3393324851989745
+        },
+        "passed": true,
+        "seconds": 7.433355207554996
+      },
+      {
+        "method": "im2im",
+        "height": 300,
+        "width": 480,
+        "batch_size": 10,
+        "dtype": "float32",
+        "gpu": "NVIDIA RTX 6000 Ada Generation",
+        "gpu_total_gib": 47.38275146484375,
+        "training_peak_allocated_gib": 32.71447944641113,
+        "training_peak_reserved_gib": 36.712890625,
+        "validation_peak_allocated_gib": 26.615140438079834,
+        "validation_peak_reserved_gib": 35.32421875,
+        "scores": {
+          "psnr": 4.850356578826904,
+          "ssim": 0.0002974592207465321,
+          "lpips": 1.3011857986450195
+        },
+        "passed": true,
+        "seconds": 7.058788591995835
+      },
+      {
+        "method": "ensemble",
+        "height": 300,
+        "width": 480,
+        "batch_size": 10,
+        "dtype": "float32",
+        "gpu": "NVIDIA RTX 6000 Ada Generation",
+        "gpu_total_gib": 47.38275146484375,
+        "training_peak_allocated_gib": 34.8707971572876,
+        "training_peak_reserved_gib": 46.494140625,
+        "validation_peak_allocated_gib": 28.91973876953125,
+        "validation_peak_reserved_gib": 46.494140625,
+        "scores": {
+          "psnr": 4.860056400299072,
+          "ssim": 0.0003311185573693365,
+          "lpips": 1.3294637680053711
+        },
+        "passed": true,
+        "seconds": 28.904462362639606
+      },
+      {
+        "method": "mcdropout",
+        "height": 300,
+        "width": 480,
+        "batch_size": 10,
+        "dtype": "float32",
+        "gpu": "NVIDIA RTX 6000 Ada Generation",
+        "gpu_total_gib": 47.38275146484375,
+        "training_peak_allocated_gib": 36.823609352111816,
+        "training_peak_reserved_gib": 41.044921875,
+        "validation_peak_allocated_gib": 26.613205432891846,
+        "validation_peak_reserved_gib": 38.294921875,
+        "scores": {
+          "psnr": 4.68947172164917,
+          "ssim": -0.00028336385730654,
+          "lpips": 1.326469898223877
+        },
+        "passed": true,
+        "seconds": 7.246383437886834
+      }
+    ],
+    "data": "synthetic tensors; memory and execution check only",
+    "slurm_exit_codes": "all eight COMPLETED 0:0",
+    "loop_version": "Measured before the independent batch-order change; not rerun for this update.",
+    "ensemble_members_when_measured": 5,
+    "current_default_ensemble_members": 10
+  },
+  "previous_full_suite_with_production_workers": {
+    "tests": 27,
+    "passed": 19,
+    "skipped": 8,
+    "seconds": 116.691,
+    "integration_loader_workers": 2
+  },
+  "ensemble_batch_order": {
+    "independent_per_member": true,
+    "shared_batch_membership": true,
+    "each_batch_seen_once_per_member_per_epoch": true,
+    "includes_partial_batch": true,
+    "same_schedule_for_all_members": true,
+    "optimizer_steps_only_active_member": true,
+    "mean_nll_scaling_preserved": true,
+    "seed_777_reproducible": true,
+    "reshuffled_each_epoch": true,
+    "optimizer_update_equivalence_passed": true
+  },
+  "ensemble_initialization": {
+    "members": 10,
+    "master_seed": 777,
+    "separate_parameters": true,
+    "different_initial_weights": true,
+    "reproducible_initializations_test_passed": true
+  },
+  "publication": {
+    "previous_commit": "f0b6c1f13523e154fcf8ba5de765807ef1306399",
+    "preserved_tracked_files": 237,
+    "archive": "archive/previous_implementation_20261111",
+    "active_tests_exclude_archive": true
+  }
+}

@@ -1,37 +1,26 @@
-# Historical material
+# Archived implementations
 
-[publication_support/](publication_support/) holds optional extended guides,
-plotting/provenance tools and inactive GitHub Actions configuration.
+The active implementation is at the repository root in `Models/`, `ConvNeXt/`,
+`Calibration/`, `dataloader.py`, and `train.py`.
 
-[operations/](operations/) preserves cluster/job/demo deployment tooling. The portable release needs none of it.
+[`previous_implementation_20261111/`](previous_implementation_20261111/)
+preserves the implementation replaced on 2026-11-11, from commit
+`f0b6c1f13523e154fcf8ba5de765807ef1306399`. Its original directory layout and file contents are
+retained. `SNAPSHOT.json` maps every tracked file from that commit to its
+preserved location and records its SHA-256. The previous archive guide is
+retained there as `_archive_README_before_migration.md`.
 
-The four shared model implementations are in [models/](../models/), with data
-loading in [dataset.py](../dataset.py) and shared runtime/layers in [convrml/](../convrml/).
+Earlier historical material remains in:
 
-[reproduction/](reproduction/) preserves the historical numbered-experiment engines
-and their original import layout, apart from the concise model interface.
+- [`reproduction/`](reproduction/): numbered experiment implementations.
+- [`research_prototype_20261102/`](research_prototype_20261102/): earlier source snapshot.
+- [`operations/`](operations/): cluster and deployment tooling.
+- [`publication_support/`](publication_support/): earlier guides and verification tools.
+- [`reproducibility/`](reproducibility/): earlier verification records.
+- [`provenance/`](provenance/): original source and attribution records.
+- [`checkpoints/`](checkpoints/): checkpoint inventory.
+- `history_20261022.tar.gz` and `index.json`: the earlier bundled archive.
 
-| Item                                                         | Contents                                                                                                                        |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| [research_prototype_20261102/](research_prototype_20261102/) | Complete pre-simplification source, deployment engines and tests                                                                |
-| [history_20261022.tar.gz](history_20261022.tar.gz)           | Earlier experiments, stopped clean continuation, obsolete job records, scheduler/recovery utilities and superseded instructions |
-| [index.json](index.json)                                     | Every bundled path, size and SHA-256                                                                                            |
-| [provenance/](provenance/)                                   | Original captured source, source-layout maps and numerical equivalence report                                                   |
-
-Historical files were removed from the active tree after their exact contents
-were verified in this bundle. Checkpoints, datasets and the remote cluster were
-not deleted. Historical engines and imported compatibility modules remain readable under `reproduction/`.
-
-Inspect or restore into a separate directory:
-
-```bash
-tar -tzf archive/history_20261022.tar.gz
-mkdir -p /tmp/convrml-history
-tar -xzf archive/history_20261022.tar.gz -C /tmp/convrml-history
-```
-
-Entries retain their former repository paths. Symlinks were stored as their
-source bytes to make historical files readable independently; the index records
-their original shared targets. Historical scripts may require their original
-cluster paths and source snapshots. [Source verification](publication_support/tools/verify_source_release.py)
-checks both this bundle and the original captured source.
+Archived files are historical references and are excluded from active checks.
+They may depend on their original environment and paths. Dataset files,
+checkpoints, running cluster jobs, and the demo are outside this migration.
