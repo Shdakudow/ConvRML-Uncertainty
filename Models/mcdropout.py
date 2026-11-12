@@ -41,7 +41,7 @@ class MCDropout(nn.Module):
     def bounds(self, image):
         samples = self.predict_samples(image)
         mean = samples.mean(dim=0)
-        # Keep the observation-noise term from your draft: length scale 1,
+        # Assume length = 1
         # dropout 0.1, and weight decay 1e-4. Variance is in squared intensity units.
         inverse_precision = 2 * self.dataset_size * 1e-4 / (1 - 0.1)
         variance = samples.var(dim=0, unbiased=False) + inverse_precision
@@ -53,5 +53,4 @@ class MCDropout(nn.Module):
         return torch.cat((lower, mean, upper), dim=1)
 
     def loss(self, image, target):
-        # Training needs one stochastic pass with gradients, not an MC average.
         return F.mse_loss(self.baseModel(image), target)

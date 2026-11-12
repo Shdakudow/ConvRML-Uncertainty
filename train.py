@@ -23,6 +23,7 @@ def learning_rate(step, total_steps):
     warmup = 9 / EPOCHS
     if progress <= warmup:
         return 1e-5 + (1e-4 - 1e-5) * progress / warmup
+    # Personal choice
     cosine = (1 + math.cos(math.pi * (progress - warmup) / (1 - warmup))) / 2
     return 1e-9 + (1e-4 - 1e-9) * cosine
 
@@ -63,7 +64,7 @@ def train_epoch(model, loader, optimizer, device, global_step, total_steps):
                 group["lr"] = learning_rate(step, total_steps)
                 group["weight_decay"] = 1e-4 * (1 + math.cos(math.pi * progress)) / 2
             # Inactive members must have no gradients so AdamW skips them.
-            optimizer.zero_grad(set_to_none=True)
+            optimizer.zero_grad()
             loss = member.loss(measurement, target)
             (loss / len(members)).backward()
             optimizer.step()
@@ -120,17 +121,20 @@ def main():
         .eval()
         .requires_grad_(False)
     )
+
     total_steps = EPOCHS * len(train_loader)
     args.output.mkdir(parents=True, exist_ok=True)
     history, global_step = [], 0
     best_ssim = -float("inf")
     best_checkpoint = None
 
+    # Training loop
     for epoch in range(1, EPOCHS + 1):
         loss, global_step = train_epoch(
             model, train_loader, optimizer, device, global_step, total_steps
         )
         scores = validate(model, validation_loader, perceptual, device)
+        # Writing result to json
         row = dict(
             epoch=epoch,
             loss=loss,
@@ -141,6 +145,8 @@ def main():
         history.append(row)
         print(json.dumps(row), flush=True)
         (args.output / "history.json").write_text(json.dumps(history, indent=2) + "\n")
+
+        # Checkpoint
         checkpoint = dict(
             model=model.state_dict(),
             optimizer=optimizer.state_dict(),
