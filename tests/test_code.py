@@ -576,7 +576,7 @@ class ReconstructionTests(unittest.TestCase):
         scores[25] = 0.95
 
         def train_next_epoch(
-            model, loader, optimizer, device, global_step, total_steps
+            model, loader, optimizer, device, global_step, total_steps, **kwargs
         ):
             with torch.no_grad():
                 model.weight.fill_(global_step + 1)
@@ -629,6 +629,112 @@ class ReconstructionTests(unittest.TestCase):
             torch.testing.assert_close(
                 latest["model"]["weight"], torch.full((1, 1), 30.0)
             )
+
+    def test_mid_epoch_resume_matches_uninterrupted_training_for_all_methods(self):
+        import copy
+        from train import rng_state, restore_rng, save_checkpoint
+
+        factories = {
+            "qutcc": lambda: QUTCC(small_backbone()),
+            "im2im": lambda: Im2im(small_backbone(9)),
+            "mcdropout": lambda: MCDropout(small_backbone(), dataset_size=9),
+            "ensemble": lambda: DeepEnsemble([
+                DeepEnsembleMember(small_backbone(6)),
+                DeepEnsembleMember(small_backbone(6)),
+            ]),
+        }
+        loader = DataLoader(
+            TensorDataset(torch.rand(9, 3, 33, 35), torch.rand(9, 3, 33, 35)),
+            batch_size=4, shuffle=True,
+        )
+        for method, factory in factories.items():
+            with self.subTest(method=method), tempfile.TemporaryDirectory() as folder:
+                torch.manual_seed(777)
+                initial = factory()
+                initial_rng = rng_state()
+                reference = copy.deepcopy(initial)
+                reference_optimizer = torch.optim.AdamW(reference.parameters())
+                restore_rng(initial_rng)
+                expected_first = train_epoch(reference, loader, reference_optimizer, "cpu", 0, 100)
+                expected_second = train_epoch(reference, loader, reference_optimizer, "cpu", 3, 100)
+
+                interrupted = copy.deepcopy(initial)
+                optimizer = torch.optim.AdamW(interrupted.parameters())
+                progress = {}
+                checkpoint_path = Path(folder) / "latest.pt"
+                calls = 0
+
+                def stop_after_batches(state):
+                    nonlocal calls
+                    calls += 1
+                    stop_at = 4 if method == "ensemble" else 2
+                    if calls == stop_at:
+                        save_checkpoint(dict(
+                            model=interrupted.state_dict(), optimizer=optimizer.state_dict(),
+                            progress=state, rng=rng_state(),
+                        ), checkpoint_path)
+                        raise RuntimeError("simulated interruption")
+
+                restore_rng(initial_rng)
+                with self.assertRaisesRegex(RuntimeError, "simulated interruption"):
+                    train_epoch(interrupted, loader, optimizer, "cpu", 0, 100,
+                                progress=progress, checkpoint_callback=stop_after_batches)
+                saved = torch.load(checkpoint_path, weights_only=False)
+                resumed = factory()
+                resumed.load_state_dict(saved["model"])
+                resumed_optimizer = torch.optim.AdamW(resumed.parameters())
+                resumed_optimizer.load_state_dict(saved["optimizer"])
+                restore_rng(saved["rng"])
+                actual_first = train_epoch(resumed, loader, resumed_optimizer, "cpu", 0, 100,
+                                           progress=saved["progress"])
+                actual_second = train_epoch(resumed, loader, resumed_optimizer, "cpu", 3, 100)
+                self.assertEqual(actual_first, expected_first)
+                self.assertEqual(actual_second, expected_second)
+                torch.testing.assert_close(resumed.state_dict(), reference.state_dict(), rtol=0, atol=0)
+                torch.testing.assert_close(resumed_optimizer.state_dict(), reference_optimizer.state_dict(), rtol=0, atol=0)
+
+    def test_main_resume_retains_history_and_unsaved_best_weights(self):
+        import train
+
+        model = nn.Linear(1, 1, bias=False)
+        dataset = TensorDataset(torch.zeros(10, 3, 2, 2), torch.zeros(10, 3, 2, 2))
+        loader = DataLoader(dataset, batch_size=10)
+        scores = [0.1] * 30
+        scores[2], scores[11], scores[25] = 0.8, 0.85, 0.95
+        interrupt = True
+
+        def next_epoch(model, loader, optimizer, device, global_step, total_steps, **kwargs):
+            if interrupt and global_step == 13:
+                raise RuntimeError("simulated interruption")
+            with torch.no_grad():
+                model.weight.fill_(global_step + 1)
+            return 0.0, global_step + 1
+
+        def metrics(model, *args):
+            return dict(psnr=0.0, ssim=scores[int(model.weight.item()) - 1], lpips=0.0)
+
+        with tempfile.TemporaryDirectory() as folder:
+            args = ["train.py", "--manifest", "unused.json", "--model", "im2im", "--output", folder]
+            with patch.object(train, "EPOCHS", 30), patch.object(
+                train, "get_loaders", return_value=(loader, loader)
+            ), patch.object(train, "make_model", return_value=model), patch.object(
+                train, "LearnedPerceptualImagePatchSimilarity", return_value=nn.Identity()
+            ), patch.object(train, "train_epoch", side_effect=next_epoch), patch.object(
+                train, "validate", side_effect=metrics
+            ), patch("builtins.print"):
+                with patch("sys.argv", args), self.assertRaisesRegex(RuntimeError, "simulated interruption"):
+                    train.main()
+                latest = Path(folder) / "latest.pt"
+                self.assertEqual(torch.load(latest, weights_only=False)["epoch"], 13)
+                interrupt = False
+                with patch("sys.argv", args + ["--resume", str(latest)]):
+                    train.main()
+            history = json.loads((Path(folder) / "history.json").read_text())
+            self.assertEqual([row["epoch"] for row in history], list(range(1, 31)))
+            for milestone, winner in [(10, 3), (20, 12), (30, 26)]:
+                saved = torch.load(Path(folder) / f"best_through_epoch_{milestone:03d}.pt", weights_only=False)
+                self.assertEqual(saved["epoch"], winner)
+                self.assertEqual(saved["model"]["weight"].item(), winner)
 
 
 @unittest.skipUnless(

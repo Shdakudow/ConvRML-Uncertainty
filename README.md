@@ -77,7 +77,8 @@ again. `.npy` values are not divided by 255 or quantized to 8-bit pixels.
 python train.py --manifest /path/to/split.json --model qutcc --output runs/qutcc
 ```
 
-The only command-line arguments select the data, model, and output folder.
+The command-line arguments select the data, model, output folder, and an
+optional recovery checkpoint.
 Settings follow the draft and your updates: 50 epochs, AdamW, physical batch
 size 10 without gradient accumulation, and a nine-epoch linear
 warmup from 1e-5 to 1e-4, then cosine decay to 1e-9. Weight decay decreases
@@ -95,16 +96,28 @@ averaged per image. LPIPS is an evaluation metric here, not a training loss.
 Its lower values indicate closer
 perceptual similarity; it is not a coverage probability or a percentage.
 The fixed seed is your chosen value, 777. It supports repeatability rather than
-improving accuracy by itself. `latest.pt` saves the current weights and optimizer
-each epoch. Every 5 epochs, `best_through_epoch_005.pt`,
+improving accuracy by itself. `latest.pt` saves recovery state after the first
+training batch, every five minutes during training, and after each validation
+epoch. Recovery files are replaced atomically. Every 5 epochs, `best_through_epoch_005.pt`,
 `best_through_epoch_010.pt`, and so on save the weights with the highest raw
 validation SSIM seen from epoch 1 through that milestone. Selection is
 cumulative and does not reset every 5 epochs. Each best checkpoint records
 the selected model's actual `epoch`, `validation_ssim`, and
 `selected_through_epoch`. It contains weights and model metadata, without
 optimizer state. Tied SSIM values retain the earlier winner.
-This script starts a new run; it does
-not implement checkpoint resumption.
+Without `--resume`, training starts from scratch. To continue the same run:
+
+```bash
+python train.py --manifest /path/to/split.json --model qutcc --output runs/qutcc --resume runs/qutcc/latest.pt
+```
+
+Recovery includes model and optimizer state, the current member/batch cursor,
+batch assignments and order, random-number states, history, and the best weights
+seen so far. It can continue within an epoch, including partway through an
+ensemble member. All members retain the same epoch-based learning-rate schedule.
+The loader uses a separate seed-777 generator for worker setup so restarting
+workers does not consume the restored model RNG. Recovery requires checkpoints
+written by this version; use the same dataset split and model configuration.
 
 ## Calibration
 
