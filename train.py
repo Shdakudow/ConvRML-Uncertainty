@@ -13,7 +13,8 @@ from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
 
 from dataloader import get_loaders
 from models import make_model
-from models.ensemble import DeepEnsemble
+from ConvNeXt import ConvRecon
+from models.ensemble import DeepEnsemble, DeepEnsembleMember
 
 EPOCHS = 50
 RECOVERY_SECONDS = 300
@@ -32,7 +33,7 @@ def learning_rate(step, total_steps):
 
 def train_epoch(
     model, loader, optimizer, device, global_step, total_steps,
-    progress=None, checkpoint_callback=None,
+    progress=None, checkpoint_callback=None, loss_divisor=None,
 ):
     """Train each ensemble member with its own order of this epoch's batches."""
     model.train()
@@ -71,7 +72,7 @@ def train_epoch(
             # Inactive members must have no gradients so AdamW skips them.
             optimizer.zero_grad()
             loss = member.loss(measurement, target)
-            (loss / len(members)).backward()
+            (loss / (len(members) if loss_divisor is None else loss_divisor)).backward()
             optimizer.step()
             progress["loss_sum"] += loss.item() * len(measurement)
             progress["count"] += len(measurement)
@@ -139,15 +140,23 @@ def main():
     )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--resume", type=Path)
+    parser.add_argument("--ensemble-member", type=int,
+                        help="Train this ensemble member (0–9) in its own GPU job.")
     args = parser.parse_args()
-    torch.manual_seed(777)  # personal preference
+    torch.manual_seed(777 + (args.ensemble_member or 0))  # personal preference
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_loader, validation_loader = get_loaders(args.manifest)
     _, sample_target = train_loader.dataset[0]
     height, width = sample_target.shape[-2:]
-    model = make_model(args.model, height, width, len(train_loader.dataset)).to(device)
+    if args.ensemble_member is None:
+        model = make_model(args.model, height, width, len(train_loader.dataset))
+    else:
+        model = DeepEnsemble([DeepEnsembleMember(
+            ConvRecon(3, height, width, out_channels=6)
+        )])
+    model = model.to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5, weight_decay=1e-4)
-    perceptual = (
+    perceptual = None if args.ensemble_member is not None else (
         LearnedPerceptualImagePatchSimilarity(
             net_type="alex", normalize=True, reduction="none"
         )
@@ -183,6 +192,7 @@ def main():
             height=height, width=width, dataset_size=len(train_loader.dataset),
             global_step=global_step, train_progress=progress,
             best_ssim=best_ssim, best_checkpoint=best_checkpoint, rng=rng_state(),
+            ensemble_member=args.ensemble_member,
         )
 
     def save_recovery(progress):
@@ -198,12 +208,18 @@ def main():
 
     # Training loop
     for epoch in range(completed_epoch + 1, EPOCHS + 1):
+        if args.ensemble_member is not None and not train_progress:
+            from ensemble_jobs import member_batch_progress
+            train_progress = member_batch_progress(train_loader, epoch, args.ensemble_member)
         loss, global_step = train_epoch(
             model, train_loader, optimizer, device, global_step, total_steps,
             progress=train_progress, checkpoint_callback=save_recovery,
+            loss_divisor=10 if args.ensemble_member is not None else None,
         )
         train_progress = {}
-        scores = validate(model, validation_loader, perceptual, device)
+        # Ensemble validation uses all ten members together in a separate job.
+        scores = (validate(model, validation_loader, perceptual, device)
+                  if args.ensemble_member is None else {})
         # Writing result to json
         row = dict(
             epoch=epoch,
@@ -215,6 +231,15 @@ def main():
         history.append(row)
         print(json.dumps(row), flush=True)
         (args.output / "history.json").write_text(json.dumps(history, indent=2) + "\n")
+
+        if args.ensemble_member is not None:
+            save_checkpoint(dict(
+                model=model.state_dict(), epoch=epoch, method="ensemble",
+                ensemble_member=args.ensemble_member, height=height, width=width,
+                dataset_size=len(train_loader.dataset),
+            ), args.output / f"epoch_{epoch:03d}.pt")
+            save_checkpoint(checkpoint_state(epoch, None), args.output / "latest.pt")
+            continue
 
         # Checkpoint
         if scores["ssim"] > best_ssim:

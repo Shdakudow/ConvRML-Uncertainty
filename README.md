@@ -218,3 +218,45 @@ The backbone adapts [Meta's ConvNeXt](https://github.com/facebookresearch/ConvNe
 and the decoder adapts
 [Lensless Imaging Transformer](https://github.com/BobPXX/Lensless_Imaging_Transformer).
 License notices are available in the linked upstream repositories.
+
+## Parallel ensemble training
+
+Each ensemble member can run on a separate GPU. For member 0 (repeat for 1–9):
+
+```bash
+python train.py --manifest /path/to/split.json --model ensemble --ensemble-member 0 --output runs/ensemble/member_00 --resume runs/ensemble/member_00/latest.pt
+```
+
+To migrate an existing sequential ensemble before submitting member jobs:
+
+```bash
+python ensemble_jobs.py split --source runs/old_ensemble/latest.pt --output runs/ensemble
+```
+
+The split preserves each member's weights, AdamW moments, completed epochs,
+learning-rate position, and pending batch order. Members that already finished
+part of the next ensemble epoch keep their progress. The first resumed epoch's
+reported loss covers only the batches run after the split; its optimization
+updates are unaffected. The old ensemble validation history and best weights
+are retained. Original sequential checkpoints remain in their original folder.
+
+The mean-ensemble loss gradient scaling (division by ten) is retained. Future
+epochs use shared batch membership and independently permuted batch orders,
+with reproducible epoch/member seeds derived from 777. Fresh parallel members
+use initialization seeds 777 + member index; migrated members keep their
+existing distinct weights. Future shuffle streams differ from the old serial
+run because members now advance independently.
+
+Member jobs save current weights after every epoch. They do not use a single
+member's validation score to select an ensemble. Once all ten snapshots for an
+epoch are available, evaluate their combined prediction on the validation split:
+
+```bash
+python ensemble_jobs.py evaluate --manifest /path/to/split.json --output runs/ensemble
+```
+
+Evaluation processes consecutive ready epochs and records combined PSNR, SSIM,
+and LPIPS in `history.json`. `latest.pt` contains the most recently evaluated
+ensemble weights; `best.pt` keeps the cumulative SSIM winner. Every five epochs,
+`best_through_epoch_XXX.pt` records that winner, using the same selection rule
+as sequential training. Resume individual jobs from `member_XX/latest.pt`.

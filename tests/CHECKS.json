@@ -1,9 +1,9 @@
 {
   "full_suite": {
-    "tests": 33,
-    "passed": 25,
+    "tests": 37,
+    "passed": 29,
     "skipped": 8,
-    "seconds": 8.655,
+    "seconds": 8.589,
     "integration_loader_workers": 0
   },
   "real_lpips_test_passed": true,
@@ -646,5 +646,14 @@
         "estimated_50epoch_days_on_profile_gpu": 118.8970811102384
       }
     ]
+  },
+  "parallel_ensemble": {
+    "checkpoint_split_preserves_weights_and_adamw_updates_exactly": true,
+    "member_epoch_and_batch_cursor_preserved": true,
+    "independent_member_orders_with_shared_batch_membership": true,
+    "ten_member_validation_and_cumulative_best_selection_tested": true,
+    "member_entrypoint_tested": true,
+    "loss_divisor": 10,
+    "original_sequential_checkpoints_retained": true
   }
 }
