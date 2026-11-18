@@ -1,9 +1,9 @@
 {
   "full_suite": {
-    "tests": 37,
-    "passed": 29,
+    "tests": 39,
+    "passed": 31,
     "skipped": 8,
-    "seconds": 8.589,
+    "seconds": 8.846,
     "integration_loader_workers": 0
   },
   "real_lpips_test_passed": true,
@@ -655,5 +655,16 @@
     "member_entrypoint_tested": true,
     "loss_divisor": 10,
     "original_sequential_checkpoints_retained": true
+  },
+  "calibration_entrypoint": {
+    "calibration_and_test_roles_separate": true,
+    "test_not_used_for_fit": true,
+    "raw_psnr_ssim": true,
+    "lpips_clipped_copy": true,
+    "coverage_and_interval_intersection_tested": true,
+    "unchanged_weights_checked": true,
+    "cached_fit_keyed_by_checkpoint_and_manifest_sha256": true,
+    "batch_size": 10,
+    "seed": 777
   }
 }

@@ -165,6 +165,28 @@ based on [Sulam-Group/k-rcps](https://github.com/Sulam-Group/k-rcps).
 The final calibration step uses HB with delta=0.1 instead of the source fork's
 confidence-independent risk expression. CVXPY supplies the convex solver.
 
+Run calibration and held-out testing for a selected checkpoint:
+
+```bash
+python calibrate.py --manifest /path/to/split.json --checkpoint runs/qutcc/best_through_epoch_050.pt --output runs/qutcc/calibration_050
+```
+
+Use the same command for an Im2im checkpoint. The runner loads the model type
+from the checkpoint, uses batch size 10 and seed 777, and fits on the
+`calibration` role only. It saves fitted parameters and provenance in
+`parameters.pt`, then measures coverage, interval width, PSNR, SSIM, and LPIPS
+on the separate `test` role. `summary.json` records the selected checkpoint's
+actual epoch, its selection milestone, and SHA-256 hashes of the checkpoint
+and manifest. It also checks that calibration left the training weights unchanged.
+A completed fit is reused after interruption only when both hashes match.
+
+Coverage counts RGB pixel-channel values inside their predicted interval.
+Widths are reported both as predicted and after intersecting the interval with
+[0,1]. The latter makes width comparisons use the same valid image range;
+it does not clip the reconstruction or change how coverage is counted.
+QUTCC's quantile search measures coverage but does not return an HB confidence
+certificate. K-RCPS reports its HB p-value and whether its certificate passed.
+
 ## Checks
 
 ```bash
@@ -204,7 +226,7 @@ checks on a 48 GB RTX A6000 with independent member batch orders. Peak
 allocated training memory was 33.14 GiB at 270×480 and 36.34 GiB at 300×480.
 Those checks used two training passes with AdamW and validation, with
 physical batch size 10 and FP32.
-All 23 regular checks also pass, including batch coverage, pairing, independent orders, seed
+All 31 regular checks also pass, including batch coverage, pairing, independent orders, seed
 reproducibility, matched schedules, and AdamW update equivalence.
 Detailed results are recorded in `tests/CHECKS.json`.
 
