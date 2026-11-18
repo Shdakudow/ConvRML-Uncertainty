@@ -1,0 +1,57 @@
+{
+  "checkpoint_sha256": "fe2dde92411788efe48a41f6ef2be8ffe9a4126547df40937fed78b4c231ae6a",
+  "manifest_sha256": "92b12e510b1e81f78ad7103b28d8f7899763549224b88ce25454df398f5d2a9c",
+  "method": "im2im",
+  "selected_epoch": 50,
+  "selected_through_epoch": 50,
+  "validation_ssim": 0.8204370141029358,
+  "seed": 777,
+  "batch_size": 10,
+  "training_weights_changed": false,
+  "test_used_for_fitting": false,
+  "calibration": {
+    "procedure": "K-RCPS with held-out Hoeffding-Bentkus calibration",
+    "lambda_map": {
+      "shape": [
+        270,
+        480
+      ],
+      "minimum": 0.0,
+      "mean": 0.008950182236731052,
+      "maximum": 0.017900366336107254
+    },
+    "alpha": 0.1,
+    "delta": 0.1,
+    "target_coverage": 0.9,
+    "confidence": 0.9,
+    "n_images": 2990,
+    "n_optimization_images": 10,
+    "optimization_indices_count": 10,
+    "calibration_indices_count": 2990,
+    "calibration_coverage": 0.9106992185115814,
+    "crossing": 0.0,
+    "target_met": true,
+    "hb_pvalue": 0.08162667340287963,
+    "certificate_passed": true,
+    "hb_iterations": 40,
+    "endpoint_clipping": [
+      0,
+      1
+    ]
+  },
+  "test": {
+    "n_images": 2000,
+    "coverage": 0.9089483500514404,
+    "crossing": 0.0,
+    "mean_interval_width": 0.11386360890078447,
+    "mean_interval_width_in_image_range": 0.11386360890078447,
+    "psnr": 26.219430923461914,
+    "ssim": 0.8214802742004395,
+    "lpips": 0.2456264036297798
+  },
+  "reconstruction_metrics": "Raw PSNR/SSIM; LPIPS uses a clipped [0,1] copy",
+  "coverage_definition": "Fraction of RGB pixel-channel targets inside the interval",
+  "width_definition": "Nonnegative interval length; also reported after intersection with [0,1]",
+  "checkpoint_file": "best_through_epoch_050.pt",
+  "calibration_source_commit": "d9518cd"
+}
