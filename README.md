@@ -187,6 +187,32 @@ it does not clip the reconstruction or change how coverage is counted.
 QUTCC's quantile search measures coverage but does not return an HB confidence
 certificate. K-RCPS reports its HB p-value and whether its certificate passed.
 
+<!-- calibration-results-20261118:start -->
+## Calibration results (2026-11-18)
+
+Checkpoints are selected by the best raw validation SSIM through epoch 50. Calibration uses seed 777 and batch size 10; training weights stay frozen. Calibration images and held-out test images are separate.
+
+| Dataset | Model | Selected epoch | Test SSIM | Calibration coverage | Test coverage | Mean width in [0,1] | Status |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
+| MIRFLICKR | QUTCC | 49 | 0.8211 | 90.062% | 89.973% | 0.13013 | Complete |
+| MIRFLICKR | Im2im | — | — | — | — | — | Calibration queued/running |
+| DiffuserCam | QUTCC | — | — | — | — | — | Waiting for epoch 50 |
+| DiffuserCam | Im2im | — | — | — | — | — | Waiting for epoch 50 |
+
+MIRFLICKR uses 3,000 calibration and 2,000 test images. DiffuserCam uses 2,048 calibration and 5,000 test images. Im2im reserves 10 calibration images for K-RCPS optimization; its HB check uses the remaining images. Both methods target 90% coverage. Only K-RCPS supplies the 90%-confidence HB certificate. Coverage counts RGB pixel-channel values. Width is the interval length after intersection with [0,1]; coverage and raw reconstruction predictions are not changed by this width calculation.
+
+- **mirflickr / qutcc:** q_lower=0.0415039, q_upper=0.976807; crossing fraction=0.00320291. [Full summary](reports/calibration_20261118/mirflickr_qutcc.json).
+
+### Earlier MIRFLICKR validation reference
+
+| Model | Earlier epoch 50 | Current epoch 50 | Current − earlier |
+| --- | ---: | ---: | ---: |
+| QUTCC | 0.8261 | 0.8196 | −0.0064 |
+| Im2im | 0.8235 | 0.8204 | −0.0030 |
+
+The earlier run is `mirflickr_verified50_20261027`; all four scene-ID splits match the current MIRFLICKR split. These are reference values, not a controlled comparison: the earlier evaluation clipped reconstructions to [0,1], whereas the current SSIM uses raw predictions. Training also changed from Adam with batch size 4 (microbatch 1) to AdamW with physical batch size 10, with different seeds and warmup. Calibration changes interval bounds; it does not improve reconstruction SSIM.
+<!-- calibration-results-20261118:end -->
+
 ## Checks
 
 ```bash
