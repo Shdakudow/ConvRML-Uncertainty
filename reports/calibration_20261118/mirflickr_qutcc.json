@@ -1,0 +1,37 @@
+{
+  "checkpoint_sha256": "cd0a33b0f28cc6439be52d392b4082b4e6d0d40b7a966c007db9f9a4527e9ef7",
+  "manifest_sha256": "92b12e510b1e81f78ad7103b28d8f7899763549224b88ce25454df398f5d2a9c",
+  "method": "qutcc",
+  "selected_epoch": 49,
+  "selected_through_epoch": 50,
+  "validation_ssim": 0.8198327422142029,
+  "seed": 777,
+  "batch_size": 10,
+  "training_weights_changed": false,
+  "test_used_for_fitting": false,
+  "calibration": {
+    "lower_q": 0.04150390625,
+    "upper_q": 0.976806640625,
+    "procedure": "QUTCC quantile search",
+    "n_images": 3000,
+    "target_coverage": 0.9,
+    "calibration_coverage": 0.9006237482853223,
+    "crossing": 0.003110667866941015,
+    "target_met": true
+  },
+  "test": {
+    "n_images": 2000,
+    "coverage": 0.899728515946502,
+    "crossing": 0.0032029102366255145,
+    "mean_interval_width": 0.13018288475758744,
+    "mean_interval_width_in_image_range": 0.13012516392586163,
+    "psnr": 25.88077735900879,
+    "ssim": 0.8211246728897095,
+    "lpips": 0.25522108751535416
+  },
+  "reconstruction_metrics": "Raw PSNR/SSIM; LPIPS uses a clipped [0,1] copy",
+  "coverage_definition": "Fraction of RGB pixel-channel targets inside the interval",
+  "width_definition": "Nonnegative interval length; also reported after intersection with [0,1]",
+  "checkpoint_file": "best_through_epoch_050.pt",
+  "calibration_source_commit": "d9518cd"
+}
