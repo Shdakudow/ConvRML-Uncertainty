@@ -665,6 +665,7 @@
     "unchanged_weights_checked": true,
     "cached_fit_keyed_by_checkpoint_and_manifest_sha256": true,
     "batch_size": 10,
-    "seed": 777
+    "seed": 777,
+    "module": "calibration.run"
   }
 }

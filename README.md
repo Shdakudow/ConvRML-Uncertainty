@@ -168,7 +168,7 @@ confidence-independent risk expression. CVXPY supplies the convex solver.
 Run calibration and held-out testing for a selected checkpoint:
 
 ```bash
-python calibrate.py --manifest /path/to/split.json --checkpoint runs/qutcc/best_through_epoch_050.pt --output runs/qutcc/calibration_050
+python -m calibration.run --manifest /path/to/split.json --checkpoint runs/qutcc/best_through_epoch_050.pt --output runs/qutcc/calibration_050
 ```
 
 Use the same command for an Im2im checkpoint. The runner loads the model type
