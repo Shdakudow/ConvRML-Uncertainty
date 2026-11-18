@@ -195,13 +195,15 @@ Checkpoints are selected by the best raw validation SSIM through epoch 50. Calib
 | Dataset | Model | Selected epoch | Test SSIM | Calibration coverage | Test coverage | Mean width in [0,1] | Status |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
 | MIRFLICKR | QUTCC | 49 | 0.8211 | 90.062% | 89.973% | 0.13013 | Complete |
-| MIRFLICKR | Im2im | — | — | — | — | — | Calibration queued/running |
+| MIRFLICKR | Im2im | 50 | 0.8215 | 91.070% | 90.895% | 0.11386 | Complete |
 | DiffuserCam | QUTCC | — | — | — | — | — | Waiting for epoch 50 |
 | DiffuserCam | Im2im | — | — | — | — | — | Waiting for epoch 50 |
 
 MIRFLICKR uses 3,000 calibration and 2,000 test images. DiffuserCam uses 2,048 calibration and 5,000 test images. Im2im reserves 10 calibration images for K-RCPS optimization; its HB check uses the remaining images. Both methods target 90% coverage. Only K-RCPS supplies the 90%-confidence HB certificate. Coverage counts RGB pixel-channel values. Width is the interval length after intersection with [0,1]; coverage and raw reconstruction predictions are not changed by this width calculation.
 
 - **mirflickr / qutcc:** q_lower=0.0415039, q_upper=0.976807; crossing fraction=0.00320291. [Full summary](reports/calibration_20261118/mirflickr_qutcc.json).
+
+- **mirflickr / im2im:** HB p-value=0.0816267; certificate passed=true; n=2990. [Full summary](reports/calibration_20261118/mirflickr_im2im.json).
 
 ### Earlier MIRFLICKR validation reference
 
