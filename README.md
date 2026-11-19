@@ -2,7 +2,11 @@
 
 ConvNeXt-Tiny reconstruction with QUTCC, Im2im, deep ensemble, and MC dropout
 uncertainty models. All four methods use the encoder and full-resolution
-reconstruction decoder in `ConvNeXt/backbone.py`.
+reconstruction decoder in `ConvNeXt/backbone.py`. The `ConvNeXt/` directory is
+an editable Python package tracked directly in this repository. Its encoder
+adapts Meta’s ConvNeXt with optional FiLM conditioning, and its decoder adapts
+Lensless Imaging Transformer for reconstruction. Edit `ConvNeXt/backbone.py`
+here to change the backbone shared by all four models.
 
 | Model | Output | Training loss |
 | --- | --- | --- |
@@ -267,7 +271,13 @@ License notices are available in the linked upstream repositories.
 
 ## Parallel ensemble training
 
-Each ensemble member can run on a separate GPU. For member 0 (repeat for 1–9):
+`ensemble_jobs.py` runs two commands in the calling Python process. `split`
+converts a sequential checkpoint into ten member checkpoints. `evaluate` loads
+all ten members for each ready epoch and scores their combined prediction.
+Launch each member separately with `train.py`, using one Slurm job per GPU on
+Unicorn.
+
+To resume member 0 (repeat for 1–9):
 
 ```bash
 python train.py --manifest /path/to/split.json --model ensemble --ensemble-member 0 --output runs/ensemble/member_00 --resume runs/ensemble/member_00/latest.pt
