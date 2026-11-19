@@ -18,6 +18,7 @@ from train import save_checkpoint
 
 
 def sha256(path):
+    """Return the SHA-256 hex digest of a file, reading it in 1 MB blocks."""
     digest = hashlib.sha256()
     with Path(path).open("rb") as stream:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
@@ -56,7 +57,12 @@ def evaluate(calibrator, loader, perceptual, device):
 
 
 def compact_parameters(parameters):
-    """Keep the full tensor and split indices in parameters.pt, not the summary."""
+    """Summarize calibration parameters for JSON output.
+
+    Tensors are replaced with shape/min/mean/max so the full lambda map stays
+    in parameters.pt rather than the human-readable summary. Index lists are
+    replaced with their counts.
+    """
     compact = {}
     for name, value in parameters.items():
         if isinstance(value, torch.Tensor):
@@ -70,6 +76,12 @@ def compact_parameters(parameters):
 
 
 def main():
+    """Calibrate a checkpoint and evaluate it on the held-out test split.
+
+    Fitting is skipped when parameters.pt already exists for the same checkpoint
+    and manifest (compared by SHA-256), so re-running after a failed evaluation
+    does not redo the expensive calibration step.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--checkpoint", type=Path, required=True)

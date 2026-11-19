@@ -2,6 +2,8 @@
 
 import torch
 
+# AdamW weight decay at step 0; decays on a cosine schedule during training.
+# MCDropout also reads this at inference for the GP approximation precision term.
 INITIAL_WEIGHT_DECAY = 1e-4
 
 # 95th percentile of N(0,1); symmetric interval for 90% nominal coverage.
@@ -24,5 +26,6 @@ def pinball_loss(prediction, target, quantile):
 
 
 def gaussian_interval_from_mean_variance(mean, variance):
+    """Return (lower, upper) bounds for a 90% Gaussian prediction interval."""
     radius = _Z_95 * variance.sqrt()
     return mean - radius, mean + radius
