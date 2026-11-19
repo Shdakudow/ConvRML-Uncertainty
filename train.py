@@ -25,7 +25,6 @@ def learning_rate(step, total_steps):
     warmup = 9 / EPOCHS
     if progress <= warmup:
         return 1e-5 + (1e-4 - 1e-5) * progress / warmup
-    # Personal choice
     cosine = (1 + math.cos(math.pi * (progress - warmup) / (1 - warmup))) / 2
     return 1e-9 + (1e-4 - 1e-9) * cosine
 
@@ -107,6 +106,8 @@ def validate(model, loader, perceptual, device):
     # Reducing over C/H/W preserves mean per-image PSNR rather than global PSNR.
     psnr = PeakSignalNoiseRatio(data_range=1.0, dim=(1, 2, 3)).to(device)
     ssim = StructuralSimilarityIndexMeasure(data_range=1.0).to(device)
+    # perceptual is passed in and reused across epochs to avoid reloading AlexNet
+    # each epoch. Called functionally with reset() per batch to avoid accumulation.
     lpips_sum = 0.0
     count = 0
     for measurement, target in loader:
@@ -197,7 +198,6 @@ def main():
         # Ensemble validation uses all ten members together in a separate job.
         scores = (validate(model, validation_loader, perceptual, device)
                   if args.ensemble_member is None else {})
-        # Writing result to json
         row = dict(
             epoch=epoch,
             loss=loss,
@@ -218,7 +218,6 @@ def main():
             save_checkpoint(checkpoint_state(epoch), args.output / "latest.pt")
             continue
 
-        # Checkpoint
         if scores["ssim"] > best_ssim:
             best_ssim = scores["ssim"]
             best_checkpoint = dict(

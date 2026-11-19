@@ -4,6 +4,9 @@ import torch
 
 INITIAL_WEIGHT_DECAY = 1e-4
 
+# 95th percentile of N(0,1); symmetric interval for 90% nominal coverage.
+_Z_95 = float(torch.distributions.Normal(0.0, 1.0).icdf(torch.tensor(0.95)))
+
 
 def load_legacy_backbone_keys(module, state_dict, prefix, *args):
     """Accept checkpoints written before baseModel was renamed to backbone."""
@@ -21,7 +24,5 @@ def pinball_loss(prediction, target, quantile):
 
 
 def gaussian_interval_from_mean_variance(mean, variance):
-    normal = torch.distributions.Normal(mean.new_tensor(0.0), mean.new_tensor(1.0))
-    multiplier = normal.icdf(mean.new_tensor(0.95))
-    radius = multiplier * variance.sqrt()
+    radius = _Z_95 * variance.sqrt()
     return mean - radius, mean + radius
