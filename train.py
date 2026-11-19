@@ -12,6 +12,7 @@ from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
 
 from dataloader import get_loaders
 from models import make_model
+from models.common import INITIAL_WEIGHT_DECAY
 from ConvNeXt import ConvRecon
 from models.ensemble import DeepEnsemble, DeepEnsembleMember
 
@@ -65,7 +66,7 @@ def train_epoch(
             schedule_progress = step / (total_steps - 1)
             for group in optimizer.param_groups:
                 group["lr"] = learning_rate(step, total_steps)
-                group["weight_decay"] = 1e-4 * (1 + math.cos(math.pi * schedule_progress)) / 2
+                group["weight_decay"] = INITIAL_WEIGHT_DECAY * (1 + math.cos(math.pi * schedule_progress)) / 2
             # Inactive members must have no gradients so AdamW skips them.
             optimizer.zero_grad()
             loss = member.loss(measurement, target)
@@ -145,7 +146,7 @@ def main():
             ConvRecon(3, height, width, out_channels=6)
         )])
     model = model.to(device)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5, weight_decay=1e-4)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5, weight_decay=INITIAL_WEIGHT_DECAY)
     perceptual = None if args.ensemble_member is not None else (
         LearnedPerceptualImagePatchSimilarity(
             net_type="alex", normalize=True, reduction="none"

@@ -60,6 +60,63 @@ class KRCPS:
         upper = (upper + expansion).clip(0, 1)
         return float(((target < lower) | (target > upper)).float().mean())
 
+    def _cache_predictions(self, loader, device, folder, shape):
+        """Run inference once and store the targets and ordered bounds on disk."""
+        arrays = [
+            np.lib.format.open_memmap(
+                Path(folder) / f"{name}.npy",
+                mode="w+",
+                dtype=np.float32,
+                shape=shape,
+            )
+            for name in ("target", "lower", "upper")
+        ]
+        offset = 0
+        for measurement, target in loader:
+            _, lower, upper = self.model.bounds(measurement.to(device))
+            values = (
+                target,
+                torch.minimum(lower, upper),
+                torch.maximum(lower, upper),
+            )
+            for array, value in zip(arrays, values):
+                array[offset : offset + len(target)] = value.cpu().numpy()
+            offset += len(target)
+
+        return arrays
+
+    @staticmethod
+    def _initial_expansion(arrays, n_opt, device):
+        rng = np.random.default_rng(torch.initial_seed())
+        membership, group_offsets = _optimize_group_lambdas(
+            *(torch.from_numpy(array[:n_opt]) for array in arrays),
+            epsilon=SETTINGS["alpha"],
+            gamma=SETTINGS["gamma"],
+            k=SETTINGS["k"],
+            prob_size=SETTINGS["prob_size"],
+            device=device,
+            rng=rng,
+        )
+        return membership.to(device) @ group_offsets + SETTINGS["lambda_max"]
+
+    def _select_expansion(self, target, lower, upper, expansion):
+        n_cal = len(target)
+        threshold = self._accepted_risk(n_cal)
+        risk = self._risk(target, lower, upper, expansion)
+        selected = expansion.clone()
+        selected_risk = risk
+        # Try smaller expansions until one fails. Keep the last passing map;
+        # if the initial map already fails, report its risk and failed certificate.
+        while risk <= threshold:
+            selected = expansion.clone()
+            selected_risk = risk
+            if torch.all(expansion == 0):
+                break
+            expansion = F.relu(expansion - SETTINGS["stepsize"])
+            risk = self._risk(target, lower, upper, expansion)
+
+        return selected, selected_risk
+
     @torch.inference_mode()
     def fit(self, loader, device):
         self.model.eval()
@@ -73,59 +130,15 @@ class KRCPS:
             shuffle=False,
             num_workers=loader.num_workers,
         )
-        shape = (n, *loader.dataset[0][1].shape)
-
-        # Cache predictions on disk once. CPU tensors can view this storage;
-        # CUDA calibration transfers the cached endpoints after inference ends.
         with tempfile.TemporaryDirectory() as folder:
-            arrays = [
-                np.lib.format.open_memmap(
-                    Path(folder) / f"{name}.npy",
-                    mode="w+",
-                    dtype=np.float32,
-                    shape=shape,
-                )
-                for name in ("target", "lower", "upper")
-            ]
-            offset = 0
-            for measurement, target in ordered_loader:
-                _, lower, upper = self.model.bounds(measurement.to(device))
-                values = (
-                    target,
-                    torch.minimum(lower, upper),
-                    torch.maximum(lower, upper),
-                )
-                for array, value in zip(arrays, values):
-                    array[offset : offset + len(target)] = value.cpu().numpy()
-                offset += len(target)
-
-            rng = np.random.default_rng(torch.initial_seed())
-            membership, group_offsets = _optimize_group_lambdas(
-                *(torch.from_numpy(array[:n_opt]) for array in arrays),
-                epsilon=SETTINGS["alpha"],
-                gamma=SETTINGS["gamma"],
-                k=SETTINGS["k"],
-                prob_size=SETTINGS["prob_size"],
-                device=device,
-                rng=rng,
-            )
-            expansion = membership.to(device) @ group_offsets + SETTINGS["lambda_max"]
+            shape = (n, *loader.dataset[0][1].shape)
+            arrays = self._cache_predictions(ordered_loader, device, folder, shape)
+            expansion = self._initial_expansion(arrays, n_opt, device)
             target, lower, upper = (
                 torch.from_numpy(array[n_opt:]).to(device) for array in arrays
             )
+            selected, selected_risk = self._select_expansion(target, lower, upper, expansion)
             n_cal = n - n_opt
-            threshold = self._accepted_risk(n_cal)
-            risk = self._risk(target, lower, upper, expansion)
-            selected = expansion.clone()
-            selected_risk = risk
-            while risk <= threshold:
-                selected = expansion.clone()
-                selected_risk = risk
-                if torch.all(expansion == 0):
-                    break
-                expansion = F.relu(expansion - SETTINGS["stepsize"])
-                risk = self._risk(target, lower, upper, expansion)
-
             pvalue = self._hb_pvalue(selected_risk, n_cal)
             self.parameters = dict(
                 procedure="K-RCPS with held-out Hoeffding-Bentkus calibration",
@@ -173,6 +186,7 @@ class QUTCCCalibration:
         target_risk = (0.1 - 0.9 / n) / 2
         left, right = [0.0, 0.0], [1.0, 1.0]
         selected = [0.0, 1.0]
+        # Twelve bisections narrow each unit q bracket to 1/4096 (about 0.00024).
         for _ in range(12):
             qs = [(lo + hi) / 2 for lo, hi in zip(left, right)]
             misses, pixels = [0, 0], 0

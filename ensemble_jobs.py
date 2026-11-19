@@ -7,13 +7,16 @@ from pathlib import Path
 
 import torch
 
+# Arbitrary base seed for repeatable batch orders and member initialization.
+BASE_SEED = 777
+
 
 def member_batch_order(loader, epoch, member_index):
     """Share batch membership, with an independent batch order for each member."""
     with torch.random.fork_rng(devices=[]):
-        torch.set_rng_state(torch.Generator().manual_seed(777 + epoch).get_state())
+        torch.set_rng_state(torch.Generator().manual_seed(BASE_SEED + epoch).get_state())
         batches = list(loader.batch_sampler)
-    generator = torch.Generator().manual_seed(777 + 10 * epoch + member_index)
+    generator = torch.Generator().manual_seed(BASE_SEED + 10 * epoch + member_index)
     return [batches[i] for i in torch.randperm(len(batches), generator=generator).tolist()]
 
 
@@ -25,17 +28,17 @@ def split_member_checkpoint(saved, member_index):
     optimizer = dict(state={}, param_groups=copy.deepcopy(saved["optimizer"]["param_groups"]))
     # The shared AdamW group lists ten equally sized member parameter lists.
     group = optimizer["param_groups"][0]
-    width = len(group["params"]) // 10
-    parameter_ids = group["params"][member_index * width:(member_index + 1) * width]
+    params_per_member = len(group["params"]) // 10
+    parameter_ids = group["params"][member_index * params_per_member:(member_index + 1) * params_per_member]
     optimizer["state"] = {i: saved["optimizer"]["state"][old]
                           for i, old in enumerate(parameter_ids) if old in saved["optimizer"]["state"]}
-    group["params"] = list(range(width))
+    group["params"] = list(range(params_per_member))
     return dict(
         model=model, optimizer=optimizer, epoch=saved["epoch"], method="ensemble",
         ensemble_member=member_index, height=saved["height"], width=saved["width"],
         dataset_size=saved["dataset_size"], global_step=saved["global_step"],
         history=[], best_ssim=-float("inf"), best_checkpoint=None,
-        rng=dict(cpu=torch.Generator().manual_seed(777 + member_index).get_state(), cuda=[]),
+        rng=dict(cpu=torch.Generator().manual_seed(BASE_SEED + member_index).get_state(), cuda=[]),
     )
 
 

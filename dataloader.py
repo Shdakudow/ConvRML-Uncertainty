@@ -30,6 +30,7 @@ class ImagePairs(Dataset):
             pixels = np.load(path).astype(np.float32)
             pixels = pixels[::-1, :, ::-1]
             if measurement:
+                # Undo the 0.9 measurement gain used for original MIRFLICKR arrays.
                 pixels = pixels / 0.9
             pixels = pixels.clip(0, 1)
         else:

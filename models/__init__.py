@@ -13,9 +13,9 @@ def make_model(name, height, width, dataset_size):
 
     factories = {
         "qutcc": lambda: QUTCC(backbone()),
-        "im2im": lambda: Im2im(backbone(9)),
+        "im2im": lambda: Im2im(backbone(9)),  # Lower, center, and upper RGB images.
         "ensemble": lambda: DeepEnsemble(
-            [DeepEnsembleMember(backbone(6)) for _ in range(10)]
+            [DeepEnsembleMember(backbone(6)) for _ in range(10)]  # RGB mean and variance.
         ),
         "mcdropout": lambda: MCDropout(backbone(), dataset_size),
     }

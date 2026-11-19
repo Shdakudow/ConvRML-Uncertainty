@@ -254,7 +254,7 @@ checks on a 48 GB RTX A6000 with independent member batch orders. Peak
 allocated training memory was 33.14 GiB at 270×480 and 36.34 GiB at 300×480.
 Those checks used two training passes with AdamW and validation, with
 physical batch size 10 and FP32.
-All 31 regular checks also pass, including batch coverage, pairing, independent orders, seed
+The regular checks cover legacy checkpoint loading, batch coverage, pairing, independent orders, seed
 reproducibility, matched schedules, and AdamW update equivalence.
 Detailed results are recorded in `tests/CHECKS.json`.
 

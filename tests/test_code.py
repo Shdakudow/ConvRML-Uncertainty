@@ -59,6 +59,19 @@ class ReconstructionTests(unittest.TestCase):
                 continue
             compile(path.read_text(), str(path), "exec")
 
+    def test_legacy_backbone_keys_load_for_dropout_and_nested_ensemble_members(self):
+        for model in (
+            MCDropout(nn.Conv2d(3, 3, 1), dataset_size=9),
+            DeepEnsemble([DeepEnsembleMember(nn.Conv2d(3, 6, 1)) for _ in range(2)]),
+        ):
+            expected = {key: value.clone() for key, value in model.state_dict().items()}
+            legacy = {key.replace("backbone.", "baseModel."): value for key, value in expected.items()}
+            with torch.no_grad():
+                for parameter in model.parameters():
+                    parameter.zero_()
+            model.load_state_dict(legacy, strict=True)
+            torch.testing.assert_close(model.state_dict(), expected, rtol=0, atol=0)
+
     def test_ten_member_initializations_differ_and_repeat_with_seed_777(self):
         # Small layers isolate initialization from full-size GPU requirements.
         def backbone(channels, height, width, out_channels):
@@ -70,7 +83,7 @@ class ReconstructionTests(unittest.TestCase):
             torch.manual_seed(777)
             repeated = make_model("ensemble", 33, 35, 10)
         self.assertEqual(len(model.members), 10)
-        weights = [member.baseModel.weight for member in model.members]
+        weights = [member.backbone.weight for member in model.members]
         self.assertEqual(len({weight.data_ptr() for weight in weights}), 10)
         for index, weight in enumerate(weights):
             for other in weights[:index]:
@@ -229,7 +242,7 @@ class ReconstructionTests(unittest.TestCase):
         for old, new in zip(before, after):
             torch.testing.assert_close(old, new)
         with patch.object(
-            model.baseModel, "forward", wraps=model.baseModel.forward
+            model.backbone, "forward", wraps=model.backbone.forward
         ) as forward:
             loss = model.loss(torch.rand(2, 3, 33, 35), torch.rand(2, 3, 33, 35))
         self.assertEqual(forward.call_count, 1)
@@ -244,7 +257,7 @@ class ReconstructionTests(unittest.TestCase):
             expected = model.predict_samples(image).mean(dim=0)
             torch.manual_seed(777)
             with patch.object(
-                model.baseModel, "forward", wraps=model.baseModel.forward
+                model.backbone, "forward", wraps=model.backbone.forward
             ) as forward:
                 center = model.center(image)
             self.assertEqual(forward.call_count, 30)

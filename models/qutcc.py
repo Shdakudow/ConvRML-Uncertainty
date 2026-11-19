@@ -37,6 +37,7 @@ class QUTCC(nn.Module):
                 for stage in backbone.encoder.stages
             ]
         )
+        # FNN1007.f is the decoder’s sequential reconstruction head.
         self.decoder_film = nn.ModuleList(
             [
                 FiLM(layer.num_features)
@@ -50,12 +51,14 @@ class QUTCC(nn.Module):
         q = torch.as_tensor(q, device=image.device, dtype=image.dtype).expand(
             len(image)
         )
+        # Transformer-style sinusoidal features encode scalar q at 64 frequencies.
         frequencies = torch.exp(
             -math.log(10000) * torch.arange(64, device=image.device) / 64
         )
         angles = q[:, None] * frequencies[None]
         embedding = self.embedding(torch.cat((angles.cos(), angles.sin()), dim=1))
         height, width = image.shape[-2:]
+        # The ConvNeXt encoder downsamples by a total factor of 32.
         x = F.pad(image, (0, (-width) % 32, 0, (-height) % 32), mode="replicate")
 
         features = []
