@@ -1,4 +1,4 @@
-# Archived implementations
+# Archive (not needed)
 
 The active implementation is at the repository root in `models/`, `ConvNeXt/`,
 `calibration/`, `dataloader.py`, and `train.py`.
