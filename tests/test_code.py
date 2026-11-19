@@ -630,7 +630,7 @@ class ReconstructionTests(unittest.TestCase):
                 latest["model"]["weight"], torch.full((1, 1), 30.0)
             )
 
-    def test_mid_epoch_resume_matches_uninterrupted_training_for_all_methods(self):
+    def test_epoch_boundary_resume_matches_uninterrupted_training_for_all_methods(self):
         import copy
         from train import rng_state, restore_rng, save_checkpoint
 
@@ -655,40 +655,18 @@ class ReconstructionTests(unittest.TestCase):
                 reference = copy.deepcopy(initial)
                 reference_optimizer = torch.optim.AdamW(reference.parameters())
                 restore_rng(initial_rng)
-                expected_first = train_epoch(reference, loader, reference_optimizer, "cpu", 0, 100)
-                expected_second = train_epoch(reference, loader, reference_optimizer, "cpu", 3, 100)
-
-                interrupted = copy.deepcopy(initial)
-                optimizer = torch.optim.AdamW(interrupted.parameters())
-                progress = {}
+                train_epoch(reference, loader, reference_optimizer, "cpu", 0, 100)
                 checkpoint_path = Path(folder) / "latest.pt"
-                calls = 0
-
-                def stop_after_batches(state):
-                    nonlocal calls
-                    calls += 1
-                    stop_at = 4 if method == "ensemble" else 2
-                    if calls == stop_at:
-                        save_checkpoint(dict(
-                            model=interrupted.state_dict(), optimizer=optimizer.state_dict(),
-                            progress=state, rng=rng_state(),
-                        ), checkpoint_path)
-                        raise RuntimeError("simulated interruption")
-
-                restore_rng(initial_rng)
-                with self.assertRaisesRegex(RuntimeError, "simulated interruption"):
-                    train_epoch(interrupted, loader, optimizer, "cpu", 0, 100,
-                                progress=progress, checkpoint_callback=stop_after_batches)
+                save_checkpoint(dict(model=reference.state_dict(), optimizer=reference_optimizer.state_dict(),
+                                     rng=rng_state()), checkpoint_path)
+                expected_second = train_epoch(reference, loader, reference_optimizer, "cpu", 3, 100)
                 saved = torch.load(checkpoint_path, weights_only=False)
                 resumed = factory()
                 resumed.load_state_dict(saved["model"])
                 resumed_optimizer = torch.optim.AdamW(resumed.parameters())
                 resumed_optimizer.load_state_dict(saved["optimizer"])
                 restore_rng(saved["rng"])
-                actual_first = train_epoch(resumed, loader, resumed_optimizer, "cpu", 0, 100,
-                                           progress=saved["progress"])
                 actual_second = train_epoch(resumed, loader, resumed_optimizer, "cpu", 3, 100)
-                self.assertEqual(actual_first, expected_first)
                 self.assertEqual(actual_second, expected_second)
                 torch.testing.assert_close(resumed.state_dict(), reference.state_dict(), rtol=0, atol=0)
                 torch.testing.assert_close(resumed_optimizer.state_dict(), reference_optimizer.state_dict(), rtol=0, atol=0)

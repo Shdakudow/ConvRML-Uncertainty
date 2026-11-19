@@ -9,7 +9,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from ensemble_jobs import member_batch_progress, split_member_checkpoint, split_checkpoint, ready_epochs
+from ensemble_jobs import member_batch_order, split_member_checkpoint, split_checkpoint, ready_epochs
 from models.ensemble import DeepEnsemble, DeepEnsembleMember
 from train import train_epoch, rng_state
 
@@ -17,50 +17,36 @@ from train import train_epoch, rng_state
 class ParallelEnsembleTests(unittest.TestCase):
     def test_batch_membership_shared_order_independent_and_repeatable(self):
         loader = DataLoader(TensorDataset(torch.arange(103)), batch_size=10, shuffle=True)
-        orders = [member_batch_progress(loader, 4, i)['orders'][0] for i in range(10)]
+        orders = [member_batch_order(loader, 4, i) for i in range(10)]
         canonical = lambda order: sorted(tuple(batch) for batch in order)
         self.assertTrue(all(canonical(order) == canonical(orders[0]) for order in orders))
         self.assertEqual(len({str(order) for order in orders}), 10)
-        self.assertEqual(orders[3], member_batch_progress(loader, 4, 3)['orders'][0])
-        self.assertNotEqual(canonical(orders[0]), canonical(member_batch_progress(loader, 5, 0)['orders'][0]))
+        self.assertEqual(orders[3], member_batch_order(loader, 4, 3))
+        self.assertNotEqual(canonical(orders[0]), canonical(member_batch_order(loader, 5, 0)))
 
-    def test_split_members_match_remaining_sequential_updates_exactly(self):
+    def test_split_members_preserves_epoch_weights_and_optimizer(self):
         torch.manual_seed(777)
         make = lambda: DeepEnsemble([DeepEnsembleMember(nn.Conv2d(3, 6, 1)) for _ in range(10)])
         model = make()
         loader = DataLoader(TensorDataset(torch.rand(9,3,4,4),torch.rand(9,3,4,4)),batch_size=4,shuffle=True)
         optimizer = torch.optim.AdamW(model.parameters(),lr=1e-5,weight_decay=1e-4)
         train_epoch(model,loader,optimizer,'cpu',0,150)
-        progress = {}
-        calls = 0
-        def stop(state):
-            nonlocal calls
-            calls += 1
-            if calls == 14:
-                raise InterruptedError
-        with self.assertRaises(InterruptedError):
-            train_epoch(model,loader,optimizer,'cpu',3,150,progress=progress,checkpoint_callback=stop)
         saved = copy.deepcopy(dict(model=model.state_dict(),optimizer=optimizer.state_dict(),
-                                   epoch=1,global_step=3,train_progress=progress,history=[],
+                                   epoch=1,global_step=3,history=[],
                                    best_checkpoint=None,height=4,width=4,dataset_size=9,rng=rng_state()))
-        # Finish the sequential reference epoch using exactly the pending batches.
-        train_epoch(model,loader,optimizer,'cpu',3,150,progress=progress)
         for index in range(10):
             split = split_member_checkpoint(saved,index)
             single = DeepEnsemble([DeepEnsembleMember(nn.Conv2d(3,6,1))])
             single.load_state_dict(split['model'])
             opt = torch.optim.AdamW(single.parameters())
             opt.load_state_dict(split['optimizer'])
-            if split['train_progress'] is not None:
-                train_epoch(single,loader,opt,'cpu',split['global_step'],150,
-                            progress=split['train_progress'],loss_divisor=10)
             torch.testing.assert_close(single.members[0].state_dict(),model.members[index].state_dict(),rtol=0,atol=0)
             reference = optimizer.state_dict()
             width = len(list(single.parameters()))
             for own in range(width):
                 torch.testing.assert_close(opt.state_dict()['state'][own],reference['state'][index*width+own],rtol=0,atol=0)
-            self.assertEqual(split['epoch'],2 if index < 4 else 1)
-            self.assertEqual(split['global_step'],6 if index < 4 else 3)
+            self.assertEqual(split['epoch'],1)
+            self.assertEqual(split['global_step'],3)
         with tempfile.TemporaryDirectory() as folder:
             source=Path(folder)/'old.pt'
             output=Path(folder)/'parallel'

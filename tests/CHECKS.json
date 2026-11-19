@@ -442,15 +442,12 @@
     "active_uppercase_package_references": 0
   },
   "checkpoint_recovery": {
-    "within_epoch": true,
-    "ensemble_member_cursor": true,
-    "batch_orders_preserved": true,
+    "resume_from": "last completed epoch",
     "model_and_optimizer_restored": true,
     "rng_streams_restored": true,
     "all_four_methods_match_uninterrupted_cpu_training_exactly": true,
     "history_and_unsaved_best_weights_preserved": true,
-    "atomic_latest_file": true,
-    "period_seconds": 300
+    "atomic_latest_file": true
   },
   "retraining_real_data_preflight": {
     "job_id": 662640,
@@ -648,8 +645,8 @@
     ]
   },
   "parallel_ensemble": {
-    "checkpoint_split_preserves_weights_and_adamw_updates_exactly": true,
-    "member_epoch_and_batch_cursor_preserved": true,
+    "checkpoint_split_preserves_weights_and_adamw_state_exactly": true,
+    "completed_member_epoch_preserved": true,
     "independent_member_orders_with_shared_batch_membership": true,
     "ten_member_validation_and_cumulative_best_selection_tested": true,
     "member_entrypoint_tested": true,

@@ -96,9 +96,7 @@ averaged per image. LPIPS is an evaluation metric here, not a training loss.
 Its lower values indicate closer
 perceptual similarity; it is not a coverage probability or a percentage.
 The fixed seed is your chosen value, 777. It supports repeatability rather than
-improving accuracy by itself. `latest.pt` saves recovery state after the first
-training batch, every five minutes during training, and after each validation
-epoch. Recovery files are replaced atomically. Every 5 epochs, `best_through_epoch_005.pt`,
+improving accuracy by itself. `latest.pt` is replaced atomically after each completed epoch. Every 5 epochs, `best_through_epoch_005.pt`,
 `best_through_epoch_010.pt`, and so on save the weights with the highest raw
 validation SSIM seen from epoch 1 through that milestone. Selection is
 cumulative and does not reset every 5 epochs. Each best checkpoint records
@@ -111,13 +109,11 @@ Without `--resume`, training starts from scratch. To continue the same run:
 python train.py --manifest /path/to/split.json --model qutcc --output runs/qutcc --resume runs/qutcc/latest.pt
 ```
 
-Recovery includes model and optimizer state, the current member/batch cursor,
-batch assignments and order, random-number states, history, and the best weights
-seen so far. It can continue within an epoch, including partway through an
-ensemble member. All members retain the same epoch-based learning-rate schedule.
-The loader uses a separate seed-777 generator for worker setup so restarting
-workers does not consume the restored model RNG. Recovery requires checkpoints
-written by this version; use the same dataset split and model configuration.
+Recovery restores model and optimizer state, random-number states, history,
+and the best weights. An interrupted epoch starts again from the last completed
+epoch. If the first epoch was interrupted, restart the original training command.
+Older end-of-epoch recovery checkpoints are supported. For an older partial
+checkpoint, finish the epoch with the previous trainer first.
 
 ## Calibration
 
@@ -283,11 +279,8 @@ To migrate an existing sequential ensemble before submitting member jobs:
 python ensemble_jobs.py split --source runs/old_ensemble/latest.pt --output runs/ensemble
 ```
 
-The split preserves each member's weights, AdamW moments, completed epochs,
-learning-rate position, and pending batch order. Members that already finished
-part of the next ensemble epoch keep their progress. The first resumed epoch's
-reported loss covers only the batches run after the split; its optimization
-updates are unaffected. The old ensemble validation history and best weights
+Split a completed-epoch checkpoint. Each member retains its weights, AdamW moments,
+completed epoch, and learning-rate position. The old ensemble validation history and best weights
 are retained. Original sequential checkpoints remain in their original folder.
 
 The mean-ensemble loss gradient scaling (division by ten) is retained. Future

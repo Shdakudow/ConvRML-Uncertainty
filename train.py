@@ -4,7 +4,6 @@ import argparse
 import json
 import math
 from pathlib import Path
-import time
 
 import torch
 from torch.utils.data import DataLoader
@@ -17,7 +16,6 @@ from ConvNeXt import ConvRecon
 from models.ensemble import DeepEnsemble, DeepEnsembleMember
 
 EPOCHS = 50
-RECOVERY_SECONDS = 300
 
 
 def learning_rate(step, total_steps):
@@ -33,36 +31,35 @@ def learning_rate(step, total_steps):
 
 def train_epoch(
     model, loader, optimizer, device, global_step, total_steps,
-    progress=None, checkpoint_callback=None, loss_divisor=None,
+    batch_order=None, loss_divisor=None,
 ):
     """Train each ensemble member with its own order of this epoch's batches."""
     model.train()
     members = model.members if isinstance(model, DeepEnsemble) else [model]
-    if progress is None:
-        progress = {}
-    if not progress:
-        # Save batch indices and the cursor so interrupted epochs can continue.
+    if batch_order is None:
         batches = list(loader.batch_sampler)
         orders = [batches]
         if isinstance(model, DeepEnsemble):
             orders = [
-                [batches[index] for index in torch.randperm(len(batches)).tolist()]
+                [batches[i] for i in torch.randperm(len(batches)).tolist()]
                 for _ in members
             ]
-        progress.update(orders=orders, member=0, batch=0, loss_sum=0.0, count=0)
+    else:
+        orders = [batch_order]  # One independently scheduled ensemble member.
 
-    for member_index in range(progress["member"], len(members)):
-        member = members[member_index]
-        batch_order = progress["orders"][member_index]
-        first_batch = progress["batch"]
+    if loss_divisor is None:
+        loss_divisor = len(members)
+    loss_sum = 0.0
+    images_seen = 0
+    for member, order in zip(members, orders):
         member_loader = DataLoader(
-            loader.dataset, batch_sampler=batch_order[first_batch:],
+            loader.dataset, batch_sampler=order,
             num_workers=loader.num_workers, collate_fn=loader.collate_fn,
             pin_memory=loader.pin_memory,
             # Worker setup must not consume the model's restored RNG stream.
             generator=torch.Generator().manual_seed(777),
         )
-        for batch_index, (measurement, target) in enumerate(member_loader, first_batch):
+        for batch_index, (measurement, target) in enumerate(member_loader):
             measurement, target = measurement.to(device), target.to(device)
             step = global_step + batch_index
             schedule_progress = step / (total_steps - 1)
@@ -72,18 +69,11 @@ def train_epoch(
             # Inactive members must have no gradients so AdamW skips them.
             optimizer.zero_grad()
             loss = member.loss(measurement, target)
-            (loss / (len(members) if loss_divisor is None else loss_divisor)).backward()
+            (loss / loss_divisor).backward()
             optimizer.step()
-            progress["loss_sum"] += loss.item() * len(measurement)
-            progress["count"] += len(measurement)
-            progress["member"] = member_index
-            progress["batch"] = batch_index + 1
-            if progress["batch"] == len(batch_order):
-                progress["member"] += 1
-                progress["batch"] = 0
-            if checkpoint_callback is not None:
-                checkpoint_callback(progress)
-    return progress["loss_sum"] / progress["count"], global_step + len(loader)
+            loss_sum += loss.item() * len(measurement)
+            images_seen += len(measurement)
+    return loss_sum / images_seen, global_step + len(loader)
 
 
 def save_checkpoint(checkpoint, path):
@@ -171,52 +161,38 @@ def main():
     best_ssim = -float("inf")
     best_checkpoint = None
     completed_epoch = 0
-    train_progress = {}
     if args.resume is not None:
         saved = torch.load(args.resume, map_location="cpu", weights_only=False)
+        if saved.get("train_progress"):
+            raise ValueError("Finish this partial epoch with the previous trainer before resuming.")
         model.load_state_dict(saved["model"])
         optimizer.load_state_dict(saved["optimizer"])
         history, global_step = saved["history"], saved["global_step"]
         completed_epoch = saved["epoch"]
         best_ssim, best_checkpoint = saved["best_ssim"], saved["best_checkpoint"]
-        train_progress = saved["train_progress"] or {}
         restore_rng(saved["rng"])
         del saved
 
-    last_recovery = -float("inf")
-
-    def checkpoint_state(completed, progress):
+    def checkpoint_state(completed):
         return dict(
             model=model.state_dict(), optimizer=optimizer.state_dict(),
             epoch=completed, method=args.model, history=history,
             height=height, width=width, dataset_size=len(train_loader.dataset),
-            global_step=global_step, train_progress=progress,
+            global_step=global_step,
             best_ssim=best_ssim, best_checkpoint=best_checkpoint, rng=rng_state(),
             ensemble_member=args.ensemble_member,
         )
 
-    def save_recovery(progress):
-        nonlocal last_recovery
-        if time.monotonic() - last_recovery < RECOVERY_SECONDS:
-            return
-        save_checkpoint(checkpoint_state(epoch - 1, progress), args.output / "latest.pt")
-        last_recovery = time.monotonic()
-        print(json.dumps(dict(phase="training", epoch=epoch,
-                              member=progress["member"], batch=progress["batch"],
-                              batches_per_member=len(train_loader),
-                              loss=progress["loss_sum"] / progress["count"])), flush=True)
-
-    # Training loop
     for epoch in range(completed_epoch + 1, EPOCHS + 1):
-        if args.ensemble_member is not None and not train_progress:
-            from ensemble_jobs import member_batch_progress
-            train_progress = member_batch_progress(train_loader, epoch, args.ensemble_member)
+        batch_order = None
+        if args.ensemble_member is not None:
+            from ensemble_jobs import member_batch_order
+            batch_order = member_batch_order(train_loader, epoch, args.ensemble_member)
         loss, global_step = train_epoch(
             model, train_loader, optimizer, device, global_step, total_steps,
-            progress=train_progress, checkpoint_callback=save_recovery,
+            batch_order=batch_order,
             loss_divisor=10 if args.ensemble_member is not None else None,
         )
-        train_progress = {}
         # Ensemble validation uses all ten members together in a separate job.
         scores = (validate(model, validation_loader, perceptual, device)
                   if args.ensemble_member is None else {})
@@ -238,7 +214,7 @@ def main():
                 ensemble_member=args.ensemble_member, height=height, width=width,
                 dataset_size=len(train_loader.dataset),
             ), args.output / f"epoch_{epoch:03d}.pt")
-            save_checkpoint(checkpoint_state(epoch, None), args.output / "latest.pt")
+            save_checkpoint(checkpoint_state(epoch), args.output / "latest.pt")
             continue
 
         # Checkpoint
@@ -263,7 +239,7 @@ def main():
                 dict(best_checkpoint, selected_through_epoch=epoch),
                 args.output / f"best_through_epoch_{epoch:03d}.pt",
             )
-        save_checkpoint(checkpoint_state(epoch, None), args.output / "latest.pt")
+        save_checkpoint(checkpoint_state(epoch), args.output / "latest.pt")
 
 
 if __name__ == "__main__":

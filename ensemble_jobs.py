@@ -8,18 +8,17 @@ from pathlib import Path
 import torch
 
 
-def member_batch_progress(loader, epoch, member_index):
+def member_batch_order(loader, epoch, member_index):
     """Share batch membership, with an independent batch order for each member."""
     with torch.random.fork_rng(devices=[]):
         torch.set_rng_state(torch.Generator().manual_seed(777 + epoch).get_state())
         batches = list(loader.batch_sampler)
     generator = torch.Generator().manual_seed(777 + 10 * epoch + member_index)
-    order = [batches[i] for i in torch.randperm(len(batches), generator=generator).tolist()]
-    return dict(orders=[order], member=0, batch=0, loss_sum=0.0, count=0)
+    return [batches[i] for i in torch.randperm(len(batches), generator=generator).tolist()]
 
 
 def split_member_checkpoint(saved, member_index):
-    """Keep one member's weights, AdamW moments, schedule, and pending batches."""
+    """Keep one member's weights, AdamW moments, and schedule at a completed epoch."""
     prefix = f"members.{member_index}."
     model = {"members.0." + name[len(prefix):]: value
              for name, value in saved["model"].items() if name.startswith(prefix)}
@@ -31,26 +30,12 @@ def split_member_checkpoint(saved, member_index):
     optimizer["state"] = {i: saved["optimizer"]["state"][old]
                           for i, old in enumerate(parameter_ids) if old in saved["optimizer"]["state"]}
     group["params"] = list(range(width))
-    progress = saved["train_progress"]
-    completed_epoch = saved["epoch"]
-    step = saved["global_step"]
-    pending = None
-    if progress:
-        batches = progress["orders"][member_index]
-        if member_index < progress["member"]:
-            completed_epoch += 1
-            step += len(batches)
-        else:
-            cursor = progress["batch"] if member_index == progress["member"] else 0
-            pending = dict(orders=[batches], member=0, batch=cursor, loss_sum=0.0, count=0)
     return dict(
-        model=model, optimizer=optimizer, epoch=completed_epoch, method="ensemble",
+        model=model, optimizer=optimizer, epoch=saved["epoch"], method="ensemble",
         ensemble_member=member_index, height=saved["height"], width=saved["width"],
-        dataset_size=saved["dataset_size"], global_step=step, train_progress=pending,
+        dataset_size=saved["dataset_size"], global_step=saved["global_step"],
         history=[], best_ssim=-float("inf"), best_checkpoint=None,
         rng=dict(cpu=torch.Generator().manual_seed(777 + member_index).get_state(), cuda=[]),
-        migration=dict(source_completed_epoch=saved["epoch"],
-                       resumed_epoch_loss_excludes_batches_before_split=True),
     )
 
 
@@ -58,6 +43,8 @@ def split_checkpoint(source, output):
     from train import save_checkpoint
 
     saved = torch.load(source, map_location="cpu", weights_only=False)
+    if saved.get("train_progress"):
+        raise ValueError("Finish this partial epoch with the previous trainer before splitting.")
     output.mkdir(parents=True, exist_ok=True)
     if saved["best_checkpoint"] is not None:
         save_checkpoint(saved["best_checkpoint"], output / "best.pt")
@@ -68,12 +55,7 @@ def split_checkpoint(source, output):
         folder = output / f"member_{index:02d}"
         folder.mkdir(exist_ok=True)
         save_checkpoint(member, folder / "latest.pt")
-        if member["epoch"] > saved["epoch"]:
-            weights = {key: member[key] for key in
-                       ("model", "epoch", "method", "ensemble_member", "height", "width", "dataset_size")}
-            save_checkpoint(weights, folder / f"epoch_{member['epoch']:03d}.pt")
-        report["members"].append(dict(index=index, completed_epoch=member["epoch"],
-                                      pending_batch=(member["train_progress"] or {}).get("batch")))
+        report["members"].append(dict(index=index, completed_epoch=member["epoch"]))
     (output / "migration.json").write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report), flush=True)
 
