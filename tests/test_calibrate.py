@@ -9,7 +9,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader,TensorDataset
 
-from calibration.run import evaluate, compact_parameters
+from calibration.calibration_run import evaluate, compact_parameters
 
 class CalibrationReportTests(unittest.TestCase):
     def test_raw_metrics_coverage_crossing_and_interval_intersection(self):
@@ -45,7 +45,7 @@ class CalibrationReportTests(unittest.TestCase):
         json.dumps(summary)
 
     def test_entrypoint_keeps_calibration_and_test_splits_separate_and_reuses_fit(self):
-        import calibration.run as calibrate
+        import calibration.calibration_run as calibrate
         class Calibration:
             calls=0
             def __init__(self,model): self.model=model;self.parameters={}
