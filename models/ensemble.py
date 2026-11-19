@@ -34,6 +34,7 @@ class DeepEnsemble(nn.Module):
         mean = means.mean(dim=0)
         # Law of total variance: average within-member variance plus variance of member means.
         variance = (variances + means.square()).mean(dim=0) - mean.square()
+        # relu clamps values that go slightly negative due to floating-point cancellation.
         return mean, F.relu(variance)
 
     def center(self, image):

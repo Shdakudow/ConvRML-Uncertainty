@@ -33,6 +33,8 @@ class MCDropout(nn.Module):
         return self.predict_samples(image).mean(dim=0)
 
     def predict_samples(self, image):
+        # eval() freezes BatchNorm; Dropout layers are then re-enabled so stochastic
+        # samples are drawn at inference. Training modes are restored afterwards.
         modes = {module: module.training for module in self.backbone.modules()}
         self.backbone.eval()
         for module in self.backbone.modules():

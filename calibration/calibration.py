@@ -167,6 +167,7 @@ class KRCPS:
     def predict(self, image):
         center, first, second = self.model.bounds(image)
         expansion = self.parameters["lambda_map"].to(image.device)
+        # min/max swap handles any crossed bounds the model may produce.
         lower = (torch.minimum(first, second) - expansion).clip(0, 1)
         upper = (torch.maximum(first, second) + expansion).clip(0, 1)
         return center, lower, upper
