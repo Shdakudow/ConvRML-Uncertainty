@@ -32,6 +32,11 @@ class KRCPS:
 
     @staticmethod
     def _hb_pvalue(risk, n):
+        """Hoeffding-Bentkus p-value for the null hypothesis that true risk >= alpha.
+
+        Returns the minimum of the Hoeffding KL bound and the Bentkus binomial
+        bound; a value below delta certifies the interval at confidence 1-delta.
+        """
         alpha = SETTINGS["alpha"]
         if risk >= alpha:
             return 1.0
@@ -45,6 +50,7 @@ class KRCPS:
         )
 
     def _accepted_risk(self, n):
+        """Binary search for the largest empirical risk whose HB p-value is below delta."""
         lower, upper = 0.0, SETTINGS["alpha"]
         for _ in range(SETTINGS["hb_iterations"]):
             middle = (lower + upper) / 2
@@ -56,6 +62,7 @@ class KRCPS:
 
     @staticmethod
     def _risk(target, lower, upper, expansion):
+        """Fraction of pixel values outside the interval after applying expansion."""
         lower = (lower - expansion).clip(0, 1)
         upper = (upper + expansion).clip(0, 1)
         return float(((target < lower) | (target > upper)).float().mean())
@@ -87,6 +94,7 @@ class KRCPS:
 
     @staticmethod
     def _initial_expansion(arrays, n_opt, device):
+        """Run K-RCPS group optimization on the first n_opt images to get a spatial expansion map."""
         rng = np.random.default_rng(torch.initial_seed())
         membership, group_offsets = _optimize_group_lambdas(
             *(torch.from_numpy(array[:n_opt]) for array in arrays),
@@ -100,6 +108,7 @@ class KRCPS:
         return membership.to(device) @ group_offsets + SETTINGS["lambda_max"]
 
     def _select_expansion(self, target, lower, upper, expansion):
+        """Shrink the expansion map one stepsize at a time; return the tightest map that still passes the HB certificate."""
         n_cal = len(target)
         threshold = self._accepted_risk(n_cal)
         risk = self._risk(target, lower, upper, expansion)
@@ -119,6 +128,12 @@ class KRCPS:
 
     @torch.inference_mode()
     def fit(self, loader, device):
+        """Fit spatial expansion offsets and certify coverage on held-out images.
+
+        Shuffles the dataset, runs inference once into memory-mapped arrays, runs
+        K-RCPS group optimization on the first n_opt images, then shrinks the
+        expansion map on the remaining images and issues the HB certificate.
+        """
         self.model.eval()
         device = torch.device(device)
         n = len(loader.dataset)
@@ -165,6 +180,7 @@ class KRCPS:
 
     @torch.inference_mode()
     def predict(self, image):
+        """Apply the fitted lambda map to produce certified center, lower, and upper bounds."""
         center, first, second = self.model.bounds(image)
         expansion = self.parameters["lambda_map"].to(image.device)
         # min/max swap handles any crossed bounds the model may produce.
@@ -182,6 +198,11 @@ class QUTCCCalibration:
 
     @torch.inference_mode()
     def fit(self, loader, device):
+        """Binary search for the tightest lower and upper quantile inputs that achieve 90% coverage.
+
+        Uses QUTCC's finite-image tail budget correction, then measures actual
+        joint pixel coverage with the selected quantiles.
+        """
         self.model.eval()
         n = len(loader.dataset)
         target_risk = (0.1 - 0.9 / n) / 2
@@ -231,6 +252,7 @@ class QUTCCCalibration:
 
     @torch.inference_mode()
     def predict(self, image):
+        """Run the model at the fitted lower and upper quantiles to get the calibrated interval."""
         return self.model.bounds(
             image, self.parameters["lower_q"], self.parameters["upper_q"]
         )
