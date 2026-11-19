@@ -19,11 +19,13 @@ from calibration.krcps_optimization import SETTINGS, _optimize_group_lambdas
 
 
 class KRCPS:
-    """Fit spatial additive offsets with K-RCPS, then certify held-out risk.
+    """Calibrate prediction intervals by fitting a per-pixel expansion map.
 
-    Group optimization uses the existing code-for-quant settings. The final
-    HB step targets alpha=0.1 with delta=0.1 (90% confidence). Optimization
-    images are excluded from this final check.
+    After training, the model's raw bounds may not reach 90% pixel coverage.
+    KRCPS adds a spatially varying offset to each pixel's interval — larger in
+    regions where the model is less reliable. The offset map is optimized on a
+    held-out subset, then the Hoeffding-Bentkus statistical test verifies that
+    the selected map achieves certified coverage at alpha=0.1, delta=0.1.
     """
 
     def __init__(self, model):
@@ -68,7 +70,11 @@ class KRCPS:
         return float(((target < lower) | (target > upper)).float().mean())
 
     def _cache_predictions(self, loader, device, folder, shape):
-        """Run inference once and store the targets and ordered bounds on disk."""
+        """Run inference once and write targets and bounds to memory-mapped disk arrays.
+
+        Storing on disk avoids holding the full calibration set's predictions in
+        GPU memory while the optimization and certificate steps run.
+        """
         arrays = [
             np.lib.format.open_memmap(
                 Path(folder) / f"{name}.npy",
@@ -94,7 +100,11 @@ class KRCPS:
 
     @staticmethod
     def _initial_expansion(arrays, n_opt, device):
-        """Run K-RCPS group optimization on the first n_opt images to get a spatial expansion map."""
+        """Return a per-pixel expansion map fitted on the first n_opt images.
+
+        The map assigns a non-negative offset to each pixel; adding it to both
+        sides of the model's interval widens coverage in less reliable regions.
+        """
         rng = np.random.default_rng(torch.initial_seed())
         membership, group_offsets = _optimize_group_lambdas(
             *(torch.from_numpy(array[:n_opt]) for array in arrays),
@@ -130,9 +140,9 @@ class KRCPS:
     def fit(self, loader, device):
         """Fit spatial expansion offsets and certify coverage on held-out images.
 
-        Shuffles the dataset, runs inference once into memory-mapped arrays, runs
-        K-RCPS group optimization on the first n_opt images, then shrinks the
-        expansion map on the remaining images and issues the HB certificate.
+        Shuffles the dataset, caches inference into memory-mapped arrays, optimizes
+        the expansion map on the first n_opt images, then shrinks the map on the
+        remaining images until coverage just passes the Hoeffding-Bentkus test.
         """
         self.model.eval()
         device = torch.device(device)
@@ -190,7 +200,14 @@ class KRCPS:
 
 
 class QUTCCCalibration:
-    """Select two q inputs using QUTCC's finite-image corrected tail budget."""
+    """Calibrate QUTCC by selecting the quantile inputs that achieve 90% coverage.
+
+    QUTCC produces an interval by running the model at a lower quantile q_lo
+    and an upper quantile q_hi. This class searches for the tightest q_lo and
+    q_hi that keep at least 90% of pixel values inside the interval, applying
+    a small correction to the per-tail miss budget to account for the finite
+    number of calibration images.
+    """
 
     def __init__(self, model):
         self.model = model
@@ -200,8 +217,10 @@ class QUTCCCalibration:
     def fit(self, loader, device):
         """Binary search for the tightest lower and upper quantile inputs that achieve 90% coverage.
 
-        Uses QUTCC's finite-image tail budget correction, then measures actual
-        joint pixel coverage with the selected quantiles.
+        The per-tail miss budget is tightened slightly for the finite calibration
+        set size, then actual joint pixel coverage is measured with the selected
+        quantiles to confirm the target was met.
+
         """
         self.model.eval()
         n = len(loader.dataset)
