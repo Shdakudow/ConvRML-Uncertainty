@@ -42,6 +42,12 @@ def split_member_checkpoint(saved, member_index):
 
 
 def split_checkpoint(source, output):
+    """Split a joint ensemble checkpoint into ten individual member checkpoints.
+
+    Writes each member's weights and optimizer state to output/member_XX/latest.pt,
+    the shared training history to output/history.json, and a migration report to
+    output/migration.json. The cluster then continues each member in its own job.
+    """
     from train import save_checkpoint
 
     saved = torch.load(source, map_location="cpu", weights_only=False)
@@ -77,6 +83,12 @@ def ready_epochs(output):
 
 
 def evaluate_ready(manifest, output):
+    """Validate the ensemble for each epoch whose ten member snapshots are all present.
+
+    Assembles all ten members into a single DeepEnsemble, runs validation, and
+    updates best.pt and history.json. The perceptual metric is recreated each
+    epoch so it does not hold GPU memory while the ten member checkpoints load.
+    """
     from dataloader import get_loaders
     from models import make_model
     from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
