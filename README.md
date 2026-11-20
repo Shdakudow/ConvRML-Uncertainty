@@ -15,6 +15,7 @@ here to change the backbone shared by all four models.
 | Ensemble | Ten independent RGB mean/variance predictors | Mean Gaussian NLL across the ten members |
 | MC dropout | Mean and variance from 30 stochastic passes | MSE |
 
+Notes (to be deleted)
 QUTCC retains `q`, embedded and applied through FiLM
 after the encoder block normalizations and decoder batch normalizations.
 The ConvNeXt block owns its forward computation and accepts optional FiLM
