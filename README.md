@@ -201,9 +201,9 @@ Checkpoints are selected by the best raw validation SSIM through epoch 50. Calib
 
 MIRFLICKR uses 3,000 calibration and 2,000 test images. DiffuserCam uses 2,048 calibration and 5,000 test images. Im2im reserves 10 calibration images for K-RCPS optimization; its HB check uses the remaining images. Both methods target 90% coverage. Only K-RCPS supplies the 90%-confidence HB certificate. Coverage counts RGB pixel-channel values. Width is the interval length after intersection with [0,1]; coverage and raw reconstruction predictions are not changed by this width calculation.
 
-- **mirflickr / qutcc:** q_lower=0.0415039, q_upper=0.976807; crossing fraction=0.00320291. [Full summary](calibration%20results/mirflickr_qutcc.json).
+- **mirflickr / qutcc:** q_lower=0.0415039, q_upper=0.976807; crossing fraction=0.00320291. [Full summary](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_qutcc.json) · [Fitted parameters](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_qutcc-parameters.pt).
 
-- **mirflickr / im2im:** HB p-value=0.0816267; certificate passed=true; n=2990. [Full summary](calibration%20results/mirflickr_im2im.json).
+- **mirflickr / im2im:** HB p-value=0.0816267; certificate passed=true; n=2990. [Full summary](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_im2im.json) · [Fitted parameters](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_im2im-parameters.pt).
 
 ### Earlier MIRFLICKR validation reference
 
