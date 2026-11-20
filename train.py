@@ -33,7 +33,13 @@ def train_epoch(
     model, loader, optimizer, device, global_step, total_steps,
     batch_order=None, loss_divisor=None,
 ):
-    """Train each ensemble member with its own order of this epoch's batches."""
+    """Run one training epoch and return (mean loss per image, updated global step).
+
+    batch_order: pre-shuffled batch list for a single parallel ensemble member;
+        if None, the order is drawn fresh (each member gets its own shuffle).
+    loss_divisor: divides the loss before backward; set to 10 for parallel
+        members so their gradient scale matches joint ensemble training.
+    """
     model.train()
     members = model.members if isinstance(model, DeepEnsemble) else [model]
     if batch_order is None:
@@ -65,6 +71,7 @@ def train_epoch(
             schedule_progress = step / (total_steps - 1)
             for group in optimizer.param_groups:
                 group["lr"] = learning_rate(step, total_steps)
+                # Weight decay also follows a cosine schedule, decaying to 0 by the final step.
                 group["weight_decay"] = INITIAL_WEIGHT_DECAY * (1 + math.cos(math.pi * schedule_progress)) / 2
             # Inactive members must have no gradients so AdamW skips them.
             optimizer.zero_grad()
@@ -100,7 +107,10 @@ def restore_rng(state):
 
 @torch.inference_mode()
 def validate(model, loader, perceptual, device):
-    """Measure reconstruction"""
+    """Return per-image PSNR, SSIM, and LPIPS for the model's center predictions.
+
+    Calibration is a separate held-out step; this only measures reconstruction.
+    """
     model.eval()
     # Fresh metric objects keep each validation epoch's statistics separate.
     # Reducing over C/H/W preserves mean per-image PSNR rather than global PSNR.
@@ -125,6 +135,12 @@ def validate(model, loader, perceptual, device):
 
 
 def main():
+    """Parse arguments, build model and optimizer, and run the training loop.
+
+    Supports all four uncertainty methods and two modes: joint training of the
+    full ensemble, or a single parallel member job via --ensemble-member.
+    Resumes from a completed-epoch checkpoint with --resume.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument(
@@ -135,7 +151,7 @@ def main():
     parser.add_argument("--ensemble-member", type=int,
                         help="Train this ensemble member (0–9) in its own GPU job.")
     args = parser.parse_args()
-    torch.manual_seed(777 + (args.ensemble_member or 0))  # personal preference
+    torch.manual_seed(777 + (args.ensemble_member or 0))
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_loader, validation_loader = get_loaders(args.manifest)
     _, sample_target = train_loader.dataset[0]
@@ -176,6 +192,7 @@ def main():
         del saved
 
     def checkpoint_state(completed):
+        """Snapshot all state needed to resume or evaluate at the given epoch."""
         return dict(
             model=model.state_dict(), optimizer=optimizer.state_dict(),
             epoch=completed, method=args.model, history=history,
@@ -234,6 +251,7 @@ def main():
                 width=width,
                 dataset_size=len(train_loader.dataset),
             )
+        # Snapshot the best model so far every 5 epochs for mid-run analysis.
         if epoch % 5 == 0:
             torch.save(
                 dict(best_checkpoint, selected_through_epoch=epoch),
