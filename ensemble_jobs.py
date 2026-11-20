@@ -7,7 +7,6 @@ from pathlib import Path
 
 import torch
 
-# Arbitrary base seed for repeatable batch orders and member initialization.
 BASE_SEED = 777
 
 
