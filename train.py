@@ -100,7 +100,7 @@ def restore_rng(state):
 
 @torch.inference_mode()
 def validate(model, loader, perceptual, device):
-    """Measure reconstruction only; calibration is a separate held-out step."""
+    """Measure reconstruction"""
     model.eval()
     # Fresh metric objects keep each validation epoch's statistics separate.
     # Reducing over C/H/W preserves mean per-image PSNR rather than global PSNR.
