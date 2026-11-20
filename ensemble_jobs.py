@@ -51,8 +51,6 @@ def split_checkpoint(source, output):
     from train import save_checkpoint
 
     saved = torch.load(source, map_location="cpu", weights_only=False)
-    if saved.get("train_progress"):
-        raise ValueError("Finish this partial epoch with the previous trainer before splitting.")
     output.mkdir(parents=True, exist_ok=True)
     if saved["best_checkpoint"] is not None:
         save_checkpoint(saved["best_checkpoint"], output / "best.pt")

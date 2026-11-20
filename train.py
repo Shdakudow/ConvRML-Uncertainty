@@ -181,8 +181,6 @@ def main():
     completed_epoch = 0
     if args.resume is not None:
         saved = torch.load(args.resume, map_location="cpu", weights_only=False)
-        if saved.get("train_progress"):
-            raise ValueError("Finish this partial epoch with the previous trainer before resuming.")
         model.load_state_dict(saved["model"])
         optimizer.load_state_dict(saved["optimizer"])
         history, global_step = saved["history"], saved["global_step"]

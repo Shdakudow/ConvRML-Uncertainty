@@ -134,24 +134,6 @@ class ConvNeXt(nn.Module):
             trunc_normal_(m.weight, std=0.02)
             nn.init.constant_(m.bias, 0)
 
-    def init_weights(self, pretrained=None):
-        """Initialize the backbone weights.
-        Args:
-            pretrained (str, optional): Path to pre-trained weights.
-                Defaults to None.
-        """
-
-        def _init_weights(m):
-            if isinstance(m, nn.Linear):
-                trunc_normal_(m.weight, std=0.02)
-                if isinstance(m, nn.Linear) and m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.LayerNorm):
-                nn.init.constant_(m.bias, 0)
-                nn.init.constant_(m.weight, 1.0)
-
-        self.apply(_init_weights)
-
     def forward_features(self, x):
         outs = []
         for i in range(4):
@@ -210,10 +192,7 @@ class FNN(nn.Module):
         super(FNN, self).__init__()
         self.rec_channels = rec_channels
 
-        self.dropout = nn.Dropout(0.3)
-        self.act_Lrelu = nn.LeakyReLU(negative_slope=0.2)
         self.act_relu = nn.ReLU()
-        self.act_tanh = nn.Tanh()
 
         self.f = nn.Sequential(
             nn.Conv2d(
@@ -336,13 +315,8 @@ class ConvRecon(nn.Module):
 model_urls = {
     "convnext_tiny_1k": "https://dl.fbaipublicfiles.com/convnext/convnext_tiny_1k_224_ema.pth",
     "convnext_small_1k": "https://dl.fbaipublicfiles.com/convnext/convnext_small_1k_224_ema.pth",
-    "convnext_base_1k": "https://dl.fbaipublicfiles.com/convnext/convnext_base_1k_224_ema.pth",
-    "convnext_large_1k": "https://dl.fbaipublicfiles.com/convnext/convnext_large_1k_224_ema.pth",
     "convnext_tiny_22k": "https://dl.fbaipublicfiles.com/convnext/convnext_tiny_22k_224.pth",
     "convnext_small_22k": "https://dl.fbaipublicfiles.com/convnext/convnext_small_22k_224.pth",
-    "convnext_base_22k": "https://dl.fbaipublicfiles.com/convnext/convnext_base_22k_224.pth",
-    "convnext_large_22k": "https://dl.fbaipublicfiles.com/convnext/convnext_large_22k_224.pth",
-    "convnext_xlarge_22k": "https://dl.fbaipublicfiles.com/convnext/convnext_xlarge_22k_224.pth",
 }
 
 
@@ -374,36 +348,3 @@ def convnext_small(pretrained=False, in_22k=False, **kwargs):
     return model
 
 
-def convnext_base(pretrained=False, in_22k=False, **kwargs):
-    model = ConvNeXt(depths=[3, 3, 27, 3], dims=[128, 256, 512, 1024], **kwargs)
-    if pretrained:
-        url = (
-            model_urls["convnext_base_22k"]
-            if in_22k
-            else model_urls["convnext_base_1k"]
-        )
-        checkpoint = torch.hub.load_state_dict_from_url(url=url, map_location="cpu")
-        model.load_state_dict(checkpoint["model"])
-    return model
-
-
-def convnext_large(pretrained=False, in_22k=False, **kwargs):
-    model = ConvNeXt(depths=[3, 3, 27, 3], dims=[192, 384, 768, 1536], **kwargs)
-    if pretrained:
-        url = (
-            model_urls["convnext_large_22k"]
-            if in_22k
-            else model_urls["convnext_large_1k"]
-        )
-        checkpoint = torch.hub.load_state_dict_from_url(url=url, map_location="cpu")
-        model.load_state_dict(checkpoint["model"])
-    return model
-
-
-def convnext_xlarge(pretrained=False, in_22k=False, **kwargs):
-    model = ConvNeXt(depths=[3, 3, 27, 3], dims=[256, 512, 1024, 2048], **kwargs)
-    if pretrained:
-        url = model_urls["convnext_xlarge_22k"]
-        checkpoint = torch.hub.load_state_dict_from_url(url=url, map_location="cpu")
-        model.load_state_dict(checkpoint["model"])
-    return model

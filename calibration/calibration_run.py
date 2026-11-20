@@ -33,7 +33,7 @@ def evaluate(calibrator, loader, perceptual, device):
     psnr = PeakSignalNoiseRatio(data_range=1.0, dim=(1, 2, 3)).to(device)
     ssim = StructuralSimilarityIndexMeasure(data_range=1.0).to(device)
     covered = pixels = crossed = images = 0
-    width = width_in_range = lpips = 0.0
+    interval_width = interval_width_in_range = lpips = 0.0
     for measurement, target in loader:
         measurement, target = measurement.to(device), target.to(device)
         center, lower, upper = calibrator.predict(measurement)
@@ -43,15 +43,15 @@ def evaluate(calibrator, loader, perceptual, device):
         perceptual.reset()
         covered += int(((target >= lower) & (target <= upper)).sum())
         crossed += int((lower > upper).sum())
-        width += float(F.relu(upper - lower).sum())
+        interval_width += float(F.relu(upper - lower).sum())
         # Length of the interval's intersection with the valid image range.
-        width_in_range += float(F.relu(upper.clip(max=1) - lower.clip(min=0)).sum())
+        interval_width_in_range += float(F.relu(upper.clip(max=1) - lower.clip(min=0)).sum())
         pixels += target.numel()
         images += len(target)
     return dict(
         n_images=images, coverage=covered / pixels, crossing=crossed / pixels,
-        mean_interval_width=width / pixels,
-        mean_interval_width_in_image_range=width_in_range / pixels,
+        mean_interval_width=interval_width / pixels,
+        mean_interval_width_in_image_range=interval_width_in_range / pixels,
         psnr=float(psnr.compute()), ssim=float(ssim.compute()), lpips=lpips / images,
     )
 
@@ -87,6 +87,7 @@ def main():
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+
     torch.manual_seed(777)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     saved = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
@@ -95,14 +96,23 @@ def main():
     model = model.to(device).eval()
     calibrator = QUTCCCalibration(model) if saved["method"] == "qutcc" else KRCPS(model)
     args.output.mkdir(parents=True, exist_ok=True)
+
     provenance = dict(
-        checkpoint=str(args.checkpoint.resolve()), checkpoint_sha256=sha256(args.checkpoint),
-        manifest=str(args.manifest.resolve()), manifest_sha256=sha256(args.manifest),
-        method=saved["method"], selected_epoch=saved["epoch"],
+        checkpoint=str(args.checkpoint.resolve()),
+        checkpoint_sha256=sha256(args.checkpoint),
+        manifest=str(args.manifest.resolve()),
+        manifest_sha256=sha256(args.manifest),
+        method=saved["method"],
+        selected_epoch=saved["epoch"],
         selected_through_epoch=saved.get("selected_through_epoch", saved["epoch"]),
-        validation_ssim=saved.get("validation_ssim"), seed=777, batch_size=10,
-        training_weights_changed=False, test_used_for_fitting=False,
+        validation_ssim=saved.get("validation_ssim"),
+        seed=777,
+        batch_size=10,
+        training_weights_changed=False,
+        test_used_for_fitting=False,
     )
+
+    # Skip fitting if parameters.pt already matches this checkpoint and manifest.
     parameters_file = args.output / "parameters.pt"
     fitted = (torch.load(parameters_file, map_location="cpu", weights_only=False)
               if parameters_file.exists() else None)
@@ -121,16 +131,22 @@ def main():
         )
         save_checkpoint(dict(parameters=calibrator.parameters, provenance=provenance), parameters_file)
     print(json.dumps(dict(phase="fitted", parameters=compact_parameters(calibrator.parameters))), flush=True)
+
     perceptual = LearnedPerceptualImagePatchSimilarity(
         net_type="alex", normalize=True, reduction="none"
     ).to(device).eval().requires_grad_(False)
     test_loader = DataLoader(ImagePairs(args.manifest, "test"),
                              batch_size=10, shuffle=False, num_workers=2)
     metrics = evaluate(calibrator, test_loader, perceptual, device)
-    summary = dict(**provenance, calibration=compact_parameters(calibrator.parameters), test=metrics,
-                   reconstruction_metrics="Raw PSNR/SSIM; LPIPS uses a clipped [0,1] copy",
-                   coverage_definition="Fraction of RGB pixel-channel targets inside the interval",
-                   width_definition="Nonnegative interval length; also reported after intersection with [0,1]")
+
+    summary = dict(
+        **provenance,
+        calibration=compact_parameters(calibrator.parameters),
+        test=metrics,
+        reconstruction_metrics="Raw PSNR/SSIM; LPIPS uses a clipped [0,1] copy",
+        coverage_definition="Fraction of RGB pixel-channel targets inside the interval",
+        width_definition="Nonnegative interval length; also reported after intersection with [0,1]",
+    )
     temporary = args.output / "summary.tmp"
     temporary.write_text(json.dumps(summary, indent=2) + "\n")
     temporary.replace(args.output / "summary.json")
