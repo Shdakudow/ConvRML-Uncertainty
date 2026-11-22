@@ -10,7 +10,6 @@ DROPOUT_RATE = 0.1
 
 
 def add_dropout(module):
-    """Modify the supplied backbone in place, inserting dropout after each GELU and ReLU."""
     for name, child in list(module._modules.items()):
         if isinstance(child, (nn.GELU, nn.ReLU)):
             module._modules[name] = nn.Sequential(child, nn.Dropout(DROPOUT_RATE))
@@ -19,8 +18,6 @@ def add_dropout(module):
 
 
 class MCDropout(nn.Module):
-    """Wrap the supplied backbone and insert its dropout layers in place."""
-
     def __init__(self, base_model, dataset_size):
         super().__init__()
         self.backbone = base_model
@@ -29,7 +26,6 @@ class MCDropout(nn.Module):
         add_dropout(self.backbone)
 
     def center(self, image):
-        """Use the same Monte Carlo mean for validation and interval prediction."""
         return self.predict_samples(image).mean(dim=0)
 
     def predict_samples(self, image):
