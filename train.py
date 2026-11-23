@@ -3,9 +3,11 @@
 import argparse
 import json
 import math
+import os
 from pathlib import Path
 
 import torch
+import torch.distributed as dist
 from torch.utils.data import DataLoader
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
@@ -108,35 +110,6 @@ def train(model, train_loader, validation_loader, optimizer, device,
     _, sample_target = train_loader.dataset[0]
     height, width = sample_target.shape[-2:]
 
-    if args.ensemble_member is not None:
-        from ensemble_jobs import member_batch_order
-        for epoch in range(completed_epoch + 1, EPOCHS + 1):
-            batch_order = member_batch_order(train_loader, epoch, args.ensemble_member)
-            loss = train_epoch(
-                model.members[0], _make_member_loader(train_loader, batch_order),
-                optimizer, device, global_step, total_steps, loss_divisor=10,
-            )
-            global_step += len(train_loader)
-            row = dict(epoch=epoch, loss=loss,
-                       learning_rate=optimizer.param_groups[0]["lr"],
-                       weight_decay=optimizer.param_groups[0]["weight_decay"])
-            history.append(row)
-            print(json.dumps(row), flush=True)
-            (args.output / "history.json").write_text(json.dumps(history, indent=2) + "\n")
-            save_checkpoint(dict(
-                model=model.state_dict(), epoch=epoch, method="ensemble",
-                ensemble_member=args.ensemble_member, height=height, width=width,
-                dataset_size=len(train_loader.dataset),
-            ), args.output / f"epoch_{epoch:03d}.pt")
-            save_checkpoint(dict(
-                model=model.state_dict(), optimizer=optimizer.state_dict(),
-                epoch=epoch, method=args.model, history=history,
-                height=height, width=width, dataset_size=len(train_loader.dataset),
-                global_step=global_step, best_ssim=best_ssim, best_checkpoint=best_checkpoint,
-                rng=rng_state(), ensemble_member=args.ensemble_member,
-            ), args.output / "latest.pt")
-        return
-
     perceptual = (
         LearnedPerceptualImagePatchSimilarity(net_type="alex", normalize=True, reduction="none")
         .to(device).eval().requires_grad_(False)
@@ -194,7 +167,7 @@ def train(model, train_loader, validation_loader, optimizer, device,
             epoch=epoch, method=args.model, history=history,
             height=height, width=width, dataset_size=len(train_loader.dataset),
             global_step=global_step, best_ssim=best_ssim, best_checkpoint=best_checkpoint,
-            rng=rng_state(), ensemble_member=args.ensemble_member,
+            rng=rng_state(),
         ), args.output / "latest.pt")
 
 
@@ -206,20 +179,29 @@ def main():
     )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--resume", type=Path)
-    parser.add_argument("--ensemble-member", type=int,
-                        help="Train this ensemble member (0–9) in its own GPU job.")
     args = parser.parse_args()
 
-    torch.manual_seed(777 + (args.ensemble_member or 0))
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # Distributed ensemble: torchrun sets RANK automatically; each rank trains one member.
+    # Usage: torchrun --nproc_per_node=10 train.py --model ensemble ...
+    if args.model == "ensemble" and "RANK" in os.environ:
+        dist.init_process_group("nccl")
+        rank = dist.get_rank()
+        device = torch.device(f"cuda:{rank}")
+        torch.cuda.set_device(device)
+        args.output = args.output / f"member_{rank:02d}"
+    else:
+        rank = 0
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    torch.manual_seed(777 + rank)
     train_loader, validation_loader = get_loaders(args.manifest)
     _, sample_target = train_loader.dataset[0]
     height, width = sample_target.shape[-2:]
 
-    if args.ensemble_member is None:
-        model = make_model(args.model, height, width, len(train_loader.dataset))
-    else:
+    if dist.is_initialized():
         model = DeepEnsemble([DeepEnsembleMember(ConvRecon(3, height, width, out_channels=6))])
+    else:
+        model = make_model(args.model, height, width, len(train_loader.dataset))
     model = model.to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5, weight_decay=INITIAL_WEIGHT_DECAY)
 
@@ -243,6 +225,9 @@ def main():
     train(model, train_loader, validation_loader, optimizer, device,
           total_steps, completed_epoch, history, global_step,
           best_ssim, best_checkpoint, args)
+
+    if dist.is_initialized():
+        dist.destroy_process_group()
 
 
 if __name__ == "__main__":
