@@ -1,0 +1,28 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-raw-diffuser-continue80-01.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_diffuser_continue80_20261019/results/raw/im2im/checkpoints/epoch_050.pt",
+   "sha256": "39077861a5b807fb860baf04ed568ec68cf5d3596fa0aa794161746fe99523d4",
+   "bytes": 381352698,
+   "tar_member": "experiments/raw_diffuser_continue80_20261019/results/raw/im2im/checkpoints/epoch_050.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_diffuser_continue80_20261019/results/raw/im2im/checkpoints/epoch_055.pt",
+   "sha256": "9716367c48603e674b31cc0a88a4b2df03754056ea7578bbcc78b2ae78bb1fac",
+   "bytes": 381353658,
+   "tar_member": "experiments/raw_diffuser_continue80_20261019/results/raw/im2im/checkpoints/epoch_055.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_diffuser_continue80_20261019/results/raw/im2im/checkpoints/epoch_060.pt",
+   "sha256": "f444bb208d643b5fdd412dc771512ffa3403ccd21aa7e26683526dea013f5a4f",
+   "bytes": 381354746,
+   "tar_member": "experiments/raw_diffuser_continue80_20261019/results/raw/im2im/checkpoints/epoch_060.pt"
+  }
+ ]
+}

@@ -1,0 +1,14 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-qutcc-paper-style-20.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "experiments/qutcc_paper_style_20261018/results/rml/qutcc/latest.pt",
+   "sha256": "ccc786c6b3866b01d80d81b384707a45395652ff74b638cbab9cf45f0bd66667",
+   "bytes": 1407994128,
+   "tar_member": "experiments/qutcc_paper_style_20261018/results/rml/qutcc/latest.pt"
+  }
+ ]
+}

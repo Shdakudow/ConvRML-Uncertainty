@@ -1,0 +1,28 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-adaptive-q-coverage90-scratch50-02.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "results/adaptive_q_coverage90_scratch50_20261014/diffuser/epoch_010.pt",
+   "sha256": "a50d27fc562dd08464d194be539305d71a967e2aa27d009d4815f640dc5cc39f",
+   "bytes": 469417658,
+   "tar_member": "results/adaptive_q_coverage90_scratch50_20261014/diffuser/epoch_010.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "results/adaptive_q_coverage90_scratch50_20261014/diffuser/epoch_015.pt",
+   "sha256": "7142946198d2d6f100c1bd27557354df3176b346f136bbec683769a680d9b76d",
+   "bytes": 469420602,
+   "tar_member": "results/adaptive_q_coverage90_scratch50_20261014/diffuser/epoch_015.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "results/adaptive_q_coverage90_scratch50_20261014/diffuser/epoch_020.pt",
+   "sha256": "6cfc929248fde284d701692f57ed866ad186ad945f2d18a13170de408a17227a",
+   "bytes": 469423034,
+   "tar_member": "results/adaptive_q_coverage90_scratch50_20261014/diffuser/epoch_020.pt"
+  }
+ ]
+}

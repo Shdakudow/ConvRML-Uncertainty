@@ -1,0 +1,28 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-mixed-01.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "checkpoints/motion_endpoint_gn/best_model.pth",
+   "sha256": "b5f5134f169865f5ed78673b12cfc91a40490887d8c8541ebd1f0f1bc8586f38",
+   "bytes": 455491274,
+   "tar_member": "checkpoints/motion_endpoint_gn/best_model.pth"
+  },
+  {
+   "study": "ConvRML",
+   "path": "checkpoints/motion_endpoint_gn/latest_model.pth",
+   "sha256": "deeebb0573aafbdfe0eedc67189a925ad389ef31ac76230a8a5c8a1f4b670f13",
+   "bytes": 455493098,
+   "tar_member": "checkpoints/motion_endpoint_gn/latest_model.pth"
+  },
+  {
+   "study": "ConvRML",
+   "path": "checkpoints/motion_uniform_gn/best_model.pth",
+   "sha256": "8211b02398b311f2200fcaf2bc3715e9b1717fbd96213ebdeaf5e373bf1c9c20",
+   "bytes": 455491274,
+   "tar_member": "checkpoints/motion_uniform_gn/best_model.pth"
+  }
+ ]
+}

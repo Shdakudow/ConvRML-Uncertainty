@@ -1,0 +1,28 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-mixed-06.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "checkpoints/quantile_toy_fourier_smoke/best_model.pth",
+   "sha256": "0bafd44aa7c97fd80319f3cac28902477af3cd97565dee88697e603955337af0",
+   "bytes": 455498774,
+   "tar_member": "checkpoints/quantile_toy_fourier_smoke/best_model.pth"
+  },
+  {
+   "study": "ConvRML",
+   "path": "checkpoints/quantile_toy_fourier_smoke/latest_model.pth",
+   "sha256": "c877915feddc65c2e455a40eca75f43c288f3f8bedb6516f75b23ddab8dafe88",
+   "bytes": 455500622,
+   "tar_member": "checkpoints/quantile_toy_fourier_smoke/latest_model.pth"
+  },
+  {
+   "study": "ConvRML",
+   "path": "checkpoints/quantile_toy_uniform_8k/best_model.pth",
+   "sha256": "e69d1cba7766d49d5ac362df1aea3f684f36863cc8e9c4506bb866d672afc01e",
+   "bytes": 455498838,
+   "tar_member": "checkpoints/quantile_toy_uniform_8k/best_model.pth"
+  }
+ ]
+}

@@ -1,0 +1,28 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-fixed-backbone50-01.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "results/fixed_backbone50_20260927/fixed/epoch_40.pt",
+   "sha256": "99d3f79fe7095ee1b42046d9c7984d1d987ab820052970ed8e77200299627d41",
+   "bytes": 381334274,
+   "tar_member": "results/fixed_backbone50_20260927/fixed/epoch_40.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "results/fixed_backbone50_20260927/fixed/epoch_50.pt",
+   "sha256": "ece49db7bd13e030bd4a3931d5f76318eafcf819028637e586bc6f165eb22097",
+   "bytes": 381334274,
+   "tar_member": "results/fixed_backbone50_20260927/fixed/epoch_50.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "results/fixed_backbone50_20260927/normal/epoch_40.pt",
+   "sha256": "81ccca57af762395b38fcbcc41f56d71c25119e284bea44d7f6444bde4ed463b",
+   "bytes": 381273604,
+   "tar_member": "results/fixed_backbone50_20260927/normal/epoch_40.pt"
+  }
+ ]
+}

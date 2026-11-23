@@ -1,0 +1,14 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-image-adaptive-q-60k-01.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "results/image_adaptive_q_60k_20261014/diffuser/latest.pt",
+   "sha256": "bf7192c8b6462b993dd3783482f719fb61bea026ce095431b6dd6daad337f024",
+   "bytes": 1408185104,
+   "tar_member": "results/image_adaptive_q_60k_20261014/diffuser/latest.pt"
+  }
+ ]
+}

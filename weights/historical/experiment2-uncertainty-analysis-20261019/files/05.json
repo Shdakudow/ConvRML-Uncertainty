@@ -1,0 +1,26 @@
+{
+ "tar_parts_in_order": [],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "experiments/experiment2_uncertainty_analysis_20261019/weights/diffuser/mc_005/checkpoints/epoch_025.pt",
+   "sha256": "6ccc7d942656a25a61cde5328af1fa1268bd83934cd9fb51e5ef194d7cb75a09",
+   "bytes": 381288250,
+   "download": "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/checkpoints-diffuser-baseline50-20261016/diffuser__mc_005__checkpoints__epoch_025.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/experiment2_uncertainty_analysis_20261019/weights/diffuser/mc_005/checkpoints/epoch_050.pt",
+   "sha256": "9d5085309825b6fe706989d442848e9b25acd09e5f2008ddb2a5d49b3e20995e",
+   "bytes": 381295290,
+   "download": "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/checkpoints-diffuser-baseline50-20261016/diffuser__mc_005__checkpoints__epoch_050.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/experiment2_uncertainty_analysis_20261019/weights/rml/ensemble_00/checkpoints/epoch_025.pt",
+   "sha256": "be7f493ce2752de05af88613d951bd0c65bc916fe45feebd6ad4591f54eb78db",
+   "bytes": 381323450,
+   "download": "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/checkpoints-rml-baseline50-20261016/rml__ensemble_00__checkpoints__epoch_025.pt"
+  }
+ ]
+}

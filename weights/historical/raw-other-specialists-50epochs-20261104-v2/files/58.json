@@ -1,0 +1,14 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-specialists-v2-58.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_other_specialists_50epochs_20261104_v2/smoke/fixed_pattern/im2im/latest.pt",
+   "sha256": "de52ac161315db7e989765d2cf07f5a160838dce08e9d563718e557a293c9618",
+   "bytes": 1144046830,
+   "tar_member": "experiments/raw_other_specialists_50epochs_20261104_v2/smoke/fixed_pattern/im2im/latest.pt"
+  }
+ ]
+}

@@ -1,0 +1,28 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-specialists-v2-19.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_other_specialists_50epochs_20261104_v2/results/gaussian_blur/im2im/checkpoints/epoch_010.pt",
+   "sha256": "f544b4862ae3146dca57efade1c32eda684c8a9c24667fa4ed2a84beccad876b",
+   "bytes": 381353338,
+   "tar_member": "experiments/raw_other_specialists_50epochs_20261104_v2/results/gaussian_blur/im2im/checkpoints/epoch_010.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_other_specialists_50epochs_20261104_v2/results/gaussian_blur/im2im/checkpoints/epoch_020.pt",
+   "sha256": "f1a86f940b483d054d88aaa13a1f0db0c5f4d22d3192dff03e94f33ab98f39e1",
+   "bytes": 381360826,
+   "tar_member": "experiments/raw_other_specialists_50epochs_20261104_v2/results/gaussian_blur/im2im/checkpoints/epoch_020.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_other_specialists_50epochs_20261104_v2/results/gaussian_blur/im2im/checkpoints/epoch_030.pt",
+   "sha256": "7825f2880fbbc317eb7d02d430abbb3c40f12ede99753e36c744e84ce99f3937",
+   "bytes": 381368314,
+   "tar_member": "experiments/raw_other_specialists_50epochs_20261104_v2/results/gaussian_blur/im2im/checkpoints/epoch_030.pt"
+  }
+ ]
+}

@@ -1,0 +1,28 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-gaussian-05.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_gaussian_specialists_50epochs_20261101/results/qutcc/checkpoints/epoch_040.pt",
+   "sha256": "9e873eca81a646e2d15317621aeff523ad79b9fde91ccb65820db630db58c0fe",
+   "bytes": 469366394,
+   "tar_member": "experiments/raw_gaussian_specialists_50epochs_20261101/results/qutcc/checkpoints/epoch_040.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_gaussian_specialists_50epochs_20261101/results/qutcc/checkpoints/epoch_050.pt",
+   "sha256": "a55a692c192232edf93ff3c8cfe54d482ada9e99e3279eb1f7550f636dfa86b0",
+   "bytes": 469373882,
+   "tar_member": "experiments/raw_gaussian_specialists_50epochs_20261101/results/qutcc/checkpoints/epoch_050.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_gaussian_specialists_50epochs_20261101/results/qutcc/initial_random.pt",
+   "sha256": "64ed9c1dbd087aad872083e8b4933dd797d2a6c5398abb2d0dae5a4119baa811",
+   "bytes": 469325116,
+   "tar_member": "experiments/raw_gaussian_specialists_50epochs_20261101/results/qutcc/initial_random.pt"
+  }
+ ]
+}

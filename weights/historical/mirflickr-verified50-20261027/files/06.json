@@ -1,0 +1,28 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-mirflickr-verified50-06.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "experiments/mirflickr_verified50_20261027/results/qutcc/checkpoints/epoch_005.pt",
+   "sha256": "0ada984e6484240ef1a326153f57347923cc7f182a5f401fd479aae3e04c0458",
+   "bytes": 469332154,
+   "tar_member": "experiments/mirflickr_verified50_20261027/results/qutcc/checkpoints/epoch_005.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/mirflickr_verified50_20261027/results/qutcc/checkpoints/epoch_010.pt",
+   "sha256": "911ac5ab7227c408d57cb2186007e623d26cf26759d750925340c7b4408ad10b",
+   "bytes": 469333050,
+   "tar_member": "experiments/mirflickr_verified50_20261027/results/qutcc/checkpoints/epoch_010.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/mirflickr_verified50_20261027/results/qutcc/checkpoints/epoch_015.pt",
+   "sha256": "2f2ac2f044128c3a99644fa6c4558a07388336dcabd0462afdba39ee49948749",
+   "bytes": 469333946,
+   "tar_member": "experiments/mirflickr_verified50_20261027/results/qutcc/checkpoints/epoch_015.pt"
+  }
+ ]
+}

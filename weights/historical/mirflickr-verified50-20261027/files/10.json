@@ -1,0 +1,14 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-mirflickr-verified50-10.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "experiments/mirflickr_verified50_20261027/results/qutcc/latest.pt",
+   "sha256": "eea6a39671d3a7a0d25c43fe80e1bc0607fec919fa6ea5212e9423821f187d6b",
+   "bytes": 1407996750,
+   "tar_member": "experiments/mirflickr_verified50_20261027/results/qutcc/latest.pt"
+  }
+ ]
+}

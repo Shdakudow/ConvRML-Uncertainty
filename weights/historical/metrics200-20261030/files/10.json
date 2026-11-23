@@ -1,0 +1,28 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-metrics200-10.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "experiments/metrics200_20261030/weights/epoch_015/diffuser/ensemble_01/checkpoints/epoch_015.pt",
+   "sha256": "16574aa124b2260ff65d4d2ee05517036f54c7cc3e635cb9a5fbae4d85bc1d21",
+   "bytes": 381314618,
+   "tar_member": "experiments/metrics200_20261030/weights/epoch_015/diffuser/ensemble_01/checkpoints/epoch_015.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/metrics200_20261030/weights/epoch_015/diffuser/ensemble_02/checkpoints/epoch_015.pt",
+   "sha256": "37f9d621edfc953c17226daf54b8febfcf159f2ac888c2cfd039aadf03a37ebe",
+   "bytes": 381314618,
+   "tar_member": "experiments/metrics200_20261030/weights/epoch_015/diffuser/ensemble_02/checkpoints/epoch_015.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/metrics200_20261030/weights/epoch_015/diffuser/ensemble_03/checkpoints/epoch_015.pt",
+   "sha256": "b0fc613e422ed7bdfd20018a0fdfbe3dc07da3bd9e48865155287c936578be17",
+   "bytes": 381314810,
+   "tar_member": "experiments/metrics200_20261030/weights/epoch_015/diffuser/ensemble_03/checkpoints/epoch_015.pt"
+  }
+ ]
+}

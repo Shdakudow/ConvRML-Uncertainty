@@ -1,0 +1,28 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-dlmd-raw-adaptive-size-01.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "experiments/dlmd_raw_adaptive_size_20261016/results/im2im/epoch_010.pt",
+   "sha256": "ff1f7e57a415cb472206754a393c4207a644d7ef23eccdbedd1429baafadc474",
+   "bytes": 381349690,
+   "tar_member": "experiments/dlmd_raw_adaptive_size_20261016/results/im2im/epoch_010.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/dlmd_raw_adaptive_size_20261016/results/im2im/epoch_015.pt",
+   "sha256": "5e53eb73cef53410b594f4ba9d05071d4ed123241001bc7f3056b9214ba904f4",
+   "bytes": 381351674,
+   "tar_member": "experiments/dlmd_raw_adaptive_size_20261016/results/im2im/epoch_015.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/dlmd_raw_adaptive_size_20261016/results/im2im/epoch_020.pt",
+   "sha256": "0a9e8a37b2ab5507283007be49e8cb77ad9c32e86e1ac74efdecd5fae856f6ae",
+   "bytes": 381353338,
+   "tar_member": "experiments/dlmd_raw_adaptive_size_20261016/results/im2im/epoch_020.pt"
+  }
+ ]
+}

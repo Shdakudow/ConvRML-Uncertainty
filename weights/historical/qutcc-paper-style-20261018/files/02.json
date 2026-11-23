@@ -1,0 +1,26 @@
+{
+ "tar_parts_in_order": [],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "experiments/qutcc_paper_style_20261018/results/diffuser/qutcc/checkpoints/epoch_020.pt",
+   "sha256": "e1cb388d4738ce8322a29b2a24a20ff16876dc5f95fd4c5405f746635034a5a7",
+   "bytes": 469336314,
+   "download": "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/checkpoints-exp2-qutcc-exp3-20261025/exp2__diffuser__qutcc__epoch_020.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/qutcc_paper_style_20261018/results/diffuser/qutcc/checkpoints/epoch_025.pt",
+   "sha256": "6bd8db919c026091e36c21068e6db2e2a0dfa6f7bd65c3d704a9a68f8d790694",
+   "bytes": 469337466,
+   "download": "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/checkpoints-exp2-qutcc-exp3-20261025/exp2__diffuser__qutcc__epoch_025.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/qutcc_paper_style_20261018/results/diffuser/qutcc/checkpoints/epoch_030.pt",
+   "sha256": "076a2b12e1c3a6056d0732a5eef69fd4dc66eb5e90e767dc902c62323d557cf4",
+   "bytes": 469338554,
+   "download": "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/checkpoints-exp2-qutcc-exp3-20261025/exp2__diffuser__qutcc__epoch_030.pt"
+  }
+ ]
+}

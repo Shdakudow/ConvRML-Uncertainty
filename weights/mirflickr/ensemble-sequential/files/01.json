@@ -1,0 +1,17 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-ensemble-sequential-01.tar.01",
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-ensemble-sequential-01.tar.02",
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-ensemble-sequential-01.tar.03",
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-ensemble-sequential-01.tar.04"
+ ],
+ "files": [
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble/latest.pt",
+   "sha256": "288032ff6cfbeecd950a1022daae6186a50487d7cabb983ec9e3f31b712daaa6",
+   "bytes": 5765247638,
+   "tar_member": "mirflickr/ensemble/latest.pt"
+  }
+ ]
+}

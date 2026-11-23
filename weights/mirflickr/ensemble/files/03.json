@@ -1,0 +1,14 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-ensemble-03.tar"
+ ],
+ "files": [
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/best_through_epoch_010.pt",
+   "sha256": "069100f3f2cf1945b1fbe9c331127f2a74af113f87587a7bc098e58da13472ee",
+   "bytes": 1441226090,
+   "tar_member": "mirflickr/ensemble_parallel/best_through_epoch_010.pt"
+  }
+ ]
+}

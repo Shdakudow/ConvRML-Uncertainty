@@ -1,0 +1,12 @@
+{
+ "tar_parts_in_order": [],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "experiments/qutcc_paper_style_20261018/results/raw/im2im/checkpoints/epoch_050.pt",
+   "sha256": "360551a7db56ca66c6aae29a0be975cad9a5165ccaa8ff2f76b887e906d35406",
+   "bytes": 381352442,
+   "download": "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/checkpoints-exp2-qutcc-exp3-20261025/exp3__raw_clean__im2im__epoch_050.pt"
+  }
+ ]
+}

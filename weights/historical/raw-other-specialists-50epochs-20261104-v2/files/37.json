@@ -1,0 +1,28 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-specialists-v2-37.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_other_specialists_50epochs_20261104_v2/results/poisson_gaussian/im2im/checkpoints/epoch_010.pt",
+   "sha256": "d7d654978fd0a3ed7bb2eac6636aa08b2de63fc7f9f4a165ae0ac7025ee3658c",
+   "bytes": 381354554,
+   "tar_member": "experiments/raw_other_specialists_50epochs_20261104_v2/results/poisson_gaussian/im2im/checkpoints/epoch_010.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_other_specialists_50epochs_20261104_v2/results/poisson_gaussian/im2im/checkpoints/epoch_020.pt",
+   "sha256": "8c17f8fe9519e3f1a7fc01f1a7561306460f684d0b86cfffe54dbf3c8c2cba63",
+   "bytes": 381362106,
+   "tar_member": "experiments/raw_other_specialists_50epochs_20261104_v2/results/poisson_gaussian/im2im/checkpoints/epoch_020.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_other_specialists_50epochs_20261104_v2/results/poisson_gaussian/im2im/checkpoints/epoch_030.pt",
+   "sha256": "b04223097649334d72c9ceb1dbadcfce8c5455ba48bccdfa4e3feb194d6bfec5",
+   "bytes": 381369594,
+   "tar_member": "experiments/raw_other_specialists_50epochs_20261104_v2/results/poisson_gaussian/im2im/checkpoints/epoch_030.pt"
+  }
+ ]
+}

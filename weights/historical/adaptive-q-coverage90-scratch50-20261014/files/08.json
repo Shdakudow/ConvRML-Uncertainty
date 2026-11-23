@@ -1,0 +1,14 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-adaptive-q-coverage90-scratch50-08.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "results/adaptive_q_coverage90_scratch50_20261014/rml/latest.pt",
+   "sha256": "22f7617440eb468db7bee78f06bde7a1ca690020cb4f5b5c4d2aa64084eb7085",
+   "bytes": 1408198282,
+   "tar_member": "results/adaptive_q_coverage90_scratch50_20261014/rml/latest.pt"
+  }
+ ]
+}

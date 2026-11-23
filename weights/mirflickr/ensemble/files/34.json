@@ -1,0 +1,77 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-ensemble-34.tar"
+ ],
+ "files": [
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_04/epoch_003.pt",
+   "sha256": "2173c8210b9d8c21adeabe755a2e11ae50a5c0ea54e030dcdb2c77808d5c9068",
+   "bytes": 144134266,
+   "tar_member": "mirflickr/ensemble_parallel/member_04/epoch_003.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_04/epoch_004.pt",
+   "sha256": "82dcea71aee100f95ddf7de93a0ae7b61e750cba1e40900b9f4e649f4f195abc",
+   "bytes": 144134266,
+   "tar_member": "mirflickr/ensemble_parallel/member_04/epoch_004.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_04/epoch_005.pt",
+   "sha256": "b3a41c75f55387ca534ce8160fd8d767351808aeb37085249aec6006a038979b",
+   "bytes": 144134266,
+   "tar_member": "mirflickr/ensemble_parallel/member_04/epoch_005.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_04/epoch_006.pt",
+   "sha256": "bf4828f3211d01b7253c5ec223eb71f633b7ad8beb890d5bca0e1b2be0b74492",
+   "bytes": 144134266,
+   "tar_member": "mirflickr/ensemble_parallel/member_04/epoch_006.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_04/epoch_007.pt",
+   "sha256": "05c5f4e5ca193e46fb1448ffa14674ee9221175118b7160ef7a7b4e7c3d36e6f",
+   "bytes": 144134266,
+   "tar_member": "mirflickr/ensemble_parallel/member_04/epoch_007.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_04/epoch_008.pt",
+   "sha256": "657c783386a7666353e7bbf7c83eb86473df3dae926cef5fd572b02cbe551877",
+   "bytes": 144134266,
+   "tar_member": "mirflickr/ensemble_parallel/member_04/epoch_008.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_04/epoch_009.pt",
+   "sha256": "d9297739a8c54d0a9e4c2138b3032a91530e06cb2efb71f5cd531f6176b2922e",
+   "bytes": 144134266,
+   "tar_member": "mirflickr/ensemble_parallel/member_04/epoch_009.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_04/epoch_010.pt",
+   "sha256": "e5536cde78030021353664c6d4d911038be3888338dac40c9c8d052b06b3ea5e",
+   "bytes": 144134266,
+   "tar_member": "mirflickr/ensemble_parallel/member_04/epoch_010.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_04/epoch_011.pt",
+   "sha256": "ce43c1f59f0281d2ee6140feab2effdc21002299facd2f987fd4fbb8fa158fcd",
+   "bytes": 144134266,
+   "tar_member": "mirflickr/ensemble_parallel/member_04/epoch_011.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_04/epoch_012.pt",
+   "sha256": "0a89c7a6132ed0666409fc1c555de9ecf84aeeb53ae2cfe6fcf5a81682bf5d82",
+   "bytes": 144134266,
+   "tar_member": "mirflickr/ensemble_parallel/member_04/epoch_012.pt"
+  }
+ ]
+}

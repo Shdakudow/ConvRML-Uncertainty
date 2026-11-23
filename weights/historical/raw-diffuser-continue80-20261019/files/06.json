@@ -1,0 +1,14 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-raw-diffuser-continue80-06.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_diffuser_continue80_20261019/results/raw/qutcc/latest.pt",
+   "sha256": "9ffed6713d6d31b6fb9f236a03a9bfad6e62954ab7b942424620785eae6fe60b",
+   "bytes": 1407998096,
+   "tar_member": "experiments/raw_diffuser_continue80_20261019/results/raw/qutcc/latest.pt"
+  }
+ ]
+}

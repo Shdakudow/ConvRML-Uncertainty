@@ -1,0 +1,19 @@
+{
+ "tar_parts_in_order": [],
+ "files": [
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/im2im/best_through_epoch_050.pt",
+   "sha256": "fe2dde92411788efe48a41f6ef2be8ffe9a4126547df40937fed78b4c231ae6a",
+   "bytes": 144127269,
+   "download": "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-im2im.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/qutcc/best_through_epoch_050.pt",
+   "sha256": "cd0a33b0f28cc6439be52d392b4082b4e6d0d40b7a966c007db9f9a4527e9ef7",
+   "bytes": 176568661,
+   "download": "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-qutcc.pt"
+  }
+ ]
+}

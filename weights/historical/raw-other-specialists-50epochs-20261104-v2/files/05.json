@@ -1,0 +1,28 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-specialists-v2-05.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_other_specialists_50epochs_20261104_v2/results/dead_pixels/qutcc/checkpoints/epoch_040.pt",
+   "sha256": "4ca0e0d7b40bdbc113aa0c4733b7339c858008944f89a6771f2f07cab0706665",
+   "bytes": 469362426,
+   "tar_member": "experiments/raw_other_specialists_50epochs_20261104_v2/results/dead_pixels/qutcc/checkpoints/epoch_040.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_other_specialists_50epochs_20261104_v2/results/dead_pixels/qutcc/checkpoints/epoch_050.pt",
+   "sha256": "4fa1a7a87fcef299b02dd6c14d40a3806b8c35be20aa260e1e5f9ffcd17b5dbf",
+   "bytes": 469370426,
+   "tar_member": "experiments/raw_other_specialists_50epochs_20261104_v2/results/dead_pixels/qutcc/checkpoints/epoch_050.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_other_specialists_50epochs_20261104_v2/results/dead_pixels/qutcc/initial_random.pt",
+   "sha256": "aeb024e9ff63746b6532c24bbff868bdabcfbb79ab971f54abbf8a117dfda2b7",
+   "bytes": 469324732,
+   "tar_member": "experiments/raw_other_specialists_50epochs_20261104_v2/results/dead_pixels/qutcc/initial_random.pt"
+  }
+ ]
+}

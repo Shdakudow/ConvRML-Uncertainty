@@ -1,0 +1,28 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-corrected-comparison-07.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "results/corrected_comparison_20261006/rml/conditioned/checkpoints/epoch_035.pt",
+   "sha256": "c6d82a419069d49c5edd177cb5000b0ebb3a184cca19561bbf51e7a0ae3e8b4b",
+   "bytes": 469338490,
+   "tar_member": "results/corrected_comparison_20261006/rml/conditioned/checkpoints/epoch_035.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "results/corrected_comparison_20261006/rml/conditioned/checkpoints/epoch_040.pt",
+   "sha256": "ec2165eb2be0e7a0961888144f2e9bb003099b278724997429a9ed6db9ecfc8e",
+   "bytes": 469339770,
+   "tar_member": "results/corrected_comparison_20261006/rml/conditioned/checkpoints/epoch_040.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "results/corrected_comparison_20261006/rml/conditioned/checkpoints/epoch_045.pt",
+   "sha256": "786ce8e173d56c452229c4ca213531db9f90b108d81981df633f87d9a9898664",
+   "bytes": 469341306,
+   "tar_member": "results/corrected_comparison_20261006/rml/conditioned/checkpoints/epoch_045.pt"
+  }
+ ]
+}

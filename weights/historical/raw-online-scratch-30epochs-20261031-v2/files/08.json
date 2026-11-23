@@ -1,0 +1,14 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-scratch-v2-08.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_online_scratch_30epochs_20261031_v2/results/im2im/latest.pt",
+   "sha256": "1389b5015cee0e98aab391107e645ffd97e1e74982c2eec86caee930829fdf1e",
+   "bytes": 1144136366,
+   "tar_member": "experiments/raw_online_scratch_30epochs_20261031_v2/results/im2im/latest.pt"
+  }
+ ]
+}

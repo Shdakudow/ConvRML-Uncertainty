@@ -1,0 +1,63 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-mixed-01.tar"
+ ],
+ "files": [
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_09/epoch_049.pt",
+   "sha256": "2c5df398c7cef70a9f5f81c36fe37a0b0669abb390766244e682b285e52e47f1",
+   "bytes": 144134266,
+   "tar_member": "mirflickr/ensemble_parallel/member_09/epoch_049.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_09/epoch_050.pt",
+   "sha256": "63e1ab9c9d011d492dae3ee90d6f76a857c7e8f5ac7bd4074d793b3323dd69f3",
+   "bytes": 144134266,
+   "tar_member": "mirflickr/ensemble_parallel/member_09/epoch_050.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_09/latest.pt",
+   "sha256": "3e7eb762c4fa3414599edca6ebcdd021720fcb5b7842af42a6204939ad1cfce1",
+   "bytes": 432389808,
+   "tar_member": "mirflickr/ensemble_parallel/member_09/latest.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/im2im/best_through_epoch_005.pt",
+   "sha256": "8716d04dab09fec757ab5861afa2799b63e28bf829823fded8764613c9e7774d",
+   "bytes": 144127269,
+   "tar_member": "mirflickr/im2im/best_through_epoch_005.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/im2im/best_through_epoch_010.pt",
+   "sha256": "6d9e955fd74887edf40f2b81a57b6df4a1be619e1a83390f2c5106ea7af1d259",
+   "bytes": 144127269,
+   "tar_member": "mirflickr/im2im/best_through_epoch_010.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/im2im/best_through_epoch_015.pt",
+   "sha256": "eff9bceef3b2c9c216ae41dcfd86136c3707aed703949171a41e82c16be98b49",
+   "bytes": 144127269,
+   "tar_member": "mirflickr/im2im/best_through_epoch_015.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/im2im/best_through_epoch_020.pt",
+   "sha256": "9dcf467ded66c1870130bbb89c356bcf640dc032571d2392a749176a4fe5f169",
+   "bytes": 144127269,
+   "tar_member": "mirflickr/im2im/best_through_epoch_020.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/im2im/best_through_epoch_025.pt",
+   "sha256": "df2b9dbbdb4cbee81344f3ea7f36e19e70dbca6433f63adde536114284a7b3b4",
+   "bytes": 144127269,
+   "tar_member": "mirflickr/im2im/best_through_epoch_025.pt"
+  }
+ ]
+}

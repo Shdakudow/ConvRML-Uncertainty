@@ -1,0 +1,63 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-ensemble-54.tar"
+ ],
+ "files": [
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_07/epoch_045.pt",
+   "sha256": "609a813370c3eadc07187cbd49603bb3c2838961036c9f4e5b176e874185c26f",
+   "bytes": 144134266,
+   "tar_member": "mirflickr/ensemble_parallel/member_07/epoch_045.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_07/epoch_046.pt",
+   "sha256": "926ed41bab44eb546f6314a0a8aac154c710779fe843a0ec9ff7d33302cd850d",
+   "bytes": 144134266,
+   "tar_member": "mirflickr/ensemble_parallel/member_07/epoch_046.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_07/epoch_047.pt",
+   "sha256": "35e8126b6921a05080da9d5a89eadd624042f8a8a714159a7a5cfc77650fdd82",
+   "bytes": 144134266,
+   "tar_member": "mirflickr/ensemble_parallel/member_07/epoch_047.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_07/epoch_048.pt",
+   "sha256": "f9aa947f4a10eb8c473d8ec92492683755e14510d4a89a0dba691820f0a72aa4",
+   "bytes": 144134266,
+   "tar_member": "mirflickr/ensemble_parallel/member_07/epoch_048.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_07/epoch_049.pt",
+   "sha256": "b8e9aa007cc8678913b8935309e6eb08581a9866a187af0d5b1275db29cd88df",
+   "bytes": 144134266,
+   "tar_member": "mirflickr/ensemble_parallel/member_07/epoch_049.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_07/epoch_050.pt",
+   "sha256": "7ad0249d29cb71917126ae1d5995cbbb0884ea5b76add6e9a495b102d87bb878",
+   "bytes": 144134266,
+   "tar_member": "mirflickr/ensemble_parallel/member_07/epoch_050.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_07/latest.pt",
+   "sha256": "bbe3cda6b0515c02c07b453e52b9550e4be7e6bac34d5e8420936304320ab352",
+   "bytes": 432389808,
+   "tar_member": "mirflickr/ensemble_parallel/member_07/latest.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/ensemble_parallel/member_08/epoch_002.pt",
+   "sha256": "a97adfd497fb25e0f033c12c51f700cb51299353dc1fc37d11c6f272b74b3c30",
+   "bytes": 144134266,
+   "tar_member": "mirflickr/ensemble_parallel/member_08/epoch_002.pt"
+  }
+ ]
+}

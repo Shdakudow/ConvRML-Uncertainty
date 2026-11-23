@@ -1,0 +1,14 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-raw-online-generalized-30epochs-02.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_online_generalized_30epochs_20261031/results/qutcc/latest.pt",
+   "sha256": "67a344cde50bd565246f2a87d8c2191330ed80690fafc4c152ae2abad6c90902",
+   "bytes": 1407988366,
+   "tar_member": "experiments/raw_online_generalized_30epochs_20261031/results/qutcc/latest.pt"
+  }
+ ]
+}

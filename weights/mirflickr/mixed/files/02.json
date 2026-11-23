@@ -1,0 +1,49 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-mixed-02.tar"
+ ],
+ "files": [
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/im2im/best_through_epoch_030.pt",
+   "sha256": "dcc292d3e9626cdfa609d6a84b5e4f6f12e4d4ef30afc92fceb0abddd274d176",
+   "bytes": 144127269,
+   "tar_member": "mirflickr/im2im/best_through_epoch_030.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/im2im/best_through_epoch_035.pt",
+   "sha256": "e07fab1fee76d032ac9b0efeb36821ff56aeef8148ae27eb621316e1e5feff18",
+   "bytes": 144127269,
+   "tar_member": "mirflickr/im2im/best_through_epoch_035.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/im2im/best_through_epoch_040.pt",
+   "sha256": "1ea480e25b7f226e24d7396d2ccffebaef08978756e5cc45d100de05e226b052",
+   "bytes": 144127269,
+   "tar_member": "mirflickr/im2im/best_through_epoch_040.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/im2im/best_through_epoch_045.pt",
+   "sha256": "5496d7743f0cfe2e93acf467b7e8a2457b49206ce2a018f7c9067b920d83c8e2",
+   "bytes": 144127269,
+   "tar_member": "mirflickr/im2im/best_through_epoch_045.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/im2im/latest.pt",
+   "sha256": "a6b99f65b97ec36fee2ad187143492f719058a9f099cb275eb03a8b9abb2081e",
+   "bytes": 576532812,
+   "tar_member": "mirflickr/im2im/latest.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/qutcc/best_through_epoch_005.pt",
+   "sha256": "4b35ccee7de7c4ae3a72d8cb6261b44b380b6afb14586792dda075880cb0f7ae",
+   "bytes": 176568661,
+   "tar_member": "mirflickr/qutcc/best_through_epoch_005.pt"
+  }
+ ]
+}

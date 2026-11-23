@@ -1,5 +1,7 @@
 # ConvRML-Uncertainty
 
+[Download trained weights by dataset and model](weights/).
+
 ConvNeXt-Tiny reconstruction with QUTCC, Im2im, deep ensemble, and MC dropout
 uncertainty models. All four methods use the encoder and full-resolution
 reconstruction decoder in `ConvNeXt/backbone.py`. The `ConvNeXt/` directory is

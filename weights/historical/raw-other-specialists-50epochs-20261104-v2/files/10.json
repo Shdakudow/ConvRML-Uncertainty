@@ -1,0 +1,28 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-specialists-v2-10.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_other_specialists_50epochs_20261104_v2/results/exposure/qutcc/checkpoints/epoch_010.pt",
+   "sha256": "9e86adf928ee93d791705172ab8fade2bbbf87d9f20eb23d571a6820cf891d92",
+   "bytes": 469338938,
+   "tar_member": "experiments/raw_other_specialists_50epochs_20261104_v2/results/exposure/qutcc/checkpoints/epoch_010.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_other_specialists_50epochs_20261104_v2/results/exposure/qutcc/checkpoints/epoch_020.pt",
+   "sha256": "b2267ee8e559b29d2cece8ed9c770070821ee61a451f451b5b44267da15cce3f",
+   "bytes": 469346938,
+   "tar_member": "experiments/raw_other_specialists_50epochs_20261104_v2/results/exposure/qutcc/checkpoints/epoch_020.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_other_specialists_50epochs_20261104_v2/results/exposure/qutcc/checkpoints/epoch_030.pt",
+   "sha256": "c1c6d2a398f754496df01fe805d719e2ed2234ce9300a62af01c101e2c69a759",
+   "bytes": 469354426,
+   "tar_member": "experiments/raw_other_specialists_50epochs_20261104_v2/results/exposure/qutcc/checkpoints/epoch_030.pt"
+  }
+ ]
+}

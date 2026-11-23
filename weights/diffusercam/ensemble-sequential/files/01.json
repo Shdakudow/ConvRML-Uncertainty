@@ -1,0 +1,15 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/diffusercam-ensemble-sequential-01.tar.01",
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/diffusercam-ensemble-sequential-01.tar.02"
+ ],
+ "files": [
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "diffusercam/ensemble/latest.pt",
+   "sha256": "ac8a8208a2bd96941b8558e1e32e1ad64b604d7a7445731bf04533caf3ac849e",
+   "bytes": 3747862262,
+   "tar_member": "diffusercam/ensemble/latest.pt"
+  }
+ ]
+}

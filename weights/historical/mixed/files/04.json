@@ -1,0 +1,21 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-mixed-04.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "checkpoints/quantile_convrml_tiny_pilot_512/latest_model.pth",
+   "sha256": "00ebbd7cace6c7bb1817bb07998fef6f4527903b4e82cee6b875573215bfb523",
+   "bytes": 563047310,
+   "tar_member": "checkpoints/quantile_convrml_tiny_pilot_512/latest_model.pth"
+  },
+  {
+   "study": "ConvRML",
+   "path": "checkpoints/quantile_convrml_tiny_smoke/best_model.pth",
+   "sha256": "95fcf2bd6e45ffc8f9d73f8457bd3db4fee07f6f1ff353677cbb9dc2c81a3288",
+   "bytes": 563045462,
+   "tar_member": "checkpoints/quantile_convrml_tiny_smoke/best_model.pth"
+  }
+ ]
+}

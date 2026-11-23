@@ -1,0 +1,77 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/diffusercam-ensemble-09.tar"
+ ],
+ "files": [
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "diffusercam/ensemble_parallel/member_06/epoch_003.pt",
+   "sha256": "21eb056e5896b6e90447a2ef2bb81ddbe9b97ee68b61d2ba4276618aa59ab956",
+   "bytes": 144134266,
+   "tar_member": "diffusercam/ensemble_parallel/member_06/epoch_003.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "diffusercam/ensemble_parallel/member_06/epoch_004.pt",
+   "sha256": "111d55eafc8d8b01c59e209c8020d423b94d2670d6775517a575d0adb3bf3ee3",
+   "bytes": 144134266,
+   "tar_member": "diffusercam/ensemble_parallel/member_06/epoch_004.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "diffusercam/ensemble_parallel/member_06/epoch_005.pt",
+   "sha256": "3fd32eeecc8e4cadeafc65cc101aa715a567b7aa57900c17ed760d7b27beaf5d",
+   "bytes": 144134266,
+   "tar_member": "diffusercam/ensemble_parallel/member_06/epoch_005.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "diffusercam/ensemble_parallel/member_06/epoch_006.pt",
+   "sha256": "8fc440bc324e192227910f60be00a323ede5fbb4c2bd24ee33708def0b5e6a4e",
+   "bytes": 144134266,
+   "tar_member": "diffusercam/ensemble_parallel/member_06/epoch_006.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "diffusercam/ensemble_parallel/member_06/epoch_007.pt",
+   "sha256": "59f698e5067a1b6649e2080307583869bb80b3aa7619548c8e374ecdb6b92ce1",
+   "bytes": 144134266,
+   "tar_member": "diffusercam/ensemble_parallel/member_06/epoch_007.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "diffusercam/ensemble_parallel/member_06/epoch_008.pt",
+   "sha256": "45f20c310cfbec39d6edf4646af82ab594847511392e3b1620a4342eb1195b3a",
+   "bytes": 144134266,
+   "tar_member": "diffusercam/ensemble_parallel/member_06/epoch_008.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "diffusercam/ensemble_parallel/member_06/epoch_009.pt",
+   "sha256": "c20fd1f4a33f736485f9bb2f26f707e431f4d54377b09a0bd9489722716c30ab",
+   "bytes": 144134266,
+   "tar_member": "diffusercam/ensemble_parallel/member_06/epoch_009.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "diffusercam/ensemble_parallel/member_06/epoch_010.pt",
+   "sha256": "b84721d97216ff5e4b49f23a04b8ea79f548488b5cd82e5fe99228cc7bafae2d",
+   "bytes": 144134266,
+   "tar_member": "diffusercam/ensemble_parallel/member_06/epoch_010.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "diffusercam/ensemble_parallel/member_06/epoch_011.pt",
+   "sha256": "729d9007345c2c5411e9ecf8af9d327c2a32efe6d685fefa1ba160a7ae8f4ca7",
+   "bytes": 144134266,
+   "tar_member": "diffusercam/ensemble_parallel/member_06/epoch_011.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "diffusercam/ensemble_parallel/member_06/epoch_012.pt",
+   "sha256": "0917d762ab196df9dedb9ff864c9a316dadfa6d56efd30fa276b6f38a6304d3a",
+   "bytes": 144134266,
+   "tar_member": "diffusercam/ensemble_parallel/member_06/epoch_012.pt"
+  }
+ ]
+}

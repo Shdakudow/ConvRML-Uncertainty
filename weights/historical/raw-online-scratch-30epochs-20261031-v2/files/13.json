@@ -1,0 +1,28 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-scratch-v2-13.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_online_scratch_30epochs_20261031_v2/results/qutcc/checkpoints/epoch_035.pt",
+   "sha256": "d91a787a571b0d99ef6463f97ec4b3ff479f6a1cfd48220ab753492a1bf01dad",
+   "bytes": 469363194,
+   "tar_member": "experiments/raw_online_scratch_30epochs_20261031_v2/results/qutcc/checkpoints/epoch_035.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_online_scratch_30epochs_20261031_v2/results/qutcc/checkpoints/epoch_040.pt",
+   "sha256": "31f2ebb2b31ee8e010ecaa6f8f8c8786c08697a7b135f3d95f0e423a83bc90b1",
+   "bytes": 469368634,
+   "tar_member": "experiments/raw_online_scratch_30epochs_20261031_v2/results/qutcc/checkpoints/epoch_040.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "experiments/raw_online_scratch_30epochs_20261031_v2/results/qutcc/checkpoints/epoch_045.pt",
+   "sha256": "7aa0f53f0e4394b5137e6d8b06985801c798256abfd07aba8d665ff7e566b3e4",
+   "bytes": 469372666,
+   "tar_member": "experiments/raw_online_scratch_30epochs_20261031_v2/results/qutcc/checkpoints/epoch_045.pt"
+  }
+ ]
+}

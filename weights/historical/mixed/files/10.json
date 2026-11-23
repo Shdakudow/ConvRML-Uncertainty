@@ -1,0 +1,28 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-mixed-10.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "results/fixed_backbone50_20260927/normal/epoch_50.pt",
+   "sha256": "c166394e0b00975982ed69701c10ce81b35838b455f2de9602506c0cb1893558",
+   "bytes": 381273604,
+   "tar_member": "results/fixed_backbone50_20260927/normal/epoch_50.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "results/image_adaptive_q_60k_20261014/diffuser/epoch_001.pt",
+   "sha256": "9f6ad29c2bf5858122967df8556a905c75686f65d0842985c53ceb9f4180474c",
+   "bytes": 469411514,
+   "tar_member": "results/image_adaptive_q_60k_20261014/diffuser/epoch_001.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "results/image_adaptive_q_60k_20261014/diffuser/epoch_002.pt",
+   "sha256": "1d0331cb44cf3e0125003d4218d8d3190b33bef172722e88defcb4ab904c354d",
+   "bytes": 469412090,
+   "tar_member": "results/image_adaptive_q_60k_20261014/diffuser/epoch_002.pt"
+  }
+ ]
+}

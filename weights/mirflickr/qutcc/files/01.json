@@ -1,0 +1,63 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-qutcc-01.tar"
+ ],
+ "files": [
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/qutcc/best_through_epoch_010.pt",
+   "sha256": "df2b491d77562728b63d789074eb3bf792c6368e7bca410cca8fe2934b18f622",
+   "bytes": 176568661,
+   "tar_member": "mirflickr/qutcc/best_through_epoch_010.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/qutcc/best_through_epoch_015.pt",
+   "sha256": "631d51fc6056786ce4de45d70e6ff4cda5ce883493affa32b44da78ea48989a4",
+   "bytes": 176568661,
+   "tar_member": "mirflickr/qutcc/best_through_epoch_015.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/qutcc/best_through_epoch_020.pt",
+   "sha256": "88b9eafdaf878617f280d35531af3c4be72db76ec3f847a245b45d72ff7bff6e",
+   "bytes": 176568661,
+   "tar_member": "mirflickr/qutcc/best_through_epoch_020.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/qutcc/best_through_epoch_025.pt",
+   "sha256": "ac82676a864eda7ddced18bfff25b648d4bc6c35bea1e26dc25e9411996b4089",
+   "bytes": 176568661,
+   "tar_member": "mirflickr/qutcc/best_through_epoch_025.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/qutcc/best_through_epoch_030.pt",
+   "sha256": "68a5c88304264e29f89ba2acadbe34cbf2ce134dad763ab160f0972709aa4abc",
+   "bytes": 176568661,
+   "tar_member": "mirflickr/qutcc/best_through_epoch_030.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/qutcc/best_through_epoch_035.pt",
+   "sha256": "ee05701790f09eccc51202d4050d957bef68e69dd64fb39beeea5a2fa9bdfcc4",
+   "bytes": 176568661,
+   "tar_member": "mirflickr/qutcc/best_through_epoch_035.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/qutcc/best_through_epoch_040.pt",
+   "sha256": "6d011f6518cfcb62017ef08c2bb89bdd163c8455a441b5ea3a9e188c965a0a7e",
+   "bytes": 176568661,
+   "tar_member": "mirflickr/qutcc/best_through_epoch_040.pt"
+  },
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/qutcc/best_through_epoch_045.pt",
+   "sha256": "9ea4d96ca015ae53b628a35b95f71b59cb888b1da609b0a4c4c818a893ee8c6a",
+   "bytes": 176568661,
+   "tar_member": "mirflickr/qutcc/best_through_epoch_045.pt"
+  }
+ ]
+}

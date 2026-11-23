@@ -1,0 +1,21 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/old-image-adaptive-q-60k-02.tar"
+ ],
+ "files": [
+  {
+   "study": "ConvRML",
+   "path": "results/image_adaptive_q_60k_20261014/rml/epoch_001.pt",
+   "sha256": "08dde1b1c20ea76f428cd271c08c0a1c719821bd41df9356ed086671b8ba5b5c",
+   "bytes": 469411514,
+   "tar_member": "results/image_adaptive_q_60k_20261014/rml/epoch_001.pt"
+  },
+  {
+   "study": "ConvRML",
+   "path": "results/image_adaptive_q_60k_20261014/rml/epoch_002.pt",
+   "sha256": "25487eb8fca246ed28ac4f811e6808de82c091ae000b0d4e6224c483d937bbbf",
+   "bytes": 469412090,
+   "tar_member": "results/image_adaptive_q_60k_20261014/rml/epoch_002.pt"
+  }
+ ]
+}

@@ -1,0 +1,14 @@
+{
+ "tar_parts_in_order": [
+  "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-qutcc-02.tar"
+ ],
+ "files": [
+  {
+   "study": "uq_convnext_retrain_20261115",
+   "path": "mirflickr/qutcc/latest.pt",
+   "sha256": "4394ef049c768c56b52bfb10e6a07d4d7c3347f410b066783585ee21d235e555",
+   "bytes": 706312172,
+   "tar_member": "mirflickr/qutcc/latest.pt"
+  }
+ ]
+}
