@@ -1,4 +1,6 @@
-# Historical experiments
+# Historical weights
+
+Experiments preceding the November 15 retraining run. Browse the 528 checkpoint entries below or use the [catalog](catalog.json). The model pages flag 68 unavailable historical downloads.
 
 - [adaptive q coverage90 scratch50 20261014](adaptive-q-coverage90-scratch50-20261014/)
 - [corrected comparison 20261006](corrected-comparison-20261006/)

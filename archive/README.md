@@ -1,5 +1,7 @@
 # Archive (not needed)
 
+[Historical model weights](weights/) covers runs before November 15, 2026.
+
 The active implementation is at the repository root in `models/`, `ConvNeXt/`,
 `calibration/`, `dataloader.py`, and `train.py`.
 
