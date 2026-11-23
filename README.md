@@ -205,7 +205,7 @@ QUTCC's quantile search measures coverage but does not return an HB confidence
 certificate. K-RCPS reports its HB p-value and whether its certificate passed.
 
 <!-- calibration-results-20261118:start -->
-## Calibration results (2026-11-18)
+## Calibration results
 
 Checkpoints are selected by the best raw validation SSIM through epoch 50. Calibration uses seed 777 and batch size 10; training weights stay frozen. Calibration images and held-out test images are separate.
 
@@ -213,14 +213,22 @@ Checkpoints are selected by the best raw validation SSIM through epoch 50. Calib
 | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
 | MIRFLICKR | QUTCC | 49 | 0.8211 | 90.062% | 89.973% | 0.13013 | Complete |
 | MIRFLICKR | Im2im | 50 | 0.8215 | 91.070% | 90.895% | 0.11386 | Complete |
-| DiffuserCam | QUTCC | — | — | — | — | — | Waiting for epoch 50 |
-| DiffuserCam | Im2im | — | — | — | — | — | Waiting for epoch 50 |
+| MIRFLICKR | Deep ensemble | 49 | 0.7854 | 92.886% | 92.660% | 0.14459 | Complete |
 
-MIRFLICKR uses 3,000 calibration and 2,000 test images. DiffuserCam uses 2,048 calibration and 5,000 test images. Im2im reserves 10 calibration images for K-RCPS optimization; its HB check uses the remaining images. Both methods target 90% coverage. Only K-RCPS supplies the 90%-confidence HB certificate. Coverage counts RGB pixel-channel values. Width is the interval length after intersection with [0,1]; coverage and raw reconstruction predictions are not changed by this width calculation.
+MIRFLICKR uses 3,000 calibration and 2,000 test images. DiffuserCam uses 2,048 calibration and 5,000 test images. Each MIRFLICKR K-RCPS fit reserves 10 calibration images for K-RCPS optimization; its HB check uses the remaining images. All four methods target 90% coverage. Only K-RCPS supplies the 90%-confidence HB certificate. Coverage counts RGB pixel-channel values. Width is the interval length after intersection with [0,1]; coverage and raw reconstruction predictions are not changed by this width calculation.
 
-- **mirflickr / qutcc:** q_lower=0.0415039, q_upper=0.976807; crossing fraction=0.00320291. [Full summary](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_qutcc.json) · [Fitted parameters](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_qutcc-parameters.pt).
+### Fitted calibration values
 
-- **mirflickr / im2im:** HB p-value=0.0816267; certificate passed=true; n=2990. [Full summary](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_im2im.json) · [Fitted parameters](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_im2im-parameters.pt).
+| Model | MIRFLICKR | DiffuserCam |
+| --- | --- | --- |
+| QUTCC | Lower quantile `q_lb = 0.04150390625`, upper quantile `q_ub = 0.976806640625` | No saved fit found |
+| Im2im | Offset map min 0, mean 0.00895018, max 0.01790037 | No saved fit found |
+| Deep ensemble | Offset 0 at every pixel | No saved fit found |
+| MC dropout | No saved fit found | No saved fit found |
+
+QUTCC uses the two fitted quantiles as model inputs. Im2im, deep ensemble, and MC dropout use a spatial offset map. Each pixel’s offset lowers the lower bound and raises the upper bound by the same amount across all three RGB channels. The MIRFLICKR maps are 270 × 480. The ensemble’s original intervals passed the risk check with zero expansion.
+
+MIRFLICKR downloads include the [QUTCC summary](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_qutcc.json), [fitted quantiles](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_qutcc-parameters.pt), [Im2im summary](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_im2im.json), and [full Im2im offset map](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_im2im-parameters.pt).
 
 ### Earlier MIRFLICKR validation reference
 
