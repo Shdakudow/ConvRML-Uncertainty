@@ -217,27 +217,8 @@ Checkpoints are selected by the best raw validation SSIM through epoch 50. Calib
 
 MIRFLICKR uses 3,000 calibration and 2,000 test images. DiffuserCam uses 2,048 calibration and 5,000 test images. Each MIRFLICKR K-RCPS fit reserves 10 calibration images for K-RCPS optimization; its HB check uses the remaining images. All four methods target 90% coverage. Only K-RCPS supplies the 90%-confidence HB certificate. Coverage counts RGB pixel-channel values. Width is the interval length after intersection with [0,1]; coverage and raw reconstruction predictions are not changed by this width calculation.
 
-### Fitted calibration values
+See the [fitted calibration values for each model](weights/README.md#fitted-calibration-values).
 
-| Model | MIRFLICKR | DiffuserCam |
-| --- | --- | --- |
-| QUTCC | Lower quantile `q_lb = 0.04150390625`, upper quantile `q_ub = 0.976806640625` | No saved fit found |
-| Im2im | Offset map min 0, mean 0.00895018, max 0.01790037 | No saved fit found |
-| Deep ensemble | Offset 0 at every pixel | No saved fit found |
-| MC dropout | No saved fit found | No saved fit found |
-
-QUTCC uses the two fitted quantiles as model inputs. Im2im, deep ensemble, and MC dropout use a spatial offset map. Each pixel’s offset lowers the lower bound and raises the upper bound by the same amount across all three RGB channels. The MIRFLICKR maps are 270 × 480. The ensemble’s original intervals passed the risk check with zero expansion.
-
-MIRFLICKR downloads include the [QUTCC summary](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_qutcc.json), [fitted quantiles](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_qutcc-parameters.pt), [Im2im summary](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_im2im.json), and [full Im2im offset map](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_im2im-parameters.pt).
-
-### Earlier MIRFLICKR validation reference
-
-| Model | Earlier epoch 50 | Current epoch 50 | Current − earlier |
-| --- | ---: | ---: | ---: |
-| QUTCC | 0.8261 | 0.8196 | −0.0064 |
-| Im2im | 0.8235 | 0.8204 | −0.0030 |
-
-The earlier run is `mirflickr_verified50_20261027`; all four scene-ID splits match the current MIRFLICKR split. These are reference values, not a controlled comparison: the earlier evaluation clipped reconstructions to [0,1], whereas the current SSIM uses raw predictions. Training also changed from Adam with batch size 4 (microbatch 1) to AdamW with physical batch size 10, with different seeds and warmup. Calibration changes interval bounds; it does not improve reconstruction SSIM.
 <!-- calibration-results-20261118:end -->
 
 ## Checks
