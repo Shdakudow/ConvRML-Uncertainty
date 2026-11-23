@@ -1,6 +1,6 @@
 # Archive (not needed)
 
-[Historical model weights](weights/) covers runs before November 15, 2026.
+Open [historical weights](weights/) for runs before November 15, 2026, or [current weights](../weights/) for the November 15 retraining run.
 
 The active implementation is at the repository root in `models/`, `ConvNeXt/`,
 `calibration/`, `dataloader.py`, and `train.py`.

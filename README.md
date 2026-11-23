@@ -1,6 +1,20 @@
 # ConvRML-Uncertainty
 
-[Download trained weights by dataset and model](weights/).
+## Directory guide
+
+| Location | What you can find there |
+| --- | --- |
+| [weights/mirflickr/](weights/mirflickr/) | Selected weights for all four MIRFLICKR models. Open a model folder for its download link and selected epoch. |
+| [weights/diffusercam/](weights/diffusercam/) | Intermediate DiffuserCam ensemble checkpoints from the November 20 transfer. |
+| [archive/weights/](archive/weights/) | Checkpoints from experiments before the November 15, 2026 retraining run, grouped by experiment. |
+| [models/](models/) and [ConvNeXt/](ConvNeXt/) | The four uncertainty models and the reconstruction backbone they share. |
+| [dataloader.py](dataloader.py) and [train.py](train.py) | Dataset loading and model training. |
+| [calibration/](calibration/) | Code for fitting and evaluating prediction intervals. |
+| [archive/](archive/) | Previous implementations and experiment records. |
+
+The weight directories on `main` contain download links and checkpoint inventories. The checkpoint files are hosted in GitHub Releases.
+
+## Models
 
 ConvNeXt-Tiny reconstruction with QUTCC, Im2im, deep ensemble, and MC dropout
 uncertainty models. All four methods use the encoder and full-resolution
