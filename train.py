@@ -144,16 +144,6 @@ def main():
         restore_rng(saved["rng"])
         del saved
 
-    def checkpoint_state(completed):
-        return dict(
-            model=model.state_dict(), optimizer=optimizer.state_dict(),
-            epoch=completed, method=args.model, history=history,
-            height=height, width=width, dataset_size=len(train_loader.dataset),
-            global_step=global_step,
-            best_ssim=best_ssim, best_checkpoint=best_checkpoint, rng=rng_state(),
-            ensemble_member=args.ensemble_member,
-        )
-
     if args.ensemble_member is not None:
         from ensemble_jobs import member_batch_order
         for epoch in range(completed_epoch + 1, EPOCHS + 1):
@@ -174,7 +164,13 @@ def main():
                 ensemble_member=args.ensemble_member, height=height, width=width,
                 dataset_size=len(train_loader.dataset),
             ), args.output / f"epoch_{epoch:03d}.pt")
-            save_checkpoint(checkpoint_state(epoch), args.output / "latest.pt")
+            save_checkpoint(dict(
+                model=model.state_dict(), optimizer=optimizer.state_dict(),
+                epoch=epoch, method=args.model, history=history,
+                height=height, width=width, dataset_size=len(train_loader.dataset),
+                global_step=global_step, best_ssim=best_ssim, best_checkpoint=best_checkpoint,
+                rng=rng_state(), ensemble_member=args.ensemble_member,
+            ), args.output / "latest.pt")
         return
 
     perceptual = (
@@ -229,7 +225,13 @@ def main():
                 dict(best_checkpoint, selected_through_epoch=epoch),
                 args.output / f"best_through_epoch_{epoch:03d}.pt",
             )
-        save_checkpoint(checkpoint_state(epoch), args.output / "latest.pt")
+        save_checkpoint(dict(
+            model=model.state_dict(), optimizer=optimizer.state_dict(),
+            epoch=epoch, method=args.model, history=history,
+            height=height, width=width, dataset_size=len(train_loader.dataset),
+            global_step=global_step, best_ssim=best_ssim, best_checkpoint=best_checkpoint,
+            rng=rng_state(), ensemble_member=args.ensemble_member,
+        ), args.output / "latest.pt")
 
 
 if __name__ == "__main__":
