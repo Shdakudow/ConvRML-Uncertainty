@@ -102,47 +102,11 @@ def validate(model, loader, perceptual, device):
     )
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--manifest", type=Path, required=True)
-    parser.add_argument(
-        "--model", choices=["qutcc", "im2im", "ensemble", "mcdropout"], required=True
-    )
-    parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--resume", type=Path)
-    parser.add_argument("--ensemble-member", type=int,
-                        help="Train this ensemble member (0–9) in its own GPU job.")
-    args = parser.parse_args()
-
-    torch.manual_seed(777 + (args.ensemble_member or 0))
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    train_loader, validation_loader = get_loaders(args.manifest)
+def train(model, train_loader, validation_loader, optimizer, device,
+          total_steps, completed_epoch, history, global_step,
+          best_ssim, best_checkpoint, args):
     _, sample_target = train_loader.dataset[0]
     height, width = sample_target.shape[-2:]
-
-    if args.ensemble_member is None:
-        model = make_model(args.model, height, width, len(train_loader.dataset))
-    else:
-        model = DeepEnsemble([DeepEnsembleMember(ConvRecon(3, height, width, out_channels=6))])
-    model = model.to(device)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5, weight_decay=INITIAL_WEIGHT_DECAY)
-
-    total_steps = EPOCHS * len(train_loader)
-    args.output.mkdir(parents=True, exist_ok=True)
-    history, global_step = [], 0
-    best_ssim = -float("inf")
-    best_checkpoint = None
-    completed_epoch = 0
-
-    if args.resume is not None:
-        saved = torch.load(args.resume, map_location="cpu", weights_only=False)
-        model.load_state_dict(saved["model"])
-        optimizer.load_state_dict(saved["optimizer"])
-        history, global_step = saved["history"], saved["global_step"]
-        completed_epoch = saved["epoch"]
-        best_ssim, best_checkpoint = saved["best_ssim"], saved["best_checkpoint"]
-        restore_rng(saved["rng"])
-        del saved
 
     if args.ensemble_member is not None:
         from ensemble_jobs import member_batch_order
@@ -232,6 +196,53 @@ def main():
             global_step=global_step, best_ssim=best_ssim, best_checkpoint=best_checkpoint,
             rng=rng_state(), ensemble_member=args.ensemble_member,
         ), args.output / "latest.pt")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--manifest", type=Path, required=True)
+    parser.add_argument(
+        "--model", choices=["qutcc", "im2im", "ensemble", "mcdropout"], required=True
+    )
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--resume", type=Path)
+    parser.add_argument("--ensemble-member", type=int,
+                        help="Train this ensemble member (0–9) in its own GPU job.")
+    args = parser.parse_args()
+
+    torch.manual_seed(777 + (args.ensemble_member or 0))
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    train_loader, validation_loader = get_loaders(args.manifest)
+    _, sample_target = train_loader.dataset[0]
+    height, width = sample_target.shape[-2:]
+
+    if args.ensemble_member is None:
+        model = make_model(args.model, height, width, len(train_loader.dataset))
+    else:
+        model = DeepEnsemble([DeepEnsembleMember(ConvRecon(3, height, width, out_channels=6))])
+    model = model.to(device)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5, weight_decay=INITIAL_WEIGHT_DECAY)
+
+    total_steps = EPOCHS * len(train_loader)
+    args.output.mkdir(parents=True, exist_ok=True)
+    history, global_step = [], 0
+    best_ssim = -float("inf")
+    best_checkpoint = None
+    completed_epoch = 0
+
+    if args.resume is not None:
+        saved = torch.load(args.resume, map_location="cpu", weights_only=False)
+        model.load_state_dict(saved["model"])
+        optimizer.load_state_dict(saved["optimizer"])
+        history, global_step = saved["history"], saved["global_step"]
+        completed_epoch = saved["epoch"]
+        best_ssim, best_checkpoint = saved["best_ssim"], saved["best_checkpoint"]
+        restore_rng(saved["rng"])
+        del saved
+
+    train(model, train_loader, validation_loader, optimizer, device,
+          total_steps, completed_epoch, history, global_step,
+          best_ssim, best_checkpoint, args)
 
 
 if __name__ == "__main__":
