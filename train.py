@@ -7,7 +7,6 @@ import os
 from pathlib import Path
 
 import torch
-import torch.distributed as dist
 from torch.utils.data import DataLoader
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
@@ -183,9 +182,9 @@ def main():
 
     # Distributed ensemble: torchrun sets RANK automatically; each rank trains one member.
     # Usage: torchrun --nproc_per_node=10 train.py --model ensemble ...
-    if args.model == "ensemble" and "RANK" in os.environ:
-        dist.init_process_group("nccl")
-        rank = dist.get_rank()
+    distributed = args.model == "ensemble" and "RANK" in os.environ
+    if distributed:
+        rank = int(os.environ["RANK"])
         device = torch.device(f"cuda:{rank}")
         torch.cuda.set_device(device)
         args.output = args.output / f"member_{rank:02d}"
@@ -198,7 +197,7 @@ def main():
     _, sample_target = train_loader.dataset[0]
     height, width = sample_target.shape[-2:]
 
-    if dist.is_initialized():
+    if distributed:
         model = DeepEnsemble([DeepEnsembleMember(ConvRecon(3, height, width, out_channels=6))])
     else:
         model = make_model(args.model, height, width, len(train_loader.dataset))
@@ -225,9 +224,6 @@ def main():
     train(model, train_loader, validation_loader, optimizer, device,
           total_steps, completed_epoch, history, global_step,
           best_ssim, best_checkpoint, args)
-
-    if dist.is_initialized():
-        dist.destroy_process_group()
 
 
 if __name__ == "__main__":
