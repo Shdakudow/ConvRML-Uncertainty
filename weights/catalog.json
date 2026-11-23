@@ -2386,14 +2386,6 @@
   },
   {
    "study": "uq_convnext_retrain_20261115",
-   "path": "mirflickr/ensemble/latest.pt",
-   "sha256": "288032ff6cfbeecd950a1022daae6186a50487d7cabb983ec9e3f31b712daaa6",
-   "bytes": 5765247638,
-   "tar_member": "mirflickr/ensemble/latest.pt",
-   "index": "https://raw.githubusercontent.com/Shdakudow/ConvRML-Uncertainty/main/weights/mirflickr/ensemble-sequential/files/01.json"
-  },
-  {
-   "study": "uq_convnext_retrain_20261115",
    "path": "diffusercam/ensemble_parallel/member_06/epoch_003.pt",
    "sha256": "21eb056e5896b6e90447a2ef2bb81ddbe9b97ee68b61d2ba4276618aa59ab956",
    "bytes": 144134266,

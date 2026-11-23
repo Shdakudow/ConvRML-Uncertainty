@@ -9,4 +9,4 @@ For reconstruction, choose a model below. The first link on each model page down
 | [MC dropout](mcdropout/) | 44 |
 | [Deep ensemble](ensemble/) | 49 |
 
-For intermediate checkpoints, see the archive list on each model page. The [sequential ensemble folder](ensemble-sequential/) covers the earlier stage of ensemble training. The [mixed folder](mixed/) lists the contents of archives that span multiple runs.
+For intermediate checkpoints, see the archive list on each model page. The deep ensemble page includes the combined checkpoint and individual weights for all ten members. The [mixed folder](mixed/) lists the contents of archives that span multiple runs.
