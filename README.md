@@ -151,7 +151,7 @@ MC dropout and ensemble share the empirical grid procedure in [code-for-quant](h
 For each model the smallest passing multiplier scales both distances from the reconstruction.
 The mean per-image fraction of missed RGB values must be strictly below `0.1 − 0.9/N` on the `N` calibration images.
 MC dropout uses 2,000 equally spaced scales from 0 to 50. Ensemble uses 1,000 from 0 to 10.
-The reported coverage measures empirical coverage. The grid procedure does not issue an HB certificate.
+The search records the Hoeffding–Bentkus upper bound as a diagnostic. Empirical risk selects the multiplier. Native RGB bounds and targets are cached in the temporary directory during fitting (about 19 GB for 3,000 images at 270 × 480). Set `TMPDIR` to a scratch directory with enough space.
 
 An interval offset expands a native interval `[lower, upper]` to
 `[lower - offset, upper + offset]`. K-RCPS stores an offset for each spatial
