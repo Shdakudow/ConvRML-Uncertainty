@@ -12,6 +12,7 @@ from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMe
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
 
 from calibration.calibration import KRCPS, QUTCCCalibration
+from calibration.global_grid import GlobalGridCalibration
 from dataloader import ImagePairs
 from models import make_model
 from models.mcdropout import MC_PASSES
@@ -99,7 +100,9 @@ def main():
     model.load_state_dict(checkpoint_weights)
     model = model.to(device).eval()
     method = saved["method"]
-    if method == "qutcc":
+    if method in ("ensemble", "mcdropout"):
+        calibrator = GlobalGridCalibration(model, method)
+    elif method == "qutcc":
         calibrator = QUTCCCalibration(model)
     else:
         calibrator = KRCPS(model)

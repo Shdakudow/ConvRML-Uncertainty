@@ -1,9 +1,7 @@
-"""Shared-lambda grid calibration adapted from Shdakudow/code-for-quant.
-
-Reference: commit 0e164119fc81e1d0c9cb1a889d2a2f0f2525f081,
-evaluation/calibration.py and evaluation/bounds.py. The local adapter caches
-one RGB batch per file so the search reuses identical stochastic predictions
-without requiring the full calibration split to fit in GPU or host memory.
+"""Global-grid calibration: fits a single scalar multiplier λ ≥ 0 that scales the native
+prediction interval [center−λ·(center−lower), center+λ·(upper−center)], selected as the
+smallest λ whose empirical risk falls below the adjusted target α − (1−α)/n.
+Intervals are cached to disk so stochastic models (ensemble, MC dropout) are sampled once.
 """
 
 from __future__ import annotations
