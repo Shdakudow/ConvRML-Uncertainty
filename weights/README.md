@@ -7,17 +7,17 @@ Choose a dataset and model to download weights from GitHub Releases. Numbered ar
 
 [Download the searchable browser](https://raw.githubusercontent.com/Shdakudow/ConvRML-Uncertainty/main/weights/browse.html) and open it locally, or use the [machine-readable catalog](catalog.json). Both cover 665 checkpoint paths from the November 15 run. [Earlier experiments](https://github.com/Shdakudow/global-archive/tree/main/ConvRML-Uncertainty/archive/weights/) have a separate directory.
 
-## Fitted calibration values
+## MIRFLICKR calibration
 
-| Model | MIRFLICKR | DiffuserCam |
-| --- | --- | --- |
-| QUTCC | Lower quantile `q_lb = 0.04150390625`, upper quantile `q_ub = 0.976806640625` | No saved fit found |
-| Im2im | Offset map min 0, mean 0.00895018, max 0.01790037 | No saved fit found |
-| Deep ensemble | Epoch 49, shared multiplier `λ = 0.89089084`, calibration coverage 90.272%, test coverage 90.062%, mean test width 0.13520. [Parameters](mirflickr/ensemble/calibration/parameters.pt) · [Results](mirflickr/ensemble/calibration/summary.json) | Calibration job `826080` cancelled at user request |
-| MC dropout | Epoch 44, shared multiplier `λ = 3.0015008`, calibration coverage 90.056%, test coverage 90.076%, mean test width 0.10788. [Parameters](mirflickr/mcdropout/calibration/parameters.pt) · [Results](mirflickr/mcdropout/calibration/summary.json) | Calibration deferred until training completes; job `916959` cancelled |
+Coverage is the percentage of RGB channel values inside the predicted interval. All four models target 90% coverage and use the same 2,000 test images. Im2im uses 10 images to optimize its offset map and 2,990 to measure calibration coverage. The other methods measure calibration coverage on all 3,000 images.
 
-QUTCC uses two fitted quantiles. Im2im uses a spatial offset map. The previous K-RCPS fits for deep ensemble and MC dropout also used spatial offsets. Each pixel’s offset lowers the lower bound and raises the upper bound by the same amount across all three RGB channels. The MIRFLICKR maps are 270 × 480. The earlier ensemble K-RCPS fit had zero expansion.
+| Model | Epoch | Fitted parameter | Calibration coverage | Test coverage | Mean test width | Parameters and results |
+| --- | ---: | --- | ---: | ---: | ---: | --- |
+| [QUTCC](mirflickr/qutcc/) | 49 | Lower q = 0.04150390625, upper q = 0.976806640625 | 90.062% | 89.973% | 0.13018 | [Parameters](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_qutcc-parameters.pt) · [Results](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_qutcc.json) · [Release directory](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/tag/uq-weights-20261120) |
+| [Im2im](mirflickr/im2im/) | 50 | Spatial offset map (min 0, mean 0.00895018, max 0.01790037) | 91.070% | 90.895% | 0.11386 | [Parameters](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_im2im-parameters.pt) · [Results](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_im2im.json) · [Release directory](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/tag/uq-weights-20261120) |
+| [Deep ensemble](mirflickr/ensemble/) | 49 | Shared scale λ = 0.89089084 | 90.272% | 90.062% | 0.13520 | [Parameters](mirflickr/ensemble/calibration/parameters.pt) · [Results](mirflickr/ensemble/calibration/summary.json) · [Directory](mirflickr/ensemble/calibration/) |
+| [MC dropout](mirflickr/mcdropout/) | 44 | Shared scale λ = 3.0015008 | 90.056% | 90.076% | 0.10788 | [Parameters](mirflickr/mcdropout/calibration/parameters.pt) · [Results](mirflickr/mcdropout/calibration/summary.json) · [Directory](mirflickr/mcdropout/calibration/) |
 
-MIRFLICKR downloads include the [QUTCC summary](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_qutcc.json), [fitted quantiles](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_qutcc-parameters.pt), [Im2im summary](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_im2im.json), and [full Im2im offset map](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_im2im-parameters.pt).
+## DiffuserCam calibration
 
-DiffuserCam calibration is deferred while its models finish training. Pending QUTCC (`786677`), Im2im (`788286`), MC dropout (`916959`), and ensemble (`826080`) calibration jobs have been cancelled at user request. Training jobs continue.
+The [DiffuserCam weights directory](diffusercam/) lists the available checkpoints. Calibration parameters and coverage results for this dataset have not been published here.
