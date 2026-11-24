@@ -1,4 +1,4 @@
-"""Calibrate a frozen QUTCC or Im2im checkpoint and evaluate held-out tests."""
+"""Calibrate a frozen reconstruction checkpoint and evaluate held-out tests."""
 
 import argparse
 import hashlib
@@ -12,8 +12,10 @@ from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMe
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
 
 from calibration.calibration import KRCPS, QUTCCCalibration
+from calibration.global_grid import GlobalGridCalibration
 from dataloader import ImagePairs
 from models import make_model
+from models.mcdropout import MC_PASSES
 from train import save_checkpoint
 
 
@@ -92,9 +94,18 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     saved = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
     model = make_model(saved["method"], saved["height"], saved["width"], saved["dataset_size"])
-    model.load_state_dict(saved["model"])
+    # Compare against the same canonical names even for older ensemble/dropout weights.
+    checkpoint_weights = {key.replace("baseModel.", "backbone."): value
+                          for key, value in saved["model"].items()}
+    model.load_state_dict(checkpoint_weights)
     model = model.to(device).eval()
-    calibrator = QUTCCCalibration(model) if saved["method"] == "qutcc" else KRCPS(model)
+    method = saved["method"]
+    if method in ("ensemble", "mcdropout"):
+        calibrator = GlobalGridCalibration(model, method)
+    elif method == "qutcc":
+        calibrator = QUTCCCalibration(model)
+    else:
+        calibrator = KRCPS(model)
     args.output.mkdir(parents=True, exist_ok=True)
 
     provenance = dict(
@@ -102,7 +113,8 @@ def main():
         checkpoint_sha256=sha256(args.checkpoint),
         manifest=str(args.manifest.resolve()),
         manifest_sha256=sha256(args.manifest),
-        method=saved["method"],
+        method=method,
+        calibrator=type(calibrator).__name__,
         selected_epoch=saved["epoch"],
         selected_through_epoch=saved.get("selected_through_epoch", saved["epoch"]),
         validation_ssim=saved.get("validation_ssim"),
@@ -112,11 +124,16 @@ def main():
         test_used_for_fitting=False,
     )
 
-    # Skip fitting if parameters.pt already matches this checkpoint and manifest.
+    if method == "mcdropout":
+        provenance["stochastic_passes"] = MC_PASSES
+
+    # Old files without method metadata were QUTCC or K-RCPS fits.
     parameters_file = args.output / "parameters.pt"
     fitted = (torch.load(parameters_file, map_location="cpu", weights_only=False)
               if parameters_file.exists() else None)
     if (fitted is not None
+            and fitted["provenance"].get("calibrator", "QUTCCCalibration" if method == "qutcc" else "KRCPS") == provenance["calibrator"]
+            and fitted["provenance"].get("stochastic_passes") == provenance.get("stochastic_passes")
             and fitted["provenance"]["checkpoint_sha256"] == provenance["checkpoint_sha256"]
             and fitted["provenance"]["manifest_sha256"] == provenance["manifest_sha256"]):
         calibrator.parameters = fitted["parameters"]
@@ -126,7 +143,7 @@ def main():
         print(json.dumps(dict(phase="fitting", **provenance)), flush=True)
         calibrator.fit(loader, device)
         provenance["training_weights_changed"] = any(
-            not torch.equal(value.detach().cpu(), saved["model"][name])
+            not torch.equal(value.detach().cpu(), checkpoint_weights[name])
             for name, value in model.state_dict().items()
         )
         save_checkpoint(dict(parameters=calibrator.parameters, provenance=provenance), parameters_file)

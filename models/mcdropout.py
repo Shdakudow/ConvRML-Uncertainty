@@ -7,6 +7,7 @@ from torch.nn import functional as F
 from .common import INITIAL_WEIGHT_DECAY, gaussian_interval_from_mean_variance, load_legacy_backbone_keys
 
 DROPOUT_RATE = 0.1
+MC_PASSES = 50
 
 
 def add_dropout(module):
@@ -36,7 +37,7 @@ class MCDropout(nn.Module):
         for module in self.backbone.modules():
             if isinstance(module, nn.Dropout):
                 module.train()
-        samples = torch.stack([self.backbone(image) for _ in range(50)], dim=0)
+        samples = torch.stack([self.backbone(image) for _ in range(MC_PASSES)], dim=0)
         for module, mode in modes.items():
             module.training = mode
         return samples

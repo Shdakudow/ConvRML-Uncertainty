@@ -53,7 +53,7 @@ MC dropout keeps the draft's probability of 0.1 and its observation-noise
 precision formula, with length scale 1 and weight decay 1e-4. Its interval
 variance includes `2 * dataset_size * 1e-4 / 0.9` in addition to sample variance.
 That term is inherited from the draft and can dominate the native width on a
-large dataset. Calibration operates on those native intervals separately.
+large dataset. The empirical grid calibrator instead starts from the Gaussian interval computed directly from 50 dropout predictions.
 Training uses one stochastic pass per batch. Validation uses the mean of
 50 passes, matching the reconstruction returned with the uncertainty bounds.
 BatchNorm stays in evaluation mode during MC sampling while dropout is active.
@@ -138,23 +138,20 @@ checkpoint, finish the epoch with the previous trainer first.
 
 ## Calibration
 
-Use an explicit calibrator for each method:
+The runner chooses the calibrator from the checkpoint’s model type.
 
-```python
-from calibration.calibration import KRCPS, QUTCCCalibration
+| Model | Fitted parameter |
+| --- | --- |
+| QUTCC | Lower and upper quantile inputs |
+| Im2im | K-RCPS spatial offset map |
+| MC dropout | One multiplier for the 50-pass Gaussian interval, using the sample variance alone (population denominator 50) |
+| Deep ensemble | One multiplier for the Gaussian interval from all members’ predictive mean and variance |
 
-calibrator = KRCPS(model)  # Im2im, ensemble, or MC dropout
-parameters = calibrator.fit(calibration_loader, device)
-center, lower, upper = calibrator.predict(test_images)
-```
-
-For QUTCC, construct `QUTCCCalibration(model)` instead. The fit/predict
-interface is the same. Each object stores its fitted values in
-`calibrator.parameters`; `fit` also returns that dictionary.
-The two calibration classes are independent, with their own `fit` and
-`predict` methods. Each fit uses evaluation mode and disables gradient tracking.
-Both calibrated `predict` methods also use `torch.inference_mode()` so direct
-prediction calls do not retain computation graphs.
+MC dropout and ensemble share the empirical grid procedure in [code-for-quant](https://github.com/Shdakudow/code-for-quant/blob/0e164119fc81e1d0c9cb1a889d2a2f0f2525f081/evaluation/calibration.py#L49-L90).
+For each model the smallest passing multiplier scales both distances from the reconstruction.
+The mean per-image fraction of missed RGB values must be strictly below `0.1 − 0.9/N` on the `N` calibration images.
+MC dropout uses 2,000 equally spaced scales from 0 to 50. Ensemble uses 1,000 from 0 to 10.
+The reported coverage measures empirical coverage. The grid procedure does not issue an HB certificate.
 
 An interval offset expands a native interval `[lower, upper]` to
 `[lower - offset, upper + offset]`. K-RCPS stores an offset for each spatial
@@ -185,17 +182,17 @@ confidence-independent risk expression. CVXPY supplies the convex solver.
 Run calibration and held-out testing for a selected checkpoint:
 
 ```bash
-python -m calibration.run --manifest /path/to/split.json --checkpoint runs/qutcc/best_through_epoch_050.pt --output runs/qutcc/calibration_050
+python -m calibration.calibration_run --manifest /path/to/split.json --checkpoint runs/qutcc/best_through_epoch_050.pt --output runs/qutcc/calibration_050
 ```
 
-Use the same command for an Im2im checkpoint. The runner loads the model type
+Use the same command for the other model types. For a new fit, choose a new output directory to preserve historical results. The runner loads the model type
 from the checkpoint, uses batch size 10 and seed 777, and fits on the
 `calibration` role only. It saves fitted parameters and provenance in
 `parameters.pt`, then measures coverage, interval width, PSNR, SSIM, and LPIPS
 on the separate `test` role. `summary.json` records the selected checkpoint's
 actual epoch, its selection milestone, and SHA-256 hashes of the checkpoint
 and manifest. It also checks that calibration left the training weights unchanged.
-A completed fit is reused after interruption only when both hashes match.
+A completed fit is reused after interruption when its model procedure, pass count (for MC dropout), and both hashes match.
 
 Coverage counts RGB pixel-channel values inside their predicted interval.
 Widths are reported both as predicted and after intersecting the interval with
