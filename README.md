@@ -29,7 +29,7 @@ here to change the backbone shared by all four models.
 | QUTCC | One RGB quantile image for the supplied `q` | Pinball loss at a randomly sampled `q` per image |
 | Im2im | Lower, center, and upper RGB images | Center MSE plus lower/upper pinball losses |
 | Ensemble | Ten independent RGB mean/variance predictors | Mean Gaussian NLL across the ten members |
-| MC dropout | Mean and variance from 30 stochastic passes | MSE |
+| MC dropout | Mean and variance from 50 stochastic passes | MSE |
 
 Notes (to be deleted)
 QUTCC retains `q`, embedded and applied through FiLM
@@ -55,7 +55,7 @@ variance includes `2 * dataset_size * 1e-4 / 0.9` in addition to sample variance
 That term is inherited from the draft and can dominate the native width on a
 large dataset. Calibration operates on those native intervals separately.
 Training uses one stochastic pass per batch. Validation uses the mean of
-30 passes, matching the reconstruction returned with the uncertainty bounds.
+50 passes, matching the reconstruction returned with the uncertainty bounds.
 BatchNorm stays in evaluation mode during MC sampling while dropout is active.
 
 ## Data and training
@@ -218,7 +218,7 @@ Checkpoints are selected by the best raw validation SSIM through epoch 50. Calib
 
 MIRFLICKR uses 3,000 calibration and 2,000 test images. DiffuserCam uses 2,048 calibration and 5,000 test images. Each MIRFLICKR K-RCPS fit reserves 10 calibration images for K-RCPS optimization; its HB check uses the remaining images. All four methods target 90% coverage. Only K-RCPS supplies the 90%-confidence HB certificate. Coverage counts RGB pixel-channel values. Width is the interval length after intersection with [0,1]; coverage and raw reconstruction predictions are not changed by this width calculation.
 
-**MC dropout calibration result (job 916957):** K-RCPS completed in 33 minutes
+**MC dropout calibration result (job 916957):** This historical fit used 30 stochastic passes. K-RCPS completed in 33 minutes
 59 seconds with a fitted offset of zero at every pixel. On 2,000 held-out test
 images, PSNR is 26.13419 dB, SSIM is 0.81624, and LPIPS is 0.25349. Both
 calibration and test coverage are 100%, with mean width 1.00000: the clipped

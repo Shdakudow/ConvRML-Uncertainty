@@ -36,7 +36,7 @@ class MCDropout(nn.Module):
         for module in self.backbone.modules():
             if isinstance(module, nn.Dropout):
                 module.train()
-        samples = torch.stack([self.backbone(image) for _ in range(30)], dim=0)
+        samples = torch.stack([self.backbone(image) for _ in range(50)], dim=0)
         for module, mode in modes.items():
             module.training = mode
         return samples
