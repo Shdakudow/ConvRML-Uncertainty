@@ -1,4 +1,4 @@
-"""Deep ensemble: independently initialized RGB mean and variance predictors."""
+"""Deep ensemble: independently trained members each predict per-channel mean and variance, combined via the law of total variance."""
 
 import torch
 from torch import nn
@@ -32,9 +32,9 @@ class DeepEnsemble(nn.Module):
         means, variances = zip(*(member(image) for member in self.members))
         means, variances = torch.stack(means), torch.stack(variances)
         mean = means.mean(dim=0)
-        # Law of total variance: average within-member variance plus variance of member means.
+        # Law of total variance: E[Var] + Var[E] = mean within-member variance plus variance of member means.
         variance = (variances + means.square()).mean(dim=0) - mean.square()
-        # relu clamps values that go slightly negative due to floating-point cancellation.
+        # ReLU clamps values that become marginally negative due to floating-point cancellation in the variance decomposition.
         return mean, F.relu(variance)
 
     def center(self, image):

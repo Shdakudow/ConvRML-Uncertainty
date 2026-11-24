@@ -29,20 +29,20 @@ class ImagePairs(Dataset):
         return len(self.rows)
 
     def read_image(self, name, measurement=False):
-        """Read an exported image or an original HWC MIRFLICKR array."""
+        """Load an image from an exported PNG/JPG file or an original MIRFLICKR NumPy array (HWC layout, float32)."""
         path = self.root / name
         if path.suffix.lower() == ".npy":
-            # Original arrays are floating-point BGR and vertically inverted.
+            # Original MIRFLICKR arrays are stored in floating-point BGR order with rows in reverse vertical order.
             pixels = np.load(path).astype(np.float32)
             pixels = pixels[::-1, :, ::-1]
             if measurement:
-                # Undo the 0.9 measurement gain used for original MIRFLICKR arrays.
+                # Normalises for the 0.9× gain applied to measurement arrays during dataset preparation.
                 pixels = pixels / 0.9
             pixels = pixels.clip(0, 1)
         else:
             with Image.open(path) as image:
                 pixels = np.array(image.convert("RGB"), dtype=np.float32) / 255
-        # Reversing rows/channels creates negative strides; PyTorch needs a copy.
+        # np.ascontiguousarray is required because step-−1 slicing produces negative strides, which torch.from_numpy does not accept.
         return torch.from_numpy(np.ascontiguousarray(pixels)).permute(2, 0, 1)
 
     def __getitem__(self, index):
@@ -54,7 +54,7 @@ class ImagePairs(Dataset):
 
 
 def get_loaders(manifest):
-    """Return (train_loader, val_loader) with batch size 10 for the given manifest."""
+    """Return DataLoader instances for the training and validation splits of the given manifest, each with batch size 10 and 2 worker processes."""
     train = ImagePairs(manifest, "train")
     validation = ImagePairs(manifest, "val")
     return (

@@ -1,4 +1,4 @@
-"""QUTCC: condition the ConvNeXt reconstruction on one quantile q per image."""
+"""QUTCC (quantile-conditioned uncertainty): conditions the ConvNeXt reconstruction on a scalar quantile q injected via FiLM layers at every encoder and decoder block."""
 
 import math
 
@@ -10,7 +10,7 @@ from .common import pinball_loss
 
 
 class FiLM(nn.Module):
-    """Learn a quantile-dependent scale and offset after normalization."""
+    """Feature-wise Linear Modulation (FiLM): applies a quantile-conditioned affine transformation to normalised feature maps."""
 
     def __init__(self, channels):
         super().__init__()
@@ -47,18 +47,18 @@ class QUTCC(nn.Module):
         )
 
     def forward(self, image, q=0.5):
-        """Return an RGB quantile image; q=0.5 is the reconstruction median."""
+        """Return the RGB reconstruction conditioned on quantile q. At q=0.5 this approximates the conditional median."""
         q = torch.as_tensor(q, device=image.device, dtype=image.dtype).expand(
             len(image)
         )
-        # Transformer-style sinusoidal features encode scalar q at 64 frequencies.
+        # Sinusoidal positional encoding (Vaswani et al., 2017): encodes the scalar quantile q into a 128-dimensional embedding at 64 log-spaced frequencies.
         frequencies = torch.exp(
             -math.log(10000) * torch.arange(64, device=image.device) / 64
         )
         angles = q[:, None] * frequencies[None]
         embedding = self.embedding(torch.cat((angles.cos(), angles.sin()), dim=1))
         height, width = image.shape[-2:]
-        # The ConvNeXt encoder downsamples by a total factor of 32.
+        # The ConvNeXt-Tiny encoder applies a total spatial stride of 32 (4× patchify stem, then three 2× downsampling layers).
         x = F.pad(image, (0, (-width) % 32, 0, (-height) % 32), mode="replicate")
 
         features = []

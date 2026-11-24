@@ -52,7 +52,7 @@ def train_epoch(member, loader, optimizer, device, global_step, total_steps, los
 
 
 def save_checkpoint(checkpoint, path):
-    """Replace a recovery file only after the complete new file is written."""
+    """Atomically replace a checkpoint file: writes to a temporary path first, then renames, ensuring the destination is never partially written."""
     temporary = path.with_suffix(".tmp")
     torch.save(checkpoint, temporary)
     temporary.replace(path)
@@ -76,7 +76,7 @@ def _make_member_loader(train_loader, batch_order):
         train_loader.dataset, batch_sampler=batch_order,
         num_workers=train_loader.num_workers, collate_fn=train_loader.collate_fn,
         pin_memory=train_loader.pin_memory,
-        # Worker setup must not consume the model's restored RNG stream.
+        # A fixed generator seed for DataLoader workers prevents worker initialisation from advancing the main-process RNG state restored at epoch start.
         generator=torch.Generator().manual_seed(777),
     )
 
@@ -94,7 +94,7 @@ def validate(model, loader, perceptual, device):
         prediction = model.center(measurement)
         psnr.update(prediction, target)
         ssim.update(prediction, target)
-        # Evaluate LPIPS on a clipped copy; PSNR and SSIM use raw predictions.
+        # LPIPS is evaluated on predictions clipped to [0, 1]; PSNR and SSIM accept raw (unclipped) predictions.
         lpips_sum += float(perceptual(prediction.clip(0, 1), target).sum())
         perceptual.reset()
         count += len(measurement)
@@ -146,8 +146,8 @@ def train(model, train_loader, validation_loader, optimizer, device,
         if scores["ssim"] > best_ssim:
             best_ssim = scores["ssim"]
             best_checkpoint = dict(
-                # Clone CPU tensors so later optimizer updates cannot change
-                # the saved best weights, including BatchNorm buffers.
+                # Clones to CPU so that subsequent optimizer updates do not mutate
+                # the saved weights; BatchNorm buffers are included in state_dict and must also be cloned.
                 model={
                     name: value.detach().cpu().clone()
                     for name, value in model.state_dict().items()

@@ -1,4 +1,4 @@
-"""Im2im: three RGB heads for the lower bound, center, and upper bound."""
+"""Im2im (image-to-image): three RGB output heads — lower bound, centre, and upper bound — trained jointly with pinball and MSE losses."""
 
 from torch import nn
 from torch.nn import functional as F

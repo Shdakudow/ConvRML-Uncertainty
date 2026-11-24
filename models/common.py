@@ -1,17 +1,17 @@
-"""Losses and Gaussian intervals shared by the uncertainty models."""
+"""Shared loss functions and predictive interval utilities for the uncertainty models."""
 
 import torch
 
-# AdamW weight decay at step 0; decays on a cosine schedule during training.
-# MCDropout also reads this at inference for the GP approximation precision term.
+# Initial AdamW weight decay (step 0); co-scheduled with the learning rate on a cosine decay.
+# MCDropout also reads this at inference as the precision term in the Gaussian process variance approximation.
 INITIAL_WEIGHT_DECAY = 1e-4
 
-# 95th percentile of N(0,1); symmetric interval for 90% nominal coverage.
+# 95th percentile of the standard normal distribution; a symmetric [−z, +z] interval encloses 90% probability mass.
 _Z_95 = float(torch.distributions.Normal(0.0, 1.0).icdf(torch.tensor(0.95)))
 
 
 def load_legacy_backbone_keys(module, state_dict, prefix, *args):
-    """Accept checkpoints written before baseModel was renamed to backbone."""
+    """Pre-load hook for backward compatibility with checkpoints saved before the attribute was renamed from baseModel to backbone."""
     old_prefix = prefix + "baseModel."
     for key in list(state_dict):
         if key.startswith(old_prefix):
@@ -19,13 +19,13 @@ def load_legacy_backbone_keys(module, state_dict, prefix, *args):
 
 
 def pinball_loss(prediction, target, quantile):
-    """A scalar or one quantile per image broadcasts over its RGB pixels."""
+    """Pinball (quantile regression) loss. Accepts a scalar quantile or one quantile per image; the value broadcasts over RGB pixels and spatial dimensions."""
     q = torch.as_tensor(quantile, device=prediction.device).reshape(-1, 1, 1, 1)
     error = target - prediction
     return torch.maximum(q * error, (q - 1) * error).mean()
 
 
 def gaussian_interval_from_mean_variance(mean, variance):
-    """Return (lower, upper) bounds for a 90% Gaussian prediction interval."""
+    """Construct a symmetric 90% Gaussian prediction interval from per-pixel mean and variance estimates."""
     radius = _Z_95 * variance.sqrt()
     return mean - radius, mean + radius

@@ -20,18 +20,18 @@ class Block(nn.Module):
     Args:
         dim (int): Number of input channels.
         drop_path (float): Stochastic depth rate. Default: 0.0
-        layer_scale_init_value (float): Init value for Layer Scale. Default: 1e-6.
+        layer_scale_init_value (float): Initial value for Layer Scale. Default: 1e-6.
     """
 
     def __init__(self, dim, drop_path=0.0, layer_scale_init_value=1e-6):
         super().__init__()
         self.dwconv = nn.Conv2d(
             dim, dim, kernel_size=7, padding=3, groups=dim
-        )  # depthwise conv because of the groups=dim
+        )  # Depthwise convolution: groups equals input channels, so each channel is filtered independently.
         self.norm = LayerNorm(dim, eps=1e-6)
         self.pwconv1 = nn.Linear(
             dim, 4 * dim
-        )  # pointwise/1x1 convs, implemented with linear layers
+        )  # Pointwise (1×1) convolutions, implemented as linear layers after the channel-last permutation.
         self.act = nn.GELU()
         self.pwconv2 = nn.Linear(4 * dim, dim)
         self.gamma = (
@@ -60,16 +60,16 @@ class Block(nn.Module):
 
 
 class ConvNeXt(nn.Module):
-    r"""ConvNeXt
-        A PyTorch impl of : `A ConvNet for the 2020s`  -
-          https://arxiv.org/pdf/2201.03545.pdf
+    r"""ConvNeXt encoder.
+        A PyTorch implementation of "A ConvNet for the 2020s" —
+          https://arxiv.org/abs/2201.03545
 
     Args:
-        in_chans (int): Number of input image channels. Default: 3
-        depths (tuple(int)): Number of blocks at each stage. Default: [3, 3, 9, 3]
-        dims (int): Feature dimension at each stage. Default: [96, 192, 384, 768]
+        in_chans (int): Number of input image channels. Default: 3.
+        depths (tuple of int): Number of blocks at each stage. Default: [3, 3, 9, 3].
+        dims (list of int): Feature dimension at each stage. Default: [96, 192, 384, 768].
         drop_path_rate (float): Stochastic depth rate. Default: 0.
-        layer_scale_init_value (float): Init value for Layer Scale. Default: 1e-6.
+        layer_scale_init_value (float): Initial value for Layer Scale. Default: 1e-6.
     """
 
     def __init__(
@@ -85,7 +85,7 @@ class ConvNeXt(nn.Module):
 
         self.downsample_layers = (
             nn.ModuleList()
-        )  # stem and 3 intermediate downsampling conv layers
+        )  # Patchify stem followed by three intermediate downsampling convolution layers.
         stem = nn.Sequential(
             nn.Conv2d(in_chans, dims[0], kernel_size=4, stride=4),
             LayerNorm(dims[0], eps=1e-6, data_format="channels_first"),
@@ -100,7 +100,7 @@ class ConvNeXt(nn.Module):
 
         self.stages = (
             nn.ModuleList()
-        )  # 4 feature resolution stages, each consisting of multiple residual blocks
+        )  # Four feature resolution stages, each consisting of multiple ConvNeXt blocks.
         dp_rates = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]
         cur = 0
         for i in range(4):
@@ -140,7 +140,7 @@ class ConvNeXt(nn.Module):
             if i in self.out_indices:
                 norm_layer = getattr(
                     self, f"norm{i}"
-                )  # Select the normalization for this feature stage.
+                )  # Retrieve the stage-specific normalisation layer by name.
                 x_out = norm_layer(x)
                 outs.append(x_out)
 
@@ -152,10 +152,10 @@ class ConvNeXt(nn.Module):
 
 
 class LayerNorm(nn.Module):
-    r"""LayerNorm that supports two data formats: channels_last (default) or channels_first.
-    The ordering of the dimensions in the inputs. channels_last corresponds to inputs with
-    shape (batch_size, height, width, channels) while channels_first corresponds to inputs
-    with shape (batch_size, channels, height, width).
+    r"""LayerNorm supporting two data formats: channels_last (default) or channels_first.
+    Controls the ordering of dimensions in the input tensor: channels_last expects shape
+    (batch_size, height, width, channels) while channels_first expects shape
+    (batch_size, channels, height, width).
     """
 
     def __init__(self, normalized_shape, eps=1e-6, data_format="channels_last"):
@@ -179,14 +179,14 @@ class LayerNorm(nn.Module):
             return x
 
 
-# from Lensless Imaging Transformer
+# Decoder architecture adapted from the Lensless Imaging Transformer (BobPXX, GitHub).
 # https://github.com/BobPXX/Lensless_Imaging_Transformer/tree/main
 
 
 class FNN(nn.Module):
     def __init__(
         self, sum_encoder_embed_dims=1440, rec_channels=3
-    ):  # convnext: 96 + 192 + 384 + 768 = 1440
+    ):  # ConvNeXt-Tiny encoder stage dimensions sum: 96 + 192 + 384 + 768 = 1440.
         super(FNN, self).__init__()
         self.rec_channels = rec_channels
 
@@ -223,7 +223,7 @@ class Decoder(nn.Module):
         rec_channels=3,
         original_height=300,
         original_width=480,
-    ):  # convnext: 96 + 192 + 384 + 768 = 1440
+    ):  # ConvNeXt-Tiny encoder stage dimensions sum: 96 + 192 + 384 + 768 = 1440.
         super(Decoder, self).__init__()
 
         self.original_height = original_height
@@ -240,7 +240,7 @@ class Decoder(nn.Module):
             size=(self.original_height, self.original_width),
             mode="bilinear",
             align_corners=False,
-        )  # doing something similar to U-Net (using residuals from previous layers, but they are all of different sizes, so need to be interpolated)
+        )  # Multi-scale feature fusion: all four encoder stages are upsampled to the target resolution and concatenated, following the U-Net principle of combining features from multiple scales.
         s2 = F.interpolate(
             s2,
             size=(self.original_height, self.original_width),
@@ -285,7 +285,7 @@ class ConvRecon(nn.Module):
                 drop_path_rate=drop_path_rate,
                 layer_scale_init_value=layer_scale_init_value,
                 in_chans=n_channels,
-            )  # When pretrained=True, in_22k selects ImageNet-22K rather than ImageNet-1K.
+            )  # in_22k selects ImageNet-22K weights when pretrained=True; otherwise ImageNet-1K weights are used.
         elif model_size == "small":
             self.encoder = convnext_small(
                 pretrained,
@@ -294,7 +294,7 @@ class ConvRecon(nn.Module):
                 layer_scale_init_value=layer_scale_init_value,
                 in_chans=n_channels,
             )
-        # The input stays RGB; uncertainty models need several RGB output heads.
+        # Output channel count is set by the uncertainty head (e.g., 6 for lower/mean/upper across RGB channels).
         self.decoder = Decoder(
             rec_channels=out_channels or n_channels,
             original_height=height,
@@ -302,7 +302,7 @@ class ConvRecon(nn.Module):
         )
 
     def forward(self, x):
-        # Replicate padding lets the encoder handle images such as 270 x 480.
+        # Replicate padding to the next multiple of 32, enabling the encoder to process images whose spatial dimensions are not multiples of 32.
         height, width = x.shape[-2:]
         x = F.pad(x, (0, (-width) % 32, 0, (-height) % 32), mode="replicate")
         x = self.encoder(x)

@@ -1,4 +1,4 @@
-"""MC dropout: reconstruct repeatedly with dropout active to estimate spread."""
+"""Monte Carlo dropout: draws stochastic samples at inference to estimate predictive uncertainty."""
 
 import torch
 from torch import nn
@@ -30,8 +30,8 @@ class MCDropout(nn.Module):
         return self.predict_samples(image).mean(dim=0)
 
     def predict_samples(self, image):
-        # eval() freezes BatchNorm; Dropout layers are then re-enabled so stochastic
-        # samples are drawn at inference. Training modes are restored afterwards.
+        # Sets all modules to evaluation mode to freeze BatchNorm running statistics, then
+        # re-enables Dropout layers to retain stochastic sampling. All training modes are restored after sampling.
         modes = {module: module.training for module in self.backbone.modules()}
         self.backbone.eval()
         for module in self.backbone.modules():
@@ -45,8 +45,8 @@ class MCDropout(nn.Module):
     def bounds(self, image):
         samples = self.predict_samples(image)
         mean = samples.mean(dim=0)
-        # GP approximation with assumed length scale 1. The observation-noise
-        # variance uses the initial training weight decay throughout inference.
+        # Gaussian process variance approximation (Gal & Ghahramani, 2016): the observation-noise
+        # precision is derived from the weight decay and dropout rate used during training.
         inverse_precision = 2 * self.dataset_size * INITIAL_WEIGHT_DECAY / (1 - DROPOUT_RATE)
         variance = samples.var(dim=0, unbiased=False) + inverse_precision
         lower, upper = gaussian_interval_from_mean_variance(mean, variance)
