@@ -1,0 +1,57 @@
+{
+  "selection": "Highest raw 50-pass validation SSIM among saved checkpoints from epochs 40 to 50",
+  "best": {
+    "checkpoint": "best_through_epoch_045.pt",
+    "epoch": 44,
+    "passes": 50,
+    "seed": 777,
+    "batch_size": 10,
+    "split": "val",
+    "n_images": 2000,
+    "ssim": 0.8153072595596313,
+    "psnr": 26.08381462097168,
+    "training_weights_changed": false
+  },
+  "results": [
+    {
+      "checkpoint": "best_through_epoch_040.pt",
+      "epoch": 40,
+      "passes": 50,
+      "seed": 777,
+      "batch_size": 10,
+      "split": "val",
+      "n_images": 2000,
+      "ssim": 0.8126108050346375,
+      "psnr": 26.014209747314453,
+      "training_weights_changed": false
+    },
+    {
+      "checkpoint": "best_through_epoch_045.pt",
+      "epoch": 44,
+      "passes": 50,
+      "seed": 777,
+      "batch_size": 10,
+      "split": "val",
+      "n_images": 2000,
+      "ssim": 0.8153072595596313,
+      "psnr": 26.08381462097168,
+      "training_weights_changed": false
+    },
+    {
+      "checkpoint": "latest.pt",
+      "epoch": 50,
+      "passes": 50,
+      "seed": 777,
+      "batch_size": 10,
+      "split": "val",
+      "n_images": 2000,
+      "ssim": 0.8141817450523376,
+      "psnr": 26.102142333984375,
+      "training_weights_changed": false
+    }
+  ],
+  "calibration_required": true,
+  "test_used_for_selection": false,
+  "selected_checkpoint_url": "https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-mcdropout-selected-50pass.pt",
+  "selected_checkpoint_sha256": "2b202e3e0448d82e8ad4efbbb1aa92757cadd9a34d5ec0fa61e18ff4e1ee1edd"
+}

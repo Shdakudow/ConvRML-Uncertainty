@@ -14,13 +14,13 @@ Choose a dataset and model to download weights from GitHub Releases. Numbered ar
 | QUTCC | Lower quantile `q_lb = 0.04150390625`, upper quantile `q_ub = 0.976806640625` | No saved fit found |
 | Im2im | Offset map min 0, mean 0.00895018, max 0.01790037 | No saved fit found |
 | Deep ensemble | Epoch 49, shared multiplier `λ = 0.89089084`, calibration coverage 90.272%, test coverage 90.062%, mean test width 0.13520. [Parameters](mirflickr/ensemble/calibration/parameters.pt) · [Results](mirflickr/ensemble/calibration/summary.json) | Calibration job `826080` cancelled at user request |
-| MC dropout | Fitted offset 0 at every pixel; 100% test coverage, width 1.00000 (uninformative) | Calibration deferred until training completes; job `916959` cancelled |
+| MC dropout | Epoch 44, shared multiplier `λ = 3.0015008`, calibration coverage 90.056%, test coverage 90.076%, mean test width 0.10788. [Parameters](mirflickr/mcdropout/calibration/parameters.pt) · [Results](mirflickr/mcdropout/calibration/summary.json) · [50-pass validation selection](mirflickr/mcdropout/calibration/selection.json) | Calibration deferred until training completes; job `916959` cancelled |
 
 QUTCC uses two fitted quantiles. Im2im uses a spatial offset map. The previous K-RCPS fits for deep ensemble and MC dropout also used spatial offsets. Each pixel’s offset lowers the lower bound and raises the upper bound by the same amount across all three RGB channels. The MIRFLICKR maps are 270 × 480. The earlier ensemble K-RCPS fit had zero expansion.
 
 MIRFLICKR downloads include the [QUTCC summary](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_qutcc.json), [fitted quantiles](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_qutcc-parameters.pt), [Im2im summary](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_im2im.json), and [full Im2im offset map](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_im2im-parameters.pt).
 
-Historical 30-pass MC dropout calibration job `916957` completed in 33 minutes 59 seconds using
+Historical 30-pass Historical 30-pass MC dropout calibration job `916957` completed in 33 minutes 59 seconds using
 epoch 44 (best validation SSIM through epoch 50). The fitted lambda map has
 minimum, mean, and maximum all equal to zero. Calibration coverage is 100%
 and test coverage is 100%, with mean test width 1.00000 on 2,000 images.
