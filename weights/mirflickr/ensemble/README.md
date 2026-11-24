@@ -10,6 +10,10 @@ Epoch 49, shared multiplier `λ = 0.89089084`, calibration coverage 90.272%, tes
 
 ## Archived checkpoints
 
+The numbers **01–64** identify download bundles. The ensemble has 10 members trained for 50 epochs. Bundles 01–12 each hold one whole-ensemble checkpoint. Bundles 13–64 hold the remaining 497 checkpoint files in groups of 8–10. This gives 12 + 52 = **64 bundles**.
+
+For example, [bundle 64](files/64.json) contains checkpoints for member 09 (the tenth model) from epochs 39–48. Look at the checkpoint path inside each manifest for its member and epoch. For inference with the selected ensemble, use the epoch 49 download at the top of this page.
+
 For a tar download, extract the original path listed below. The contents file includes the SHA-256 checksum.
 
 | Original path | Weights | Manifest |
