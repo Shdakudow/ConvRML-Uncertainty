@@ -6,7 +6,7 @@ import torch
 # MCDropout also reads this at inference as the precision term in the Gaussian process variance approximation.
 INITIAL_WEIGHT_DECAY = 1e-4
 
-# 95th percentile of the standard normal distribution; a symmetric [−z, +z] interval encloses 90% probability mass.
+# 95th percentile of N(0,1); symmetric [−z, +z] covers 90% probability mass.
 _Z_95 = float(torch.distributions.Normal(0.0, 1.0).icdf(torch.tensor(0.95)))
 
 
@@ -26,6 +26,6 @@ def pinball_loss(prediction, target, quantile):
 
 
 def gaussian_interval_from_mean_variance(mean, variance):
-    """Construct a symmetric 90% Gaussian prediction interval from per-pixel mean and variance estimates."""
+    """Symmetric 90% Gaussian prediction interval: mean ± z₀.₉₅ · √variance, per pixel."""
     radius = _Z_95 * variance.sqrt()
     return mean - radius, mean + radius

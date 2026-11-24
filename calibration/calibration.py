@@ -1,7 +1,8 @@
-"""Calibrate frozen models on held-out images.
+"""Calibrate frozen reconstruction models to achieve 90% pixel coverage on held-out data.
 
-KRCPS fits baseline spatial interval offsets. QUTCCCalibration selects quantile inputs.
-Both target 90% coverage; KRCPS uses the Hoeffding-Bentkus certificate.
+KRCPS fits a spatially varying expansion map λ(x,y) ≥ 0 and certifies coverage via the
+Hoeffding-Bentkus bound. QUTCCCalibration searches for quantile inputs (q_lo, q_hi) that
+achieve the target jointly across all pixels.
 """
 
 import math
@@ -19,13 +20,8 @@ from calibration.krcps_optimization import SETTINGS, _optimize_group_lambdas
 
 
 class KRCPS:
-    """Calibrate prediction intervals by fitting a per-pixel expansion map.
-
-    After training, the model's raw bounds may not reach 90% pixel coverage.
-    KRCPS adds a spatially varying offset to each pixel's interval — larger in
-    regions where the model is less reliable. The offset map is optimized on a
-    held-out subset, then the Hoeffding-Bentkus statistical test verifies that
-    the selected map achieves certified coverage at alpha=0.1, delta=0.1.
+    """K-RCPS calibration: fits a per-pixel expansion map λ(x,y) ≥ 0 on a held-out subset,
+    then shrinks it until the Hoeffding-Bentkus test certifies ≥90% coverage (α=0.1, δ=0.1).
     """
 
     def __init__(self, model):
@@ -34,10 +30,8 @@ class KRCPS:
 
     @staticmethod
     def _hb_pvalue(risk, n):
-        """Hoeffding-Bentkus p-value for the null hypothesis that true risk >= alpha.
-
-        Returns the minimum of the Hoeffding KL bound and the Bentkus binomial
-        bound; a value below delta certifies the interval at confidence 1-delta.
+        """Hoeffding-Bentkus p-value for H₀: true risk ≥ α.
+        Returns min(Hoeffding KL bound, Bentkus binomial bound); p < δ certifies coverage at confidence 1−δ.
         """
         alpha = SETTINGS["alpha"]
         if risk >= alpha:
@@ -52,7 +46,7 @@ class KRCPS:
         )
 
     def _accepted_risk(self, n):
-        """Binary search for the largest empirical risk whose HB p-value is below delta."""
+        """Largest empirical risk r̂ with HB p-value < δ, found by binary search."""
         lower, upper = 0.0, SETTINGS["alpha"]
         for _ in range(SETTINGS["hb_iterations"]):
             middle = (lower + upper) / 2
@@ -100,11 +94,7 @@ class KRCPS:
 
     @staticmethod
     def _initial_expansion(arrays, n_opt, device):
-        """Return a per-pixel expansion map fitted on the first n_opt images.
-
-        The map assigns a non-negative offset to each pixel; adding it to both
-        sides of the model's interval widens coverage in less reliable regions.
-        """
+        """Per-pixel λ(x,y) ≥ 0 fitted on the first n_opt images; expands [lower−λ, upper+λ] symmetrically."""
         rng = np.random.default_rng(torch.initial_seed())
         membership, group_offsets = _optimize_group_lambdas(
             *(torch.from_numpy(array[:n_opt]) for array in arrays),
@@ -118,7 +108,7 @@ class KRCPS:
         return membership.to(device) @ group_offsets + SETTINGS["lambda_max"]
 
     def _select_expansion(self, target, lower, upper, expansion):
-        """Shrink the expansion map one stepsize at a time; return the tightest map that still passes the HB certificate."""
+        """Shrink λ by stepsize until the next step would fail the HB certificate; return the tightest passing map."""
         n_cal = len(target)
         threshold = self._accepted_risk(n_cal)
         risk = self._risk(target, lower, upper, expansion)
@@ -190,7 +180,7 @@ class KRCPS:
 
     @torch.inference_mode()
     def predict(self, image):
-        """Apply the fitted lambda map to produce certified center, lower, and upper bounds."""
+        """Apply the fitted λ map: [min(f,g)−λ, max(f,g)+λ], clipped to [0,1]."""
         center, first, second = self.model.bounds(image)
         expansion = self.parameters["lambda_map"].to(image.device)
         # min/max swap handles any crossed bounds the model may produce.
@@ -200,13 +190,8 @@ class KRCPS:
 
 
 class QUTCCCalibration:
-    """Calibrate QUTCC by selecting the quantile inputs that achieve 90% coverage.
-
-    QUTCC produces an interval by running the model at a lower quantile q_lo
-    and an upper quantile q_hi. This class searches for the tightest q_lo and
-    q_hi that keep at least 90% of pixel values inside the interval, applying
-    a small correction to the per-tail miss budget to account for the finite
-    number of calibration images.
+    """QUTCC calibration: binary search for the tightest (q_lo, q_hi) ∈ [0,1]² such that
+    ≥90% of pixels satisfy lower(q_lo) ≤ target ≤ upper(q_hi), with a finite-sample correction.
     """
 
     def __init__(self, model):
@@ -215,12 +200,8 @@ class QUTCCCalibration:
 
     @torch.inference_mode()
     def fit(self, loader, device):
-        """Binary search for the tightest lower and upper quantile inputs that achieve 90% coverage.
-
-        The per-tail miss budget is tightened slightly for the finite calibration
-        set size, then actual joint pixel coverage is measured with the selected
-        quantiles to confirm the target was met.
-
+        """12-step bisection for each of q_lo and q_hi independently (resolution 1/4096).
+        Per-tail miss budget: (α − α/n)/2 to correct for finite n. Joint coverage verified after.
         """
         self.model.eval()
         n = len(loader.dataset)
@@ -271,7 +252,7 @@ class QUTCCCalibration:
 
     @torch.inference_mode()
     def predict(self, image):
-        """Run the model at the fitted lower and upper quantiles to get the calibrated interval."""
+        """Evaluate model at (q_lo, q_hi) to produce the calibrated interval."""
         return self.model.bounds(
             image, self.parameters["lower_q"], self.parameters["upper_q"]
         )

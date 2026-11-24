@@ -32,7 +32,7 @@ class DeepEnsemble(nn.Module):
         means, variances = zip(*(member(image) for member in self.members))
         means, variances = torch.stack(means), torch.stack(variances)
         mean = means.mean(dim=0)
-        # Law of total variance: E[Var] + Var[E] = mean within-member variance plus variance of member means.
+        # Law of total variance: Var(X) = E[Var(X|Y)] + Var(E[X|Y]).
         variance = (variances + means.square()).mean(dim=0) - mean.square()
         # ReLU clamps values that become marginally negative due to floating-point cancellation in the variance decomposition.
         return mean, F.relu(variance)

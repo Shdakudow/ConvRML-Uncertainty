@@ -45,8 +45,8 @@ class MCDropout(nn.Module):
     def bounds(self, image):
         samples = self.predict_samples(image)
         mean = samples.mean(dim=0)
-        # Gaussian process variance approximation (Gal & Ghahramani, 2016): the observation-noise
-        # precision is derived from the weight decay and dropout rate used during training.
+        # GP variance approximation (Gal & Ghahramani, 2016):
+        # τ⁻¹ = 2N·λ/(1−p), where N = dataset size, λ = weight decay, p = dropout rate.
         inverse_precision = 2 * self.dataset_size * INITIAL_WEIGHT_DECAY / (1 - DROPOUT_RATE)
         variance = samples.var(dim=0, unbiased=False) + inverse_precision
         lower, upper = gaussian_interval_from_mean_variance(mean, variance)

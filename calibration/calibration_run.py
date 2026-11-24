@@ -12,7 +12,6 @@ from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMe
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
 
 from calibration.calibration import KRCPS, QUTCCCalibration
-from calibration.global_grid import GlobalGridCalibration
 from dataloader import ImagePairs
 from models import make_model
 from models.mcdropout import MC_PASSES
@@ -100,9 +99,7 @@ def main():
     model.load_state_dict(checkpoint_weights)
     model = model.to(device).eval()
     method = saved["method"]
-    if method in ("ensemble", "mcdropout"):
-        calibrator = GlobalGridCalibration(model, method)
-    elif method == "qutcc":
+    if method == "qutcc":
         calibrator = QUTCCCalibration(model)
     else:
         calibrator = KRCPS(model)
@@ -160,9 +157,9 @@ def main():
         **provenance,
         calibration=compact_parameters(calibrator.parameters),
         test=metrics,
-        reconstruction_metrics="Raw PSNR/SSIM; LPIPS uses a clipped [0,1] copy",
-        coverage_definition="Fraction of RGB pixel-channel targets inside the interval",
-        width_definition="Nonnegative interval length; also reported after intersection with [0,1]",
+        reconstruction_metrics="PSNR and SSIM computed on raw predictions; LPIPS on predictions clipped to [0,1]",
+        coverage_definition="Fraction of RGB pixel-channel values in [lower, upper]",
+        width_definition="Mean of max(upper − lower, 0); also reported after clipping bounds to [0,1]",
     )
     temporary = args.output / "summary.tmp"
     temporary.write_text(json.dumps(summary, indent=2) + "\n")
