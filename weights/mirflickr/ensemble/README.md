@@ -4,6 +4,10 @@
 
 Extract `mirflickr/ensemble_parallel/best_through_epoch_050.pt` from the tar.
 
+## Shared-scale calibration
+
+Epoch 49, shared multiplier `λ = 0.89089084`, calibration coverage 90.272%, test coverage 90.062%, mean test width 0.13520. [Parameters](calibration/parameters.pt) · [Results](calibration/summary.json)
+
 ## Archived checkpoints
 
 For a tar download, extract the original path listed below. The contents file includes the SHA-256 checksum.
