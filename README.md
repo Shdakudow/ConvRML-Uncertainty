@@ -210,24 +210,10 @@ Checkpoints are selected by the best raw validation SSIM through epoch 50. Calib
 | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
 | MIRFLICKR | QUTCC | 49 | 0.8211 | 90.062% | 89.973% | 0.13013 | Complete |
 | MIRFLICKR | Im2im | 50 | 0.8215 | 91.070% | 90.895% | 0.11386 | Complete |
-| MIRFLICKR | Deep ensemble | 49 | 0.7854 | 92.886% | 92.660% | 0.14459 | Complete |
-| MIRFLICKR | MC dropout | 44 | 0.81624 | 100.000% | 100.000% | 1.00000 | Complete; uninformative intervals |
+| MIRFLICKR | Deep ensemble | 49 | 0.78541 | 90.272% | 90.062% | 0.13054 | Complete |
+| MIRFLICKR | MC dropout | 44 | 0.81662 | 90.056% | 90.076% | 0.10080 | Complete |
 
 MIRFLICKR uses 3,000 calibration and 2,000 test images. DiffuserCam uses 2,048 calibration and 5,000 test images. Each MIRFLICKR K-RCPS fit reserves 10 calibration images for K-RCPS optimization; its HB check uses the remaining images. All four methods target 90% coverage. Only K-RCPS supplies the 90%-confidence HB certificate. Coverage counts RGB pixel-channel values. Width is the interval length after intersection with [0,1]; coverage and raw reconstruction predictions are not changed by this width calculation.
-
-**MC dropout calibration result (job 916957):** This historical fit used 30 stochastic passes. K-RCPS completed in 33 minutes
-59 seconds with a fitted offset of zero at every pixel. On 2,000 held-out test
-images, PSNR is 26.13419 dB, SSIM is 0.81624, and LPIPS is 0.25349. Both
-calibration and test coverage are 100%, with mean width 1.00000: the clipped
-intervals span the entire [0,1] range. Although the HB check passes, these
-intervals provide no useful spatial discrimination of uncertainty.
-
-The current MC dropout variance includes the observation-noise term
-`2 * dataset_size * 1e-4 / 0.9`, in addition to stochastic prediction variance.
-This large term dominates the intervals. K-RCPS only adds nonnegative offsets,
-so it cannot shrink an already overwide native interval. The variance
-specification needs review before interpreting these intervals as a meaningful
-uncertainty comparison; this documentation update does not change the model.
 
 DiffuserCam training is still incomplete. Its calibration jobs are cancelled;
 no DiffuserCam calibrated results are reported here.
