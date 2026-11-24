@@ -6,11 +6,11 @@
 | --- | --- |
 | [weights/mirflickr/](weights/mirflickr/) | Selected weights for all four MIRFLICKR models. Open a model folder for its download link and selected epoch. |
 | [weights/diffusercam/](weights/diffusercam/) | Intermediate DiffuserCam ensemble checkpoints from the November 20 transfer. |
-| [archive/weights/](archive/weights/) | Checkpoints from experiments before the November 15, 2026 retraining run, grouped by experiment. |
+| [archive/weights/](https://github.com/Shdakudow/global-archive/tree/main/ConvRML-Uncertainty/archive/weights/) | Checkpoints from experiments before the November 15, 2026 retraining run, grouped by experiment. |
 | [models/](models/) and [ConvNeXt/](ConvNeXt/) | The four uncertainty models and the reconstruction backbone they share. |
 | [dataloader.py](dataloader.py) and [train.py](train.py) | Dataset loading and model training. |
 | [calibration/](calibration/) | Code for fitting and evaluating prediction intervals. |
-| [archive/](archive/) | Previous implementations and experiment records. |
+| [Private global archive](https://github.com/Shdakudow/global-archive/tree/main/ConvRML-Uncertainty/archive/) | Previous implementations and experiment records. |
 
 The weight directories on `main` contain download links and checkpoint inventories. The checkpoint files are hosted in GitHub Releases.
 
@@ -281,9 +281,11 @@ Detailed results are recorded in `tests/CHECKS.json`.
 
 ## Previous implementation and attribution
 
+Archived files now live in the private `Shdakudow/global-archive` repository; access requires repository permission. Historical release assets retain their original download URLs.
+
 The previous implementation is preserved in
-[`archive/previous_implementation_20261111/`](archive/previous_implementation_20261111/).
-Earlier snapshots are in [archive (not needed)](archive/).
+[`archive/previous_implementation_20261111/`](https://github.com/Shdakudow/global-archive/tree/main/ConvRML-Uncertainty/archive/previous_implementation_20261111/).
+Earlier snapshots are in [private global archive](https://github.com/Shdakudow/global-archive/tree/main/ConvRML-Uncertainty/archive/).
 
 The backbone adapts [Meta's ConvNeXt](https://github.com/facebookresearch/ConvNeXt)
 and the decoder adapts

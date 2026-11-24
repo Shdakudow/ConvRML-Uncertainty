@@ -1,1 +1,0 @@
-../../../shared/tests/paper_protocol.py

@@ -1,6 +1,0 @@
-results/
-logs/
-__pycache__/
-*.pyc
-jobs.json
-jobs.tmp

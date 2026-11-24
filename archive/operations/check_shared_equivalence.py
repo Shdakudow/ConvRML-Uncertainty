@@ -1,1 +1,0 @@
-../publication_support/tools/check_shared_equivalence.py
