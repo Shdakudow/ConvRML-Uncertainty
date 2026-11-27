@@ -20,4 +20,4 @@ Coverage is the percentage of RGB channel values inside the predicted interval. 
 
 ## DiffuserCam calibration
 
-The [DiffuserCam weights directory](diffusercam/) lists the available checkpoints. Calibration parameters and coverage results for this dataset have not been published here.
+The [DiffuserCam weights directory](diffusercam/) lists the available checkpoints. The epoch-50 deep ensemble uses a shared multiplier λ = 0.62062061, fitted on 2,048 calibration images. RGB pixel-channel coverage was 90.129% on calibration and 90.146% on 5,000 test images. Mean test interval width was 0.03649. [Parameters](diffusercam/ensemble/calibration/parameters.pt) · [Test results](diffusercam/ensemble/calibration/summary.json)

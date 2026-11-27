@@ -1,0 +1,41 @@
+{
+  "checkpoint": "/share/monakhova/shamus_data/uncertainty/uq_convnext_retrain_20261115/diffusercam/ensemble_parallel/best_through_epoch_050.pt",
+  "checkpoint_sha256": "346f983d6b0fab25618a3cbda3fe4c8b2e4c790e782e842c0972b56b6dc94542",
+  "manifest": "/home/jy2228/ConvRML/experiments/uq_convnext_retrain_20261115/data/diffusercam_split.json",
+  "manifest_sha256": "f20fd920c49160709a7fba779c1defe4dca3f1e1aad3d4d7480759839df5fbfd",
+  "method": "ensemble",
+  "calibrator": "GlobalGridCalibration",
+  "selected_epoch": 50,
+  "selected_through_epoch": 50,
+  "validation_ssim": 0.8894509077072144,
+  "seed": 777,
+  "batch_size": 10,
+  "training_weights_changed": false,
+  "test_used_for_fitting": false,
+  "calibration": {
+    "procedure": "Empirical global grid",
+    "scale": 0.620620608329773,
+    "grid_size": 1000,
+    "max_scale": 10,
+    "n_images": 2048,
+    "alpha": 0.1,
+    "target_coverage": 0.9,
+    "adjusted_risk_target": 0.099560546875,
+    "calibration_coverage": 0.9012936502695084,
+    "hb_upper_bound": 0.111161499538476,
+    "delta": 0.1
+  },
+  "test": {
+    "n_images": 5000,
+    "coverage": 0.9014634986111111,
+    "crossing": 0.0,
+    "mean_interval_width": 0.036494772771990744,
+    "mean_interval_width_in_image_range": 0.03561332054398148,
+    "psnr": 31.620174407958984,
+    "ssim": 0.8895073533058167,
+    "lpips": 0.2256072497367859
+  },
+  "reconstruction_metrics": "Raw PSNR/SSIM; LPIPS uses a clipped [0,1] copy",
+  "coverage_definition": "Fraction of RGB pixel-channel targets inside the interval",
+  "width_definition": "Nonnegative interval length; also reported after intersection with [0,1]"
+}
