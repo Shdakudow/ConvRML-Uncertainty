@@ -1,0 +1,43 @@
+{
+  "checkpoint": "mirflickr-ensemble-10members-epoch-049.pt",
+  "checkpoint_sha256": "9b2121bb7fd1005a00c6da0142a32139f38ff06a50f434c070a244f8bd72bf3a",
+  "manifest": "mirflickr_split.json",
+  "manifest_sha256": "92b12e510b1e81f78ad7103b28d8f7899763549224b88ce25454df398f5d2a9c",
+  "method": "ensemble",
+  "calibrator": "GlobalGridCalibration",
+  "selected_epoch": 49,
+  "selected_through_epoch": 50,
+  "validation_ssim": 0.7837292551994324,
+  "seed": 777,
+  "batch_size": 10,
+  "training_weights_changed": false,
+  "test_used_for_fitting": false,
+  "calibration": {
+    "procedure": "Empirical global grid",
+    "scale": 0.8908908367156982,
+    "grid_size": 1000,
+    "max_scale": 10,
+    "n_images": 3000,
+    "alpha": 0.1,
+    "target_coverage": 0.9,
+    "adjusted_risk_target": 0.09970000000000001,
+    "calibration_coverage": 0.9027164131402969,
+    "hb_upper_bound": 0.10717332698429201,
+    "delta": 0.1
+  },
+  "test": {
+    "n_images": 2000,
+    "coverage": 0.9006237178497942,
+    "crossing": 0.0,
+    "mean_interval_width": 0.13520219798900462,
+    "mean_interval_width_in_image_range": 0.13053612730677727,
+    "psnr": 24.226802825927734,
+    "ssim": 0.7854102849960327,
+    "lpips": 0.35037311851978303
+  },
+  "reconstruction_metrics": "Raw PSNR/SSIM; LPIPS uses a clipped [0,1] copy",
+  "coverage_definition": "Fraction of RGB pixel-channel targets inside the interval",
+  "width_definition": "Nonnegative interval length; also reported after intersection with [0,1]",
+  "calibration_source_commit": "124fee1",
+  "slurm_job": "966366"
+}

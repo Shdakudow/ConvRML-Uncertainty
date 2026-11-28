@@ -1,0 +1,37 @@
+{
+  "checkpoint": "diffusercam-qutcc-epoch-048.pt",
+  "checkpoint_sha256": "a264820aee6aa3a0462b077507cabb070946dfed407de3a4ad93e34d78146c9b",
+  "manifest": "diffusercam_split.json",
+  "manifest_sha256": "f20fd920c49160709a7fba779c1defe4dca3f1e1aad3d4d7480759839df5fbfd",
+  "method": "qutcc",
+  "selected_epoch": 48,
+  "selected_through_epoch": 50,
+  "validation_ssim": 0.9225642681121826,
+  "seed": 777,
+  "batch_size": 10,
+  "training_weights_changed": false,
+  "test_used_for_fitting": false,
+  "calibration": {
+    "lower_q": 0.0986328125,
+    "upper_q": 0.908203125,
+    "procedure": "QUTCC quantile search",
+    "n_images": 2048,
+    "target_coverage": 0.9,
+    "calibration_coverage": 0.900534839771412,
+    "crossing": 0.0010610215928819444,
+    "target_met": true
+  },
+  "test": {
+    "n_images": 5000,
+    "coverage": 0.9008006666666667,
+    "crossing": 0.0010655314814814814,
+    "mean_interval_width": 0.02764176589988426,
+    "mean_interval_width_in_image_range": 0.027637253070746527,
+    "psnr": 34.40584182739258,
+    "ssim": 0.9226574301719666,
+    "lpips": 0.14373078676462173
+  },
+  "reconstruction_metrics": "Raw PSNR/SSIM; LPIPS uses a clipped [0,1] copy",
+  "coverage_definition": "Fraction of RGB pixel-channel targets inside the interval",
+  "width_definition": "Nonnegative interval length; also reported after intersection with [0,1]"
+}

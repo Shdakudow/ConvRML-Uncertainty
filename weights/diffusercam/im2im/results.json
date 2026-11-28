@@ -1,0 +1,57 @@
+{
+  "checkpoint": "diffusercam-im2im-epoch-049.pt",
+  "checkpoint_sha256": "e6d119b408e2419de73fb489aea10bf76dbda6c0cea5447607bf5cd6069e0ffc",
+  "manifest": "diffusercam_split.json",
+  "manifest_sha256": "f20fd920c49160709a7fba779c1defe4dca3f1e1aad3d4d7480759839df5fbfd",
+  "method": "im2im",
+  "selected_epoch": 49,
+  "selected_through_epoch": 50,
+  "validation_ssim": 0.9233237504959106,
+  "seed": 777,
+  "batch_size": 10,
+  "training_weights_changed": false,
+  "test_used_for_fitting": false,
+  "calibration": {
+    "procedure": "K-RCPS with held-out Hoeffding-Bentkus calibration",
+    "lambda_map": {
+      "shape": [
+        300,
+        480
+      ],
+      "minimum": 0.0,
+      "mean": 0.0,
+      "maximum": 0.0
+    },
+    "alpha": 0.1,
+    "delta": 0.1,
+    "target_coverage": 0.9,
+    "confidence": 0.9,
+    "n_images": 2038,
+    "n_optimization_images": 10,
+    "optimization_indices_count": 10,
+    "calibration_indices_count": 2038,
+    "calibration_coverage": 0.9372793212532997,
+    "crossing": 0.0,
+    "target_met": true,
+    "hb_pvalue": 4.50131842426971e-09,
+    "certificate_passed": true,
+    "hb_iterations": 40,
+    "endpoint_clipping": [
+      0,
+      1
+    ]
+  },
+  "test": {
+    "n_images": 5000,
+    "coverage": 0.9372978782407407,
+    "crossing": 0.0,
+    "mean_interval_width": 0.03364905554470486,
+    "mean_interval_width_in_image_range": 0.03364905554470486,
+    "psnr": 34.58381652832031,
+    "ssim": 0.9235367178916931,
+    "lpips": 0.13723604575395584
+  },
+  "reconstruction_metrics": "Raw PSNR/SSIM; LPIPS uses a clipped [0,1] copy",
+  "coverage_definition": "Fraction of RGB pixel-channel targets inside the interval",
+  "width_definition": "Nonnegative interval length; also reported after intersection with [0,1]"
+}

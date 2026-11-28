@@ -1,23 +1,21 @@
 # MIRFLICKR · Im2im
 
-[Download the selected weights](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-im2im.pt) · epoch 50, selected by validation SSIM through epoch 50.
+[Download best weights (.pt)](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-im2im.pt) · Epoch 50 · Validation SSIM 0.82044
 
-[Calibration parameters](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_im2im-parameters.pt) · [Test metrics](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr_im2im.json)
+[Calibration parameters](calibration.pt) · [Test results and checkpoint SHA-256](results.json)
 
-## Archived checkpoints
+Spatial offset (min 0, mean 0.00895018, max 0.0179004). Coverage was 91.070% on calibration and 90.895% across 2,000 test images. Mean test interval width was 0.11386.
 
-For a tar download, extract the original path listed below. The contents file includes the SHA-256 checksum.
+Run from the repository root with the downloaded checkpoint in the current directory.
 
-| Original path | Weights | Manifest |
-| --- | --- | --- |
-| `mirflickr/im2im/best_through_epoch_005.pt` | [Download](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-mixed-01.tar) | [Contents](../mixed/files/01.json) |
-| `mirflickr/im2im/best_through_epoch_010.pt` | [Download](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-mixed-01.tar) | [Contents](../mixed/files/01.json) |
-| `mirflickr/im2im/best_through_epoch_015.pt` | [Download](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-mixed-01.tar) | [Contents](../mixed/files/01.json) |
-| `mirflickr/im2im/best_through_epoch_020.pt` | [Download](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-mixed-01.tar) | [Contents](../mixed/files/01.json) |
-| `mirflickr/im2im/best_through_epoch_025.pt` | [Download](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-mixed-01.tar) | [Contents](../mixed/files/01.json) |
-| `mirflickr/im2im/best_through_epoch_030.pt` | [Download](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-mixed-02.tar) | [Contents](../mixed/files/02.json) |
-| `mirflickr/im2im/best_through_epoch_035.pt` | [Download](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-mixed-02.tar) | [Contents](../mixed/files/02.json) |
-| `mirflickr/im2im/best_through_epoch_040.pt` | [Download](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-mixed-02.tar) | [Contents](../mixed/files/02.json) |
-| `mirflickr/im2im/best_through_epoch_045.pt` | [Download](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-mixed-02.tar) | [Contents](../mixed/files/02.json) |
-| `mirflickr/im2im/best_through_epoch_050.pt` | [Download](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-im2im.pt) | [Contents](../mixed/files/03.json) |
-| `mirflickr/im2im/latest.pt` | [Download](https://github.com/Shdakudow/ConvRML-Uncertainty/releases/download/uq-weights-20261120/mirflickr-mixed-02.tar) | [Contents](../mixed/files/02.json) |
+```python
+import torch
+from models import make_model
+
+checkpoint = torch.load("mirflickr-im2im.pt", map_location="cpu", weights_only=True)
+model = make_model(checkpoint["method"], checkpoint["height"], checkpoint["width"], checkpoint["dataset_size"])
+model.load_state_dict(checkpoint["model"])
+model.eval()
+```
+
+[Training archive](training-archive.md)
