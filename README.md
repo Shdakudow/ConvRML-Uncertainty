@@ -11,18 +11,26 @@ Uncertainty quantification for lensless imaging reconstruction. Four methods bui
 | Deep ensemble | Ten independent RGB mean/variance predictors | Mean Gaussian NLL across the ten members |
 | MC dropout | Mean and variance from 50 stochastic passes | MSE |
 
-Training: 50 epochs, AdamW, batch size 10, 9-epoch linear warmup 1e-5 → 1e-4, cosine decay to 1e-9.
+**QUTCC:** `q` is embedded and injected via FiLM after encoder block normalizations and decoder batch normalizations.
+
+**Deep ensemble:** 10 members, each trained independently on the same shuffled batch order per epoch (seed 777 + member index). Loss is mean NLL averaged across members and images.
+
+**MC dropout:** dropout probability 0.1. The native interval variance includes an observation-noise term `2 * dataset_size * weight_decay / (1 − dropout_p)` (length scale 1, weight decay 1e-4). Training uses one stochastic pass per batch; inference and calibration use the mean of 50 passes. BatchNorm stays in eval mode during MC sampling.
+
+**Training (all models):** 50 epochs, AdamW, physical batch size 10, 9-epoch linear warmup 1e-5 → 1e-4, cosine decay to 1e-9. Weight decay cosine-annealed 1e-4 → 0. Checkpoint selection: cumulative best validation SSIM, saved every 5 epochs.
 
 ## Calibration
 
-All methods target 90% coverage (α=0.1). MC dropout and ensemble use empirical grid search; Im2im and QUTCC use K-RCPS with HB certificate (δ=0.1).
+All methods target 90% coverage (α=0.1). Calibration and test splits are independent.
 
-| Model | Fitted parameter |
-| --- | --- |
-| QUTCC | Lower and upper quantile inputs |
-| Im2im | K-RCPS spatial offset map |
-| Deep ensemble | One multiplier for the Gaussian interval from all members |
-| MC dropout | One multiplier for the 50-pass Gaussian interval |
+| Model | Method | Fitted parameter |
+| --- | --- | --- |
+| QUTCC | K-RCPS + HB (δ=0.1) | Lower and upper quantile inputs |
+| Im2im | K-RCPS + HB (δ=0.1) | Spatial additive offset map (per pixel, shared across RGB) |
+| Deep ensemble | Empirical grid search (1,000 steps, multiplier ∈ [0, 10]) | One Gaussian interval multiplier |
+| MC dropout | Empirical grid search (2,000 steps, multiplier ∈ [0, 50]) | One Gaussian interval multiplier |
+
+K-RCPS settings: 2 groups, 10 optimization images, 500 sampled spatial coordinates, initial expansion 0.5, step 0.002, 30-value gamma sweep [0.25, 0.75], 40 HB iterations.
 
 <!-- calibration-results-20261118:start -->
 ### Results (MIRFLICKR, 3,000 calibration / 2,000 test images)
