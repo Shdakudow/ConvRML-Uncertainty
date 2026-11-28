@@ -1,6 +1,18 @@
 # ConvRML-Uncertainty
 
-Uncertainty quantification for lensless imaging reconstruction. Four methods built on a shared ConvNeXt-Tiny backbone (`ConvNeXt/backbone.py`).
+Uncertainty quantification for lensless imaging reconstruction. Four methods built on a shared ConvNeXt-Tiny backbone.
+
+| Path | What it does |
+| --- | --- |
+| `ConvNeXt/backbone.py` | Shared encoder + decoder; ConvNeXt-Tiny with optional FiLM conditioning |
+| `models/` | One file per method: `qutcc.py`, `im2im.py`, `ensemble.py`, `mcdropout.py`, `common.py` |
+| `dataloader.py` | Manifest-driven dataset loader; supports PNG/TIFF/JPEG and MIRFLICKR `.npy` |
+| `train.py` | Training entry point for all four models; also handles ensemble member jobs |
+| `calibration/calibration_run.py` | Fits and evaluates calibration for a given checkpoint |
+| `calibration/global_grid.py` | Empirical grid search calibrator (ensemble, MC dropout) |
+| `calibration/krcps_optimization.py` | K-RCPS spatial calibrator (QUTCC, Im2im) |
+| `weights/` | Pretrained checkpoints, calibration parameters, and test results |
+| `archive/` | Previous implementations (private mirror) |
 
 ## Models
 
@@ -46,19 +58,19 @@ K-RCPS settings: 2 groups, 10 optimization images, 500 sampled spatial coordinat
 
 ## Weights
 
-Pretrained checkpoints and calibration parameters live in [`weights/`](weights/). Each model folder contains:
+Checkpoints are hosted in GitHub Releases; each model folder in [`weights/`](weights/) contains pointers and metadata only.
 
 | File | Contents |
 | --- | --- |
-| `README.md` | Download link (GitHub Release), selected epoch, fitted calibration value, usage code snippet |
-| `calibration.pt` | Fitted calibration parameters (`torch.load`); use with the downloaded checkpoint for inference |
-| `calibration/parameters.pt` | Same parameters with full provenance (checkpoint + manifest SHA-256, run metadata) |
-| `calibration/summary.json` | Complete calibration run record: procedure, fitted scale, grid size, coverage on calibration and test sets, HB bound, Slurm job ID |
+| `README.md` | Download link, selected epoch, fitted calibration value, usage code snippet |
+| `calibration.pt` | Fitted calibration parameters (`torch.load`) |
+| `calibration/parameters.pt` | Same, with full provenance (checkpoint + manifest SHA-256, run metadata) |
+| `calibration/summary.json` | Full calibration record: procedure, fitted scale, grid size, coverage, HB bound |
 | `results.json` | Test-set metrics (PSNR, SSIM, LPIPS, coverage, mean width) and checkpoint SHA-256 |
-| `files/NN.json` | Download manifest: ordered tar parts and their file list with SHA-256 and byte count (ensemble weights are split across multiple tars) |
+| `files/NN.json` | Ordered tar download manifest with per-file SHA-256 and byte count |
 | `training-archive.md` | Training run notes and checkpoint history |
 
-[`weights/README.md`](weights/README.md) has the full summary table with fitted parameters and coverage for all models on both datasets.
+[`weights/README.md`](weights/README.md) has the full table of fitted parameters and coverage across all models and datasets.
 
 ## Attribution
 
