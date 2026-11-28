@@ -44,6 +44,22 @@ K-RCPS settings: 2 groups, 10 optimization images, 500 sampled spatial coordinat
 
 <!-- calibration-results-20261118:end -->
 
+## Weights
+
+Pretrained checkpoints and calibration parameters live in [`weights/`](weights/). Each model folder contains:
+
+| File | Contents |
+| --- | --- |
+| `README.md` | Download link (GitHub Release), selected epoch, fitted calibration value, usage code snippet |
+| `calibration.pt` | Fitted calibration parameters (`torch.load`); use with the downloaded checkpoint for inference |
+| `calibration/parameters.pt` | Same parameters with full provenance (checkpoint + manifest SHA-256, run metadata) |
+| `calibration/summary.json` | Complete calibration run record: procedure, fitted scale, grid size, coverage on calibration and test sets, HB bound, Slurm job ID |
+| `results.json` | Test-set metrics (PSNR, SSIM, LPIPS, coverage, mean width) and checkpoint SHA-256 |
+| `files/NN.json` | Download manifest: ordered tar parts and their file list with SHA-256 and byte count (ensemble weights are split across multiple tars) |
+| `training-archive.md` | Training run notes and checkpoint history |
+
+[`weights/README.md`](weights/README.md) has the full summary table with fitted parameters and coverage for all models on both datasets.
+
 ## Attribution
 
 Backbone adapts [Meta's ConvNeXt](https://github.com/facebookresearch/ConvNeXt); decoder adapts [Lensless Imaging Transformer](https://github.com/BobPXX/Lensless_Imaging_Transformer).
